@@ -22,9 +22,13 @@ const Navbar = () => {
     }
   };
 
+  const isLoggedIn = !!auth?.user;
+
   return (
     <MTNavbar className="w-full px-6 py-3 bg-[#242424] text-white">
       <div className="flex items-center justify-between">
+
+        {/* Logo */}
         <Typography
           as={Link}
           to="/"
@@ -33,10 +37,24 @@ const Navbar = () => {
         >
           MakerSuite
         </Typography>
+
+        {/* Right side menu */}
         <div className="flex gap-6 items-center">
-          {auth?.user ? (
+
+          {isLoggedIn ? (
             <>
-              <span>Hello, {auth.user.username}</span>
+              <Link to="/dashboard" className="hover:text-[#535bf2] transition-colors">
+                Dashboard
+              </Link>
+
+              <Link to="/crosslist" className="hover:text-[#535bf2] transition-colors">
+                Cross List
+              </Link>
+
+              <Link to="/settings" className="hover:text-[#535bf2] transition-colors">
+                Settings
+              </Link>
+
               <button
                 onClick={handleLogout}
                 className="auth-button hover:text-[#535bf2] transition-colors"
@@ -49,11 +67,13 @@ const Navbar = () => {
               <Link to="/login" className="auth-button hover:text-[#535bf2] transition-colors">
                 Login
               </Link>
+
               <Link to="/signup" className="auth-button hover:text-[#535bf2] transition-colors">
                 Sign Up
               </Link>
             </>
           )}
+
         </div>
       </div>
     </MTNavbar>

@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import './App.css';
+import CrossList from "./pages/CrossList";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/crosslist" element={<CrossList />} />
             </Route>
           </Routes>
         </main>
