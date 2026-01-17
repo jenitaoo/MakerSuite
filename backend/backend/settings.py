@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+from dotenv import load_dotenv
 from pathlib import Path
 import os
 
@@ -151,3 +152,10 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Get environment variables
+load_dotenv()
+ETSY_API_KEY = os.getenv("ETSY_API_KEY")
+ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET")
+ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
+ETSY_SCOPES = os.getenv("ETSY_SCOPES")

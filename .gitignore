@@ -1,1 +1,6 @@
-backend/.env
+*.env
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
