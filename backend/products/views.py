@@ -1,3 +1,4 @@
+from rest_framework.decorators import action
 from rest_framework import viewsets, permissions
 from .models import Product, ExternalProductListing
 from .serializers import ProductSerializer, ExternalProductListingSerializer
@@ -19,6 +20,17 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
+
+    # This custom action retrieves a product along with its associated external listings in one response.
+    @action(detail=True, methods=["get"])
+    def with_listings(self, request, pk=None):
+        product = self.get_object()
+        listings = ExternalProductListing.objects.filter(product=product)
+
+        return Response({
+            "product": ProductSerializer(product).data,
+            "external_listings": ExternalProductListingSerializer(listings, many=True).data
+        })
 
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
