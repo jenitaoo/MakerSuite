@@ -6,6 +6,7 @@ from rest_framework import serializers
 from .models import Product, ExternalProductListing
 
 class ProductSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Product
         fields = [
@@ -23,6 +24,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ExternalProductListingSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = ExternalProductListing
         fields = [
