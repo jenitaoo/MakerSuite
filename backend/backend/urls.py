@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/user/', UserView.as_view(), name='user'),
     path("api/etsy/", include("etsy.urls")),
+    path("api/", include("products.urls")),
 ]
