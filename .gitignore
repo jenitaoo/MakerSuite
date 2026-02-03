@@ -1,6 +1,9 @@
 *.env
-__pycache__/
+*.__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.so
+*.pyc
+*.py
+*.cpython-311.pyc
