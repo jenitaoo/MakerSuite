@@ -1,0 +1,42 @@
+"""
+This module contains serializers for the Product and ExternalProductListing models.
+They allow communication between the backend and frontend by converting model instances to and from JSON format.
+"""
+from rest_framework import serializers
+from .models import Product, ExternalProductListing
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'owner',
+            'title',
+            'description',
+            'sku',
+            'internal_price',
+            'internal_quantity',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class ExternalProductListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExternalProductListing
+        fields = [
+            'id',
+            'product',
+            'owner',
+            'platform',
+            'platform_listing_id',
+            'listing_title',
+            'listing_description',
+            'listing_price',
+            'listing_currency',
+            'listing_quantity',
+            'raw',
+            'last_synced',
+        ]
+        read_only_fields = ['id', 'last_synced']
