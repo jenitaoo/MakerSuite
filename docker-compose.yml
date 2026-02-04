@@ -18,7 +18,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./backend:/app
+      - ./backend:/app/backend
     ports:
       - "8000:8000"
     depends_on:
@@ -26,6 +26,9 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
       - DEBUG=True
+      - ETSY_KEYSTRING=${ETSY_KEYSTRING}
+      - ETSY_REDIRECT_URI=${ETSY_REDIRECT_URI}
+      - ETSY_SCOPES=${ETSY_SCOPES}
     networks:
       - webapp_network  
   ui:

@@ -19,11 +19,18 @@ from authentication.views import CSRFTokenView, RegisterView, LoginView, LogoutV
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Auth
     path('api/auth/csrf/', CSRFTokenView.as_view(), name='csrf-token'),
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/user/', UserView.as_view(), name='user'),
+
+    # Etsy OAuth
     path("api/etsy/", include("etsy.urls")),
+
+    # Products
     path("api/", include("products.urls")),
 ]
+

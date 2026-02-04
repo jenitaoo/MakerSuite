@@ -158,7 +158,11 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Get environment variables
 load_dotenv()
-ETSY_API_KEY = os.getenv("ETSY_API_KEY")
-ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET")
+# Etsy OAuth v3 uses the API Keystring as the client_id
+ETSY_KEYSTRING = os.getenv("ETSY_KEYSTRING")
+# Redirect URI must match EXACTLY what you registered in Etsy Developer Portal
 ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
-ETSY_SCOPES = os.getenv("ETSY_SCOPES")
+# Space-separated scopes (Etsy requires URL-encoded later)
+ETSY_SCOPES = os.getenv("ETSY_SCOPES", "profile_r shops_r listings_r")
+# Log Etsy API calls
+ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"

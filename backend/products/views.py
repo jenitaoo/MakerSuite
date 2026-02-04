@@ -2,6 +2,7 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, permissions
 from .models import Product, ExternalProductListing
 from .serializers import ProductSerializer, ExternalProductListingSerializer
+from .sync import SyncManager
 
 class ProductViewSet(viewsets.ModelViewSet):
     """
@@ -32,6 +33,23 @@ class ProductViewSet(viewsets.ModelViewSet):
             "external_listings": ExternalProductListingSerializer(listings, many=True).data
         })
 
+    # This custom action triggers synchronization of the specific product with all linked external platforms.
+    # This gives us the POST /products/{id}/sync/ endpoint.
+    @action(detail=True, methods=["post"])
+    def sync(self, request, pk=None):
+        product = self.get_object()
+        manager = SyncManager(request.user.userprofile)
+        manager.sync_product(product)
+        return Response({"status": "synced"})
+
+    # This custom action creates listings on all external platforms where the specific product is not yet listed.
+    # This gives us the POST /products/{id}/create_missing/ endpoint.
+    @action(detail=True, methods=["post"])
+    def create_missing(self, request, pk=None):
+        product = self.get_object()
+        manager = SyncManager(request.user.userprofile)
+        manager.create_missing_listings(product)
+        return Response({"status": "created_missing"})
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
     """
