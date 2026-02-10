@@ -13,10 +13,9 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views import View
 
+from products.platforms.etsy import EtsyAdapter
+
 from .models import EtsyToken
-
-print("Etsy OAuth file loaded")
-
 
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
@@ -123,3 +122,14 @@ class EtsyPingView(View):
         resp = requests.get("https://api.etsy.com/v3/application/openapi-ping", headers=headers)
 
         return JsonResponse({"status": resp.status_code, "body": resp.json()})
+
+class EtsyShopView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Login required.")
+
+        token = request.user.etsy_token.access_token
+        adapter = EtsyAdapter(token)
+
+        data = adapter.get_shop()
+        return JsonResponse(data)
