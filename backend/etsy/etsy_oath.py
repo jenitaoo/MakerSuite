@@ -21,6 +21,8 @@ def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
 
+def extract_etsy_user_id(access_token: str) -> str:
+    return access_token.split(".", 1)[0]
 
 class EtsyLoginView(View):
     def get(self, request):
@@ -89,16 +91,20 @@ class EtsyCallbackView(View):
 
         payload = resp.json()
 
+        payload["etsy_user_id"] = extract_etsy_user_id(payload["access_token"])
+
         EtsyToken.objects.update_or_create(
             user=request.user,
             defaults={
+                "etsy_user_id": payload["etsy_user_id"],
                 "access_token": payload["access_token"],
                 "refresh_token": payload.get("refresh_token"),
                 "expires_at": timezone.now() + timezone.timedelta(seconds=payload["expires_in"]),
             },
         )
+        print(payload)
 
-        return HttpResponse("Etsy connected. You may now call /api/etsy/ping/.")
+        return HttpResponse("Etsy connected.")
 
 
 class EtsyPingView(View):
@@ -128,8 +134,21 @@ class EtsyShopView(View):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
 
-        token = request.user.etsy_token.access_token
-        adapter = EtsyAdapter(token)
+        try:
+            etsy_token = request.user.etsy_token
+        except EtsyToken.DoesNotExist:
+            return HttpResponseForbidden("No Etsy token. Authenticate first.")
+
+        if etsy_token.is_expired():
+            return HttpResponseForbidden("Token expired.")
+
+        if not etsy_token.etsy_user_id:
+            return HttpResponse("Missing Etsy user id on token.", status=400)
+
+        adapter = EtsyAdapter(
+            access_token=etsy_token.access_token,
+            etsy_user_id=etsy_token.etsy_user_id
+        )
 
         data = adapter.get_shop()
         return JsonResponse(data)

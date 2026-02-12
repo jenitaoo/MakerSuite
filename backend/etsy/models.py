@@ -9,6 +9,7 @@ class EtsyToken(models.Model):
         on_delete=models.CASCADE,
         related_name="etsy_token"
     )
+    etsy_user_id = models.CharField(max_length=50, null=True, blank=True)
     access_token = models.TextField()
     refresh_token = models.TextField(null=True, blank=True)
     expires_at = models.DateTimeField()

@@ -163,6 +163,5 @@ ETSY_KEYSTRING = os.getenv("ETSY_KEYSTRING")
 # Redirect URI must match EXACTLY what you registered in Etsy Developer Portal
 ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
 # Space-separated scopes (Etsy requires URL-encoded later)
-ETSY_SCOPES = os.getenv("ETSY_SCOPES", "profile_r shops_r listings_r")
-# Log Etsy API calls
+ETSY_SCOPES = os.getenv("ETSY_SCOPES", "address_r email_r shops_r shops_w listings_r listings_w")
 ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"
