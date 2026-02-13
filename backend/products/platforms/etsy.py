@@ -10,17 +10,23 @@ class EtsyAdapter(BasePlatformAdapter):
     platform_name = "etsy"
     BASE_URL = "https://api.etsy.com/v3/application"
 
-    def __init__(self, access_token):
+    def __init__(self, access_token, etsy_user_id):
         self.access_token = access_token
+        self.etsy_user_id = etsy_user_id
 
     def _headers(self):
         return {
             "Authorization": f"Bearer {self.access_token}",
-            "x-api-key": settings.ETSY_KEYSTRING
+            "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
+            "Content-Type":"application/json",
         }
 
     def get_shop(self):
-        url = f"{self.BASE_URL}/shops"
+        """
+        Fetch the authenticated user's shop using the Etsy endpoint:
+        GET /v3/application/users/{user_id}/shops
+        """
+        url = f"{self.BASE_URL}/users/{self.etsy_user_id}/shops"
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
         return response.json()

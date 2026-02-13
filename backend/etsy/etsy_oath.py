@@ -129,6 +129,10 @@ class EtsyPingView(View):
 
         return JsonResponse({"status": resp.status_code, "body": resp.json()})
 
+"""
+The purpose of this view is to ensure that the user is logged in with a valid etsy token,
+initate the EtsyAdapter and call get_shop() to return data from the user's shop
+"""
 class EtsyShopView(View):
     def get(self, request):
         if not request.user.is_authenticated:
