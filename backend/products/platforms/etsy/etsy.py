@@ -3,7 +3,7 @@ This module contains the Etsy platform adapter for interacting with Etsy's API.
 It implements methods to fetch, create, update, and delete product listings on Etsy.
 """
 import requests
-from .base import BasePlatformAdapter
+from ..base import BasePlatformAdapter
 from django.conf import settings
 
 class EtsyAdapter(BasePlatformAdapter):
@@ -31,10 +31,18 @@ class EtsyAdapter(BasePlatformAdapter):
         response.raise_for_status()
         return response.json()
 
-    def fetch_listings(self):
-        # Step 1: call Etsy API
-        # Step 2: return normalized listing data
-        pass
+    def fetch_listings(self, shop_id):
+        """
+        Fetch the authenticated user's listings using the Etsy endpoint:
+        GET v3/application/shops/{shop_id}/listings/draft
+        """
+        url = f"{self.BASE_URL}/shops/{shop_id}/listings" # listings vs listings/active works because my shop is temporarily in Developer Mode
+        response = requests.get(url, headers=self._headers())
+        print("Etsy fetch_listings status:", response.status_code)
+        print("Etsy fetch_listings body:", response.text)
+        response.raise_for_status()
+        return response.json()
+
 
     def create_listing(self, product):
         # Step 1: send product data to Etsy

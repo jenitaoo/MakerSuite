@@ -3,7 +3,7 @@ This module manages synchronization of product listings between the local system
 and various external platforms like Etsy and Shopify.
 """
 
-from .platforms.etsy import EtsyAdapter
+from products.platforms.etsy.etsy import EtsyAdapter
 from .models import ExternalProductListing
 
 class SyncManager:

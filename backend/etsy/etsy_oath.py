@@ -12,9 +12,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views import View
-
-from products.platforms.etsy import EtsyAdapter
-
+from products.platforms.etsy.etsy import EtsyAdapter
 from .models import EtsyToken
 
 def build_code_challenge(verifier: str) -> str:
