@@ -21,6 +21,18 @@ class EtsyAdapter(BasePlatformAdapter):
             "Content-Type":"application/json",
         }
 
+    def _build_update_payload(self, listing, product):
+        """
+        Build the Etsy update payload from the internal Product model.
+        """
+        return {
+            "title": product.title,
+            "description": product.description,
+            "price": str(product.price),  # Etsy requires string
+            "quantity": product.quantity,
+            # other fields to be added later
+        }
+
     def get_shop(self):
         """
         Fetch the authenticated user's shop using the Etsy endpoint:
@@ -54,14 +66,7 @@ class EtsyAdapter(BasePlatformAdapter):
         Update an existing Etsy listing with fields from the internal Product.
         """
         url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}"
-
-        payload = {
-            "title": product.title,
-            "description": product.description,
-            "price": str(product.price),  # Etsy requires string
-            "quantity": product.quantity,
-            # Add more fields later
-        }
+        payload = self._build_update_payload(listing, product)
 
         response = requests.put(url, headers=self._headers(), json=payload)
 
