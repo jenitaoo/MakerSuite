@@ -33,6 +33,28 @@ class EtsyAdapter(BasePlatformAdapter):
             # other fields to be added later
         }
 
+    def _build_inventory_payload(self, product):
+        """
+        Build Etsy inventory payload including variations.
+        """
+        return {
+            "products": [
+                {
+                    "sku": product.sku or "",
+                    "offerings": [
+                        {
+                            "price": str(product.price),
+                            "quantity": product.quantity,
+                            "is_enabled": True,
+                        }
+                    ]
+                }
+            ],
+            "price_on_property": [],
+            "quantity_on_property": [],
+            "sku_on_property": []
+        }
+
     def get_shop(self):
         """
         Fetch the authenticated user's shop using the Etsy endpoint:
@@ -75,6 +97,33 @@ class EtsyAdapter(BasePlatformAdapter):
 
         response.raise_for_status()
         return response.json()
+
+    def update_inventory(self, listing, product):
+        url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/inventory"
+        payload = self._build_inventory_payload(product)
+
+        response = requests.put(url, headers=self._headers(), json=payload)
+        response.raise_for_status()
+        return response.json()
+
+    def upload_images(self, listing, product):
+        """
+        Upload images to Etsy for this listing.
+        """
+        for image in product.images.all():  # adjust to your model
+            url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/images"
+
+            files = {
+                "image": open(image.file.path, "rb")
+            }
+
+            response = requests.post(url, headers={
+                "Authorization": f"Bearer {self.access_token}",
+                "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
+            }, files=files)
+
+            response.raise_for_status()
+
 
     def delete_listing(self, listing):
         # Step 1: delete listing on Etsy
