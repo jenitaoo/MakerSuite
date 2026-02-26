@@ -50,8 +50,26 @@ class EtsyAdapter(BasePlatformAdapter):
         pass
 
     def update_listing(self, listing, product):
-        # Step 1: send updated fields to Etsy
-        pass
+        """
+        Update an existing Etsy listing with fields from the internal Product.
+        """
+        url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}"
+
+        payload = {
+            "title": product.title,
+            "description": product.description,
+            "price": str(product.price),  # Etsy requires string
+            "quantity": product.quantity,
+            # Add more fields later
+        }
+
+        response = requests.put(url, headers=self._headers(), json=payload)
+
+        print("Etsy update_listing status:", response.status_code)
+        print("Etsy update_listing body:", response.text)
+
+        response.raise_for_status()
+        return response.json()
 
     def delete_listing(self, listing):
         # Step 1: delete listing on Etsy

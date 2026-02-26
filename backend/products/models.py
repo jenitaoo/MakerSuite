@@ -3,6 +3,7 @@ Models for the Product Listings Feature.
 This module defines the data structures for managing products and their external listings.
 """
 from django.db import models
+from django.forms import IntegerField
 from authentication.models import UserProfile
 
 """
@@ -28,6 +29,7 @@ This stores normalised fields and the raw API response as JSON.
 A listing may be linked to an internal Product once normalised.
 """
 class ExternalProductListing(models.Model):
+    shop_id = models.IntegerField(null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     platform = models.CharField(max_length=50)
