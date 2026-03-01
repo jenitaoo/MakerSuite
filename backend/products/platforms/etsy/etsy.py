@@ -85,16 +85,31 @@ class EtsyAdapter(BasePlatformAdapter):
 
     def update_listing(self, listing, product):
         """
-        Update an existing Etsy listing with fields from the internal Product.
+        Full Etsy update pipeline:
+        - update core listing fields
+        - update inventory (variations)
+        - upload images
         """
+        # 1. Update core listing fields
+        core = self._update_core_listing(listing, product)
+
+        # 2. Update inventory
+        inventory = self.update_inventory(listing, product)
+
+        # 3. Upload images
+        self.upload_images(listing, product)
+
+        return {
+            "core": core,
+            "inventory": inventory,
+            "images": "uploaded"
+        }
+
+    def _update_core_listing(self, listing, product):
         url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}"
         payload = self._build_update_payload(listing, product)
 
         response = requests.put(url, headers=self._headers(), json=payload)
-
-        print("Etsy update_listing status:", response.status_code)
-        print("Etsy update_listing body:", response.text)
-
         response.raise_for_status()
         return response.json()
 
