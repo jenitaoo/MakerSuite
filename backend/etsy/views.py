@@ -1,22 +1,31 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from products.models import ExternalProductListing
 from authentication.models import UserProfile
 
 class EtsyListingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, shop_id):
-        # Fetch listings for this user and this shop
-        profile = UserProfile.objects.get(user=request.user)
-        listings = ExternalProductListing.objects.filter(
-            owner=profile,
-            shop_id=shop_id
-        )
+        # ensure shop_id is an int (error protection against bad input)
+        try:
+            shop_id_int = int(shop_id)
+        except (TypeError, ValueError):
+            return Response({"detail": "Invalid shop_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        listings = ExternalProductListing.objects.filter(owner=profile, shop_id=shop_id_int)
 
         data = []
         for l in listings:
-            raw = l.raw or {}  # Etsy raw JSON field
-            l.shop_id = raw.get("shop_id")
-
+            raw = l.raw or {}
+            # do not mutate l.shop_id here unless you intend to save it
             data.append({
                 "id": l.id,
                 "platform": l.platform,

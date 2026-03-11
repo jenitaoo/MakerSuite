@@ -41,6 +41,7 @@ class ExternalProductListing(models.Model):
     listing_quantity = models.IntegerField(null=True, blank=True)
     raw = models.JSONField()
     last_synced = models.DateTimeField(auto_now=True)
+    linked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('owner', 'platform', 'platform_listing_id')
