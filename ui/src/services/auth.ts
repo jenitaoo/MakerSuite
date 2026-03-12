@@ -1,5 +1,6 @@
 import apiClient from "./api";
 
+let cachedUser: any = null;
 interface UserData {
   username: string;
   email: string;
@@ -27,6 +28,7 @@ export const authService = {
   login: async (credentials: Credentials): Promise<any> => {
     try {
       const response = await apiClient.post("/api/auth/login/", credentials);
+      cachedUser = response.data.user;
       return response.data;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -39,6 +41,7 @@ export const authService = {
   logout: async (): Promise<any> => {
     try {
       const response = await apiClient.post("/api/auth/logout/");
+      cachedUser = null;
       return response.data;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -49,9 +52,12 @@ export const authService = {
   },
 
   getCurrentUser: async (): Promise<any | null> => {
+    if (cachedUser) return cachedUser;
+
     try {
       const response = await apiClient.get("/api/auth/user/");
-      return response.data;
+      cachedUser = response.data;
+      return cachedUser;
     } catch (error: unknown) {
       return null;
     }
