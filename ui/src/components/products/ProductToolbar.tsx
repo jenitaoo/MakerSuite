@@ -3,8 +3,8 @@
 type ProductToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
-  filter: string;
-  onFilterChange: (value: string) => void;
+  filter: "All" | "Etsy" | "MakerSuite" | "Shopify";
+  onFilterChange: (value: "All" | "Etsy" | "MakerSuite" | "Shopify") => void;
   onRefresh: () => void;
   onAdd: () => void;
 };
@@ -31,23 +31,28 @@ export default function ProductToolbar({
         </div>
 
         <div className="product-toolbar__filter">
-          <button
-            type="button"
-            className="product-toolbar__filter-button"
-            onClick={() => onFilterChange(filter === "All" ? "Etsy" : "All")}
+          <select
+            className="product-toolbar__filter-select"
+            value={filter}
+            onChange={(e) => onFilterChange(e.target.value as "All" | "Etsy" | "MakerSuite" | "Shopify")}
           >
-            Filter: {filter}
-            <span className="product-toolbar__filter-caret">▼</span>
-          </button>
+            <option value="All">All</option>
+            <option value="Etsy">Etsy</option>
+            <option value="MakerSuite">MakerSuite</option>
+            <option value="Shopify" disabled>Shopify (Disabled)</option>
+          </select>
         </div>
       </div>
 
       <div className="product-toolbar__right">
+        <button type="button" className="btn btn--secondary" disabled>
+          Sync from Shopify
+        </button>
         <button type="button" className="btn btn--secondary" onClick={onRefresh}>
-          Refresh
+          Sync From Etsy
         </button>
         <button type="button" className="btn btn--primary" onClick={onAdd}>
-          Add
+          Create New Product
         </button>
       </div>
     </div>

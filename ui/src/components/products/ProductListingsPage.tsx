@@ -20,7 +20,7 @@ const cleanUrl = (url: string | null) => {
 
 export default function ProductListingsPage() {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"All" | "Etsy">("All");
+  const [filter, setFilter] = useState<"All" | "Etsy" | "MakerSuite" | "Shopify">("All");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20); // matches backend page_size
   const [products, setProducts] = useState<Product[]>([]);
@@ -85,7 +85,7 @@ export default function ProductListingsPage() {
       const matchesSearch =
         search.trim().length === 0 ||
         (p.title || "").toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === "All" || (p as any).platform === filter;
+      const matchesFilter = filter === "All" || (p as { platform: string }).platform === filter;
       return matchesSearch && matchesFilter;
     });
   }, [products, search, filter]);
@@ -166,7 +166,7 @@ export default function ProductListingsPage() {
         search={search}
         onSearchChange={setSearch}
         filter={filter}
-        onFilterChange={(value) => setFilter(value === "All" ? "All" : "Etsy")}
+        onFilterChange={(value) => setFilter(value as "All" | "Etsy" | "MakerSuite" | "Shopify")}
         onRefresh={handleRefresh}
         onAdd={handleAdd}
       />
@@ -176,7 +176,7 @@ export default function ProductListingsPage() {
       ) : error ? (
         <div className="error">{error}</div>
       ) : filteredProducts.length === 0 ? (
-        <div>No products found</div>
+        <div>No products found ( • ᴖ • ｡)</div>
       ) : (
         <>
           <ProductTable products={filteredProducts} onEdit={handleEdit} />

@@ -132,3 +132,24 @@ button:disabled,
     height: 6rem;
   }
 }
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.product-toolbar__filter-select {
+  height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background-color: #f1f2f4;
+  color: #596780;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.product-toolbar__filter-select:focus {
+  outline: none;
+  border-color: #818263;
+}
