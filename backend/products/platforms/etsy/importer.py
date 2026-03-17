@@ -30,12 +30,12 @@ class EtsyImporter:
         images = listing_json.get("images") or []
         first_image = next((img for img in images if img.get("rank") == 1), None)
         image_url = first_image.get("url_570xN") if first_image else None
-  
+
         with transaction.atomic():
             # Create or update the external listing
             listing, created = ExternalProductListing.objects.update_or_create(
                 owner=owner,
-                platform="etsy",
+                platform="Etsy",
                 platform_listing_id=platform_id,
                 defaults={
                     "listing_title": title,

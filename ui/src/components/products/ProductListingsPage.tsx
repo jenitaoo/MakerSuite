@@ -36,7 +36,7 @@ export default function ProductListingsPage() {
     params.set("page", String(pageNum));
     params.set("page_size", String(pageSize));
     if (search.trim()) params.set("search", search.trim());
-    if (filter !== "All") params.set("channel", filter);
+    if (filter !== "All") params.set("platform", filter);
     // endpoint: /api/product-list/
     return `/api/product-list/?${params.toString()}`;
   };
@@ -85,7 +85,7 @@ export default function ProductListingsPage() {
       const matchesSearch =
         search.trim().length === 0 ||
         (p.title || "").toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === "All" || (p as any).channel === filter;
+      const matchesFilter = filter === "All" || (p as any).platform === filter;
       return matchesSearch && matchesFilter;
     });
   }, [products, search, filter]);

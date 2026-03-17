@@ -1,7 +1,7 @@
 /**
  * Note for Product, to wire to ExternalProductListing later:
  * - imageUrl: from ExternalProductListing's image_url
- * - channel: from ExternalProductListing's channel
+ * - platform: from ExternalProductListing's platform
  * - link: from ExternalProductListing's listing_url
  * Currently these are not in the Product API, so we show placeholders in ProductRow and
  * will add them later when we have ExternalProductListing data available.
@@ -14,6 +14,7 @@ export type Product = {
   title: string;
   description?: string | null;
   sku?: string | null;
+  platform?: string | null;
   internal_price: string;
   internal_quantity: number;
   created_at: string;
@@ -40,14 +41,7 @@ export default function ProductRow({ product, onEdit }: ProductRowProps) {
       <td className="product-row__name">{product.title}</td>
       <td className="product-row__price">€{product.internal_price}</td>
       <td className="product-row__qty">{product.internal_quantity}</td>
-      <td className="product-row__channel">
-        {/* channel not in API yet — comes from ExternalProductListing later */}
-        —
-      </td>
-      <td className="product-row__link">
-        {/* link not in API yet — comes from ExternalProductListing later */}
-        —
-      </td>
+      <td className="product-row__platform">{product.platform ?? "MakerSuite Only"}</td>
       <td className="product-row__edit">
         <button
           type="button"
