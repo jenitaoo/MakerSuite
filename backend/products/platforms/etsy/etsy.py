@@ -71,7 +71,8 @@ class EtsyAdapter(BasePlatformAdapter):
         GET v3/application/shops/{shop_id}/listings/draft
         """
         url = f"{self.BASE_URL}/shops/{shop_id}/listings" # listings vs listings/active works because my shop is temporarily in Developer Mode
-        response = requests.get(url, headers=self._headers())
+        params = {"includes": "Images"}
+        response = requests.get(url, headers=self._headers(), params=params)
         print("Etsy fetch_listings status:", response.status_code)
         print("Etsy fetch_listings body:", response.text)
         response.raise_for_status()

@@ -112,3 +112,23 @@ button:disabled,
     background-color: #f9f9f9;
   }
 }
+
+.product-row__photo-placeholder {
+  width: 6rem;
+  height: 6rem;
+}
+
+.product-row__photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .product-row__photo-placeholder {
+    width: 6rem;
+    height: 6rem;
+  }
+}

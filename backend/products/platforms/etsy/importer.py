@@ -26,6 +26,11 @@ class EtsyImporter:
         quantity = listing_json.get("quantity", 0)
         platform_id = str(listing_json.get("listing_id"))
 
+        # Extract first image URL (rank=1)
+        images = listing_json.get("images") or []
+        first_image = next((img for img in images if img.get("rank") == 1), None)
+        image_url = first_image.get("url_570xN") if first_image else None
+  
         with transaction.atomic():
             # Create or update the external listing
             listing, created = ExternalProductListing.objects.update_or_create(
@@ -38,13 +43,17 @@ class EtsyImporter:
                     "listing_price": price_amount,
                     "listing_currency": currency,
                     "listing_quantity": quantity,
+                    "listing_image_url": image_url,
                     "raw": listing_json,
                 }
             )
 
-            # If already linked, return early (idempotent)
+            # Force save image URL regardless of linked state
+            if image_url:
+                ExternalProductListing.objects.filter(pk=listing.pk).update(listing_image_url=image_url)
+
+            # If already linked, return early
             if listing.product is not None:
-                # Optionally update linked_at if you want to refresh timestamp
                 listing.linked_at = listing.linked_at or timezone.now()
                 listing.save(update_fields=["linked_at"])
                 return listing

@@ -12,6 +12,7 @@ This model stores the original version of the product within our system. Externa
 """
 class Product(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    image_url = models.URLField(max_length=500, blank=True, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
@@ -34,6 +35,7 @@ class ExternalProductListing(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     platform = models.CharField(max_length=50)
     platform_listing_id = models.CharField(max_length=100)
+    listing_image_url = models.URLField(max_length=500, blank=True, null=True)
     listing_title = models.CharField(max_length=255, blank=True, null=True)
     listing_description = models.TextField(blank=True, null=True)
     listing_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

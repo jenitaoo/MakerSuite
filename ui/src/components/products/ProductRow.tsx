@@ -10,6 +10,7 @@
 export type Product = {
   id: number;
   owner: number;
+  image_url?: string | null;
   title: string;
   description?: string | null;
   sku?: string | null;
@@ -29,8 +30,11 @@ export default function ProductRow({ product, onEdit }: ProductRowProps) {
     <tr className="product-row">
       <td className="product-row__photo">
         <div className="product-row__photo-placeholder">
-          {/* imageUrl not in API yet — comes from ExternalProductListing later */}
-          <div className="product-row__photo-empty">No image</div>
+          {product.image_url ? (
+            <img src={product.image_url} alt={product.title} className="product-row__photo-image" />
+          ) : (
+            <div className="product-row__photo-empty">No image</div>
+          )}
         </div>
       </td>
       <td className="product-row__name">{product.title}</td>

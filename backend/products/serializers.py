@@ -7,11 +7,18 @@ from .models import Product, ExternalProductListing
 
 class ProductSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    image_url = serializers.SerializerMethodField()
+
+    def get_image_url(self, obj):
+        listing = obj.externalproductlisting_set.first()
+        return listing.listing_image_url if listing else None
+
     class Meta:
         model = Product
         fields = [
             'id',
             'owner',
+            'image_url',
             'title',
             'description',
             'sku',
@@ -21,7 +28,6 @@ class ProductSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-
 
 class ExternalProductListingSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
