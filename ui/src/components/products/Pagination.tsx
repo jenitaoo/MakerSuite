@@ -2,57 +2,34 @@ type PaginationProps = {
   page: number;
   pageSize: number;
   total: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (p: number) => void;
+  nextUrl?: string | null;
+  prevUrl?: string | null;
 };
 
 export default function Pagination({
   page,
   pageSize,
   total,
+  nextUrl = null,
+  prevUrl = null,
   onPageChange,
 }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(total, page * pageSize);
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 5);
 
   return (
     <div className="pagination">
-      <div className="pagination__info">
-        {total > 0
-          ? `Showing ${start}-${end} of ${total} products`
-          : "No products"}
-      </div>
+      <button onClick={() => onPageChange(page - 1)} disabled={!prevUrl && page <= 1}>
+        Previous
+      </button>
 
-      <div className="pagination__controls">
-        <button
-          type="button"
-          disabled={page === 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          &lt; Prev
-        </button>
+      <span>
+        Page {page} of {totalPages}
+      </span>
 
-        {pages.map((p) => (
-          <button
-            key={p}
-            type="button"
-            className={p === page ? "pagination__page--active" : ""}
-            onClick={() => onPageChange(p)}
-          >
-            {p}
-          </button>
-        ))}
-
-        <button
-          type="button"
-          disabled={page === totalPages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          Next &gt;
-        </button>
-      </div>
+      <button onClick={() => onPageChange(page + 1)} disabled={!nextUrl && page >= totalPages}>
+        Next
+      </button>
     </div>
   );
 }
