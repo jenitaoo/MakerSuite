@@ -5,8 +5,7 @@ type ProductToolbarProps = {
   onSearchChange: (value: string) => void;
   filter: string;
   onFilterChange: (value: string) => void;
-  onSyncAll: () => void;
-  onImport: () => void;
+  onRefresh: () => void;
   onAdd: () => void;
 };
 
@@ -15,8 +14,7 @@ export default function ProductToolbar({
   onSearchChange,
   filter,
   onFilterChange,
-  onSyncAll,
-  onImport,
+  onRefresh,
   onAdd,
 }: ProductToolbarProps) {
   return (
@@ -45,11 +43,8 @@ export default function ProductToolbar({
       </div>
 
       <div className="product-toolbar__right">
-        <button type="button" className="btn btn--secondary" onClick={onSyncAll}>
-          Refresh Database
-        </button>
-        <button type="button" className="btn btn--secondary" onClick={onImport}>
-          Import
+        <button type="button" className="btn btn--secondary" onClick={onRefresh}>
+          Refresh
         </button>
         <button type="button" className="btn btn--primary" onClick={onAdd}>
           Add

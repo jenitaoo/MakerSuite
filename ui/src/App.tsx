@@ -1,4 +1,4 @@
-// src/App.jsx
+import { Toaster } from "react-hot-toast";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
@@ -12,6 +12,20 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              border: '1px solid #713200',
+              padding: '16px',
+              color: '#713200',
+            },
+            iconTheme: {
+              primary: '#713200',
+              secondary: '#FFFAEE',
+            },
+          }}
+        />
         <Navbar />
         <main className="main-content flex justify-center items-center min-h-screen">
           <Routes>
