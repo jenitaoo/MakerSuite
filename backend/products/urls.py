@@ -9,6 +9,6 @@ router.register(r'products', ProductViewSet, basename='products')
 router.register(r'external-listings', ExternalProductListingViewSet, basename='external-listings')
 
 urlpatterns = [
+    path("product-list/", ProductListView.as_view(), name="product-list-api"),
     path("", include(router.urls)),
-    path("products/list/", ProductListView.as_view(), name="product-list-api"),
 ]
