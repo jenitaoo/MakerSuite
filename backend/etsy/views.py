@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from products.models import ExternalProductListing
 from authentication.models import UserProfile
+from django.views import View
+from django.http import JsonResponse, HttpResponseForbidden
+from products.models import ExternalProductListing
+from products.platforms.etsy.etsy import EtsyAdapter
 
 class EtsyListingsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -67,3 +71,35 @@ class EtsyListingsView(APIView):
             })
 
         return Response(data)
+
+class EtsyUploadImageView(View):
+    def post(self, request, shop_id, listing_id):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Login required.")
+
+        # find the external listing
+        listing = ExternalProductListing.objects.filter(
+            owner=request.user.userprofile,
+            platform="Etsy",
+            platform_listing_id=str(listing_id)
+        ).first()
+
+        if not listing:
+            return JsonResponse({"error": "Listing not found"}, status=404)
+
+        image_file = request.FILES.get("image")
+        rank = request.POST.get("rank", 1)
+
+        if not image_file:
+            return JsonResponse({"error": "No image provided"}, status=400)
+
+        try:
+            etsy_token = request.user.etsy_token
+            adapter = EtsyAdapter(
+                access_token=etsy_token.access_token,
+                etsy_user_id=etsy_token.etsy_user_id
+            )
+            result = adapter.upload_image(listing, image_file, int(rank))
+            return JsonResponse({"uploaded": True, "result": result})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)

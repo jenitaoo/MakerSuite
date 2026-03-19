@@ -5,6 +5,7 @@ It implements methods to fetch, create, update, and delete product listings on E
 import requests
 from ..base import BasePlatformAdapter
 from django.conf import settings
+from requests_toolbelt import MultipartEncoder
 
 class EtsyAdapter(BasePlatformAdapter):
     platform_name = "etsy"
@@ -100,7 +101,7 @@ class EtsyAdapter(BasePlatformAdapter):
         Full Etsy update pipeline:
         - update core listing fields
         - update inventory (variations)
-        - upload images
+        Images are uploaded separately via the edit page UI, so not handled here.
         """
         # 1. Update core listing fields
         core = self._update_core_listing(listing, product)
@@ -108,13 +109,9 @@ class EtsyAdapter(BasePlatformAdapter):
         # 2. Update inventory
         inventory = self.update_inventory(listing, product)
 
-        # 3. Upload images
-        self.upload_images(listing, product)
-
         return {
             "core": core,
             "inventory": inventory,
-            "images": "uploaded"
         }
 
     def _update_core_listing(self, listing, product):
@@ -131,23 +128,26 @@ class EtsyAdapter(BasePlatformAdapter):
         response.raise_for_status()
         return response.json()
 
-    def upload_images(self, listing, product):
-        """
-        Upload images to Etsy for this listing.
-        """
-        for image in product.images.all():  # adjust to your model
-            url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/images"
+    def upload_image(self, listing, image_file, rank=1):
+        url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images"
 
-            files = {
-                "image": open(image.file.path, "rb")
+        m = MultipartEncoder(
+            fields={
+                "image": (image_file.name, image_file.read(), image_file.content_type),
+                "rank": str(rank),
+                "overwrite": "true",
             }
+        )
 
-            response = requests.post(url, headers={
-                "Authorization": f"Bearer {self.access_token}",
-                "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
-            }, files=files)
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
+            "Content-Type": m.content_type,
+        }
 
-            response.raise_for_status()
+        response = requests.post(url, data=m, headers=headers)
+        response.raise_for_status()
+        return response.json()
 
 
     def delete_listing(self, listing):

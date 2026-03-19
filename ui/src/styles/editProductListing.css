@@ -311,3 +311,27 @@
   text-align: center;
   color: #6b7280;
 }
+
+.edit-product__upload {
+  margin-top: 0.75rem;
+}
+
+.edit-product__upload-label {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #596780;
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.edit-product__upload-label:hover {
+  border-color: #818263;
+  color: #818263;
+}
+
+.edit-product__upload-input {
+  display: none;
+}
