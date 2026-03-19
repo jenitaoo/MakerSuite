@@ -50,6 +50,7 @@ class ExternalProductListingSerializer(serializers.ModelSerializer):
             'listing_price',
             'listing_currency',
             'listing_quantity',
+            'listing_image_url',
             'raw',
             'last_synced',
         ]

@@ -24,7 +24,6 @@
 html, body, #root {
   height: 100%;
   width: 100%;
-  overflow: hidden;
 }
 
 /* Remove Tailwind's default min-width constraint */
@@ -153,3 +152,4 @@ button:disabled,
   outline: none;
   border-color: #818263;
 }
+

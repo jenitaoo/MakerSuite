@@ -28,24 +28,35 @@ class EtsyAdapter(BasePlatformAdapter):
         return {
             "title": product.title,
             "description": product.description,
-            "price": str(product.price),  # Etsy requires string
-            "quantity": product.quantity,
+            "price": float(product.internal_price),  # Etsy requires string
+            "quantity": product.internal_quantity,
             # other fields to be added later
         }
 
-    def _build_inventory_payload(self, product):
+
+    def _build_inventory_payload(self, product, listing):
         """
         Build Etsy inventory payload including variations.
         """
+        # clean the SKU — strip the list formatting if stored as "['WHI']"
+        raw_sku = product.sku or ""
+        sku = raw_sku.strip("[]'\" ").replace("'", "").replace('"', "") if raw_sku.startswith("[") else raw_sku
+
+        # Etsy requires readiness_state_id for inventory updates; use existing value or default to "Ready for Processing"
+        readiness_state_id = listing.raw.get("readiness_state_id")
+        if not readiness_state_id:
+            raise ValueError(f"No readiness_state_id found in raw data for listing {listing.platform_listing_id}")
+
         return {
             "products": [
                 {
-                    "sku": product.sku or "",
+                    "sku": sku,
                     "offerings": [
                         {
-                            "price": str(product.price),
-                            "quantity": product.quantity,
+                            "price": float(product.internal_price),
+                            "quantity": product.internal_quantity,
                             "is_enabled": True,
+                            "readiness_state_id": readiness_state_id
                         }
                     ]
                 }
@@ -107,17 +118,15 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
     def _update_core_listing(self, listing, product):
-        url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}"
+        url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}"
         payload = self._build_update_payload(listing, product)
-
-        response = requests.put(url, headers=self._headers(), json=payload)
+        response = requests.patch(url, headers=self._headers(), json=payload)
         response.raise_for_status()
         return response.json()
 
     def update_inventory(self, listing, product):
         url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/inventory"
-        payload = self._build_inventory_payload(product)
-
+        payload = self._build_inventory_payload(product, listing)  # pass listing
         response = requests.put(url, headers=self._headers(), json=payload)
         response.raise_for_status()
         return response.json()

@@ -1,5 +1,8 @@
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework import viewsets, permissions
+
+from .platforms.etsy.etsy import EtsyAdapter
 from .models import Product, ExternalProductListing
 from .serializers import ProductSerializer, ExternalProductListingSerializer
 from .sync import SyncManager
@@ -50,6 +53,33 @@ class ProductViewSet(viewsets.ModelViewSet):
         manager = SyncManager(request.user.userprofile)
         manager.create_missing_listings(product)
         return Response({"status": "created_missing"})
+
+    @action(detail=True, methods=["post"], url_path="push-to-etsy")
+    def push_to_etsy(self, request, pk=None):
+        product = self.get_object()
+
+        listing = ExternalProductListing.objects.filter(
+            product=product,
+            platform="Etsy"
+        ).first()
+
+        if not listing:
+            return Response(
+                {"error": "No Etsy listing linked to this product"},
+                status=404
+            )
+
+        try:
+            user = request.user
+            etsy_token = user.etsy_token
+            adapter = EtsyAdapter(
+                access_token=etsy_token.access_token,
+                etsy_user_id=etsy_token.etsy_user_id
+            )
+            result = adapter.update_listing(listing, product)
+            return Response({"status": "pushed", "result": result})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
     """

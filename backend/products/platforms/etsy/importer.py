@@ -38,6 +38,7 @@ class EtsyImporter:
                 platform="Etsy",
                 platform_listing_id=platform_id,
                 defaults={
+                    "shop_id": listing_json.get("shop_id"),
                     "listing_title": title,
                     "listing_description": description,
                     "listing_price": price_amount,
@@ -60,10 +61,12 @@ class EtsyImporter:
 
             # Try to find an existing Product to link to
             product = None
+
             # 1) Try SKU from raw (common places)
-            sku = None
             # Etsy may store SKU in different places; try a few keys
-            sku = listing_json.get("sku") or listing_json.get("skus") or listing_json.get("variations", {}).get("sku")
+            skus = listing_json.get("skus") or []
+            sku = skus[0] if skus else None
+
             if sku:
                 product = Product.objects.filter(owner=owner, sku=sku).first()
 

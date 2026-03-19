@@ -7,6 +7,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import './App.css';
 import CrossList from "./pages/CrossList";
+import EditProductListing from "./pages/EditProductListing";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/crosslist" element={<CrossList />} />
+              <Route path="/products/:id/edit" element={<EditProductListing />} />
             </Route>
           </Routes>
         </main>
