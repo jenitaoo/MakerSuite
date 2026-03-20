@@ -111,9 +111,9 @@ export default function EditProductListing() {
         if (!res.ok) throw new Error(await res.text());
       }),
       {
-        loading: "Pushing to Etsy...",
+        loading: "Saving Changes to Etsy...",
         success: "Saved to Etsy",
-        error: "Failed to push to Etsy",
+        error: "Failed to save changes to Etsy",
       }
     );
     refetch();
