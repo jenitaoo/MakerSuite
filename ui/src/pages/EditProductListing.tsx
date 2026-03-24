@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useProductWithListings, ExternalListing, EtsyRaw } from "../hooks/useProductWithListings";
 import { getCookie } from "../services/api";
@@ -40,6 +40,17 @@ export default function EditProductListing() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const blocker = useBlocker(isDirty);
+  if (blocker.state === "blocked") {
+    const confirmed = window.confirm("You have unsaved changes. Leave anyway?");
+    if (confirmed) {
+      blocker.proceed();
+    } else {
+      blocker.reset();
+    }
+  }
 
   if (product && !internal) {
     setInternal({
@@ -51,21 +62,38 @@ export default function EditProductListing() {
     });
   }
 
+/**
+ * Initialize Etsy editable fields with raw data if available,
+ * otherwise fall back to product data,
+ * and if that's not available, use defaults.
+ * This ensures that the editor is always populated with the
+ *  most relevant data when an Etsy listing is linked, even if the API response is missing some fields.
+ */
   if (raw && !etsy) {
     setEtsy({
-      title: raw.title,
-      description: raw.description,
-      tags: raw.tags ?? [],
-      materials: raw.materials ?? [],
-      who_made: raw.who_made,
-      when_made: raw.when_made,
-      should_auto_renew: raw.should_auto_renew,
-      is_taxable: raw.is_taxable,
-      listing_type: raw.listing_type,
+      title: raw?.title ?? product?.title ?? "",
+      description: raw?.description ?? product?.description ?? "",
+      tags: raw?.tags ?? [],
+      materials: raw?.materials ?? [],
+      who_made: raw?.who_made ?? "i_did",
+      when_made: raw?.when_made ?? "made_to_order",
+      should_auto_renew: raw?.should_auto_renew ?? true,
+      is_taxable: raw?.is_taxable ?? true,
+      listing_type: raw?.listing_type ?? "physical",
     });
   }
 
   const images = raw?.images?.sort((a, b) => a.rank - b.rank) ?? [];
+
+  const updateEtsy = (patch: Partial<EtsyEditableFields>) => {
+    setEtsy((prev) => prev ? { ...prev, ...patch } : prev);
+    setIsDirty(true);
+  };
+
+  const updateInternal = (patch: Partial<InternalEditableFields>) => {
+    setInternal((prev) => prev ? { ...prev, ...patch } : prev);
+    setIsDirty(true);
+  };
 
   const handleSaveInternally = async () => {
     if (!internal || !id) return;
@@ -87,6 +115,7 @@ export default function EditProductListing() {
         }),
       }).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
+        setIsDirty(false);
       }),
       {
         loading: "Saving internally...",
@@ -109,11 +138,12 @@ export default function EditProductListing() {
         },
       }).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
+        setIsDirty(false);
       }),
       {
-        loading: "Saving Changes to Etsy...",
+        loading: "Pushing to Etsy...",
         success: "Saved to Etsy",
-        error: "Failed to save changes to Etsy",
+        error: "Failed to push to Etsy",
       }
     );
     refetch();
@@ -134,14 +164,17 @@ export default function EditProductListing() {
 
     setUploadingImage(true);
     await toast.promise(
-      fetch(`/api/etsy/shops/${etsyListing.raw.shop_id}/listings/${etsyListing.platform_listing_id}/images/`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken") ?? "",
-        },
-        body: formData,
-      }).then(async (res) => {
+      fetch(
+        `/api/etsy/shops/${etsyListing.raw.shop_id}/listings/${etsyListing.platform_listing_id}/images/`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken") ?? "",
+          },
+          body: formData,
+        }
+      ).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
       }),
       {
@@ -153,7 +186,7 @@ export default function EditProductListing() {
   };
 
   if (loading) return <div className="edit-product__loading">Loading...</div>;
-  if (error || !product || !internal || !etsy) {
+  if (error || !product || !internal) {
     return <div className="edit-product__error">{error ?? "Product not found"}</div>;
   }
 
@@ -163,7 +196,7 @@ export default function EditProductListing() {
         <button
           type="button"
           className="edit-product__back"
-          onClick={() => previewOpen ? setPreviewOpen(false) : navigate("/crosslist")}
+          onClick={() => (previewOpen ? setPreviewOpen(false) : navigate("/crosslist"))}
         >
           ← {previewOpen ? "Back to Editor" : "Back"}
         </button>
@@ -172,15 +205,18 @@ export default function EditProductListing() {
 
       {!previewOpen && (
         <div className="edit-product__editor">
+
+          {/* connections */}
           <div className="edit-product__connections">
             <span className="edit-product__connections-label">Connections</span>
             <div className="edit-product__tabs">
               <button
                 type="button"
-                className="edit-product__tab edit-product__tab--active"
-                onClick={() => setPreviewOpen(true)}
+                className={`edit-product__tab ${etsyListing ? "edit-product__tab--active" : "edit-product__tab--inactive"}`}
+                onClick={() => etsyListing && setPreviewOpen(true)}
+                disabled={!etsyListing}
               >
-                Etsy
+                {etsyListing ? "Etsy" : "Etsy (not linked)"}
               </button>
               <button type="button" className="edit-product__tab" disabled>
                 Shopify (coming soon)
@@ -188,6 +224,7 @@ export default function EditProductListing() {
             </div>
           </div>
 
+          {/* product photos */}
           <section className="edit-product__section">
             <h2 className="edit-product__section-title">Product Photos</h2>
             {images.length > 0 ? (
@@ -212,10 +249,13 @@ export default function EditProductListing() {
                 </div>
               </div>
             ) : (
-              <div className="edit-product__no-image">No photos available</div>
+              <div className="edit-product__no-image">
+                {etsyListing
+                  ? "No photos available"
+                  : "No Etsy listing linked — push to Etsy to add photos"}
+              </div>
             )}
 
-            {/* image upload */}
             <div className="edit-product__upload">
               <label className="edit-product__upload-label">
                 <input
@@ -223,117 +263,139 @@ export default function EditProductListing() {
                   accept="image/jpeg,image/png,image/webp"
                   className="edit-product__upload-input"
                   onChange={handleImageUpload}
-                  disabled={uploadingImage}
+                  disabled={uploadingImage || !etsyListing}
                 />
                 {uploadingImage ? "Uploading..." : "Upload New Photo"}
               </label>
             </div>
           </section>
 
+          {/* product details */}
           <section className="edit-product__section">
             <h2 className="edit-product__section-title">Product Details</h2>
             <div className="edit-product__form">
-              <label className="edit-product__label">
-                Title
-                <input
-                  className="edit-product__input"
-                  value={etsy.title}
-                  onChange={(e) => setEtsy({ ...etsy, title: e.target.value })}
-                />
-              </label>
-              <label className="edit-product__label">
-                Description
-                <textarea
-                  className="edit-product__textarea"
-                  rows={8}
-                  value={etsy.description}
-                  onChange={(e) => setEtsy({ ...etsy, description: e.target.value })}
-                />
-              </label>
-              <label className="edit-product__label">
-                Tags (comma separated)
-                <input
-                  className="edit-product__input"
-                  value={etsy.tags.join(", ")}
-                  onChange={(e) =>
-                    setEtsy({
-                      ...etsy,
-                      tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean),
-                    })
-                  }
-                />
-              </label>
-              <label className="edit-product__label">
-                Materials (comma separated)
-                <input
-                  className="edit-product__input"
-                  value={etsy.materials.join(", ")}
-                  onChange={(e) =>
-                    setEtsy({
-                      ...etsy,
-                      materials: e.target.value.split(",").map((m) => m.trim()).filter(Boolean),
-                    })
-                  }
-                />
-              </label>
-              <div className="edit-product__row">
-                <label className="edit-product__label">
-                  Who Made
-                  <select
-                    className="edit-product__select"
-                    value={etsy.who_made}
-                    onChange={(e) => setEtsy({ ...etsy, who_made: e.target.value })}
-                  >
-                    <option value="i_did">I did</option>
-                    <option value="someone_else">Someone else</option>
-                    <option value="collective">A collective</option>
-                  </select>
-                </label>
-                <label className="edit-product__label">
-                  When Made
-                  <select
-                    className="edit-product__select"
-                    value={etsy.when_made}
-                    onChange={(e) => setEtsy({ ...etsy, when_made: e.target.value })}
-                  >
-                    <option value="made_to_order">Made to order</option>
-                    <option value="2020_2025">2020–2025</option>
-                    <option value="2010_2019">2010–2019</option>
-                    <option value="2000_2009">2000–2009</option>
-                    <option value="before_2000">Before 2000</option>
-                  </select>
-                </label>
-              </div>
-              <div className="edit-product__row">
-                <label className="edit-product__label">
-                  Listing Type
-                  <select
-                    className="edit-product__select"
-                    value={etsy.listing_type}
-                    onChange={(e) => setEtsy({ ...etsy, listing_type: e.target.value })}
-                  >
-                    <option value="physical">Physical</option>
-                    <option value="digital">Digital</option>
-                  </select>
-                </label>
-                <label className="edit-product__label edit-product__label--checkbox">
-                  <input
-                    type="checkbox"
-                    checked={etsy.should_auto_renew}
-                    onChange={(e) => setEtsy({ ...etsy, should_auto_renew: e.target.checked })}
-                  />
-                  Auto Renew
-                </label>
-                <label className="edit-product__label edit-product__label--checkbox">
-                  <input
-                    type="checkbox"
-                    checked={etsy.is_taxable}
-                    onChange={(e) => setEtsy({ ...etsy, is_taxable: e.target.checked })}
-                  />
-                  Taxable
-                </label>
-              </div>
+
+              {/* etsy fields — only shown if etsy listing is linked */}
+              {etsy && (
+                <>
+                  <label className="edit-product__label">
+                    Title
+                    <input
+                      className="edit-product__input"
+                      value={etsy.title}
+                      onChange={(e) => updateEtsy({ title: e.target.value })}
+                    />
+                  </label>
+
+                  <label className="edit-product__label">
+                    Description
+                    <textarea
+                      className="edit-product__textarea"
+                      rows={8}
+                      value={etsy.description}
+                      onChange={(e) => updateEtsy({ description: e.target.value })}
+                    />
+                  </label>
+
+                  <label className="edit-product__label">
+                    Tags (comma separated)
+                    <input
+                      className="edit-product__input"
+                      value={etsy.tags.join(", ")}
+                      onChange={(e) =>
+                        updateEtsy({
+                          tags: e.target.value
+                            .split(",")
+                            .map((t) => t.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label className="edit-product__label">
+                    Materials (comma separated)
+                    <input
+                      className="edit-product__input"
+                      value={etsy.materials.join(", ")}
+                      onChange={(e) =>
+                        updateEtsy({
+                          materials: e.target.value
+                            .split(",")
+                            .map((m) => m.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                    />
+                  </label>
+
+                  <div className="edit-product__row">
+                    <label className="edit-product__label">
+                      Who Made
+                      <select
+                        className="edit-product__select"
+                        value={etsy.who_made}
+                        onChange={(e) => updateEtsy({ who_made: e.target.value })}
+                      >
+                        <option value="i_did">I did</option>
+                        <option value="someone_else">Someone else</option>
+                        <option value="collective">A collective</option>
+                      </select>
+                    </label>
+
+                    <label className="edit-product__label">
+                      When Made
+                      <select
+                        className="edit-product__select"
+                        value={etsy.when_made}
+                        onChange={(e) => updateEtsy({ when_made: e.target.value })}
+                      >
+                        <option value="made_to_order">Made to order</option>
+                        <option value="2020_2025">2020–2025</option>
+                        <option value="2010_2019">2010–2019</option>
+                        <option value="2000_2009">2000–2009</option>
+                        <option value="before_2000">Before 2000</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="edit-product__row">
+                    <label className="edit-product__label">
+                      Listing Type
+                      <select
+                        className="edit-product__select"
+                        value={etsy.listing_type}
+                        onChange={(e) => updateEtsy({ listing_type: e.target.value })}
+                      >
+                        <option value="physical">Physical</option>
+                        <option value="digital">Digital</option>
+                      </select>
+                    </label>
+
+                    <label className="edit-product__label edit-product__label--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={etsy.should_auto_renew}
+                        onChange={(e) => updateEtsy({ should_auto_renew: e.target.checked })}
+                      />
+                      Auto Renew
+                    </label>
+
+                    <label className="edit-product__label edit-product__label--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={etsy.is_taxable}
+                        onChange={(e) => updateEtsy({ is_taxable: e.target.checked })}
+                      />
+                      Taxable
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {/* internal fields — always shown */}
               <div className="edit-product__divider">Internal Fields</div>
+
               <div className="edit-product__row">
                 <label className="edit-product__label">
                   Internal Price (€)
@@ -342,9 +404,10 @@ export default function EditProductListing() {
                     type="number"
                     step="0.01"
                     value={internal.internal_price}
-                    onChange={(e) => setInternal({ ...internal, internal_price: e.target.value })}
+                    onChange={(e) => updateInternal({ internal_price: e.target.value })}
                   />
                 </label>
+
                 <label className="edit-product__label">
                   Internal Quantity
                   <input
@@ -352,22 +415,24 @@ export default function EditProductListing() {
                     type="number"
                     value={internal.internal_quantity}
                     onChange={(e) =>
-                      setInternal({ ...internal, internal_quantity: Number(e.target.value) })
+                      updateInternal({ internal_quantity: Number(e.target.value) })
                     }
                   />
                 </label>
+
                 <label className="edit-product__label">
                   SKU
                   <input
                     className="edit-product__input"
                     value={internal.sku}
-                    onChange={(e) => setInternal({ ...internal, sku: e.target.value })}
+                    onChange={(e) => updateInternal({ sku: e.target.value })}
                   />
                 </label>
               </div>
             </div>
           </section>
 
+          {/* save buttons */}
           <div className="edit-product__actions">
             <button type="button" className="btn btn--secondary" onClick={handleSaveInternally}>
               Save Internally
@@ -385,6 +450,7 @@ export default function EditProductListing() {
         </div>
       )}
 
+      {/* etsy preview */}
       {previewOpen && (
         <div className="edit-product__preview">
           <div className="edit-product__preview-header">
@@ -400,6 +466,7 @@ export default function EditProductListing() {
               </a>
             )}
           </div>
+
           {images.length > 0 && (
             <img
               className="edit-product__preview-image"
@@ -407,6 +474,7 @@ export default function EditProductListing() {
               alt={product.title}
             />
           )}
+
           <div className="edit-product__preview-details">
             <h2 className="edit-product__preview-title">{raw?.title}</h2>
             <div className="edit-product__preview-price">
@@ -422,13 +490,17 @@ export default function EditProductListing() {
             <div className="edit-product__preview-section-title">Tags</div>
             <div className="edit-product__preview-tags">
               {raw?.tags?.map((tag) => (
-                <span key={tag} className="edit-product__preview-tag">{tag}</span>
+                <span key={tag} className="edit-product__preview-tag">
+                  {tag}
+                </span>
               ))}
             </div>
             <div className="edit-product__preview-section-title">Materials</div>
             <div className="edit-product__preview-tags">
               {raw?.materials?.map((m) => (
-                <span key={m} className="edit-product__preview-tag">{m}</span>
+                <span key={m} className="edit-product__preview-tag">
+                  {m}
+                </span>
               ))}
             </div>
             <div className="edit-product__preview-section-title">Description</div>

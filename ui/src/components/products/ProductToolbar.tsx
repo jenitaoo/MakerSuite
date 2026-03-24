@@ -6,7 +6,7 @@ type ProductToolbarProps = {
   filter: "All" | "Etsy" | "MakerSuite" | "Shopify";
   onFilterChange: (value: "All" | "Etsy" | "MakerSuite" | "Shopify") => void;
   onRefresh: () => void;
-  onAdd: () => void;
+  onCreateNewProduct: () => void;
 };
 
 export default function ProductToolbar({
@@ -15,7 +15,7 @@ export default function ProductToolbar({
   filter,
   onFilterChange,
   onRefresh,
-  onAdd,
+  onCreateNewProduct,
 }: ProductToolbarProps) {
   return (
     <div className="product-toolbar">
@@ -51,7 +51,7 @@ export default function ProductToolbar({
         <button type="button" className="btn btn--secondary" onClick={onRefresh}>
           Sync From Etsy
         </button>
-        <button type="button" className="btn btn--primary" onClick={onAdd}>
+        <button type="button" className="btn btn--primary" onClick={onCreateNewProduct}>
           Create New Product
         </button>
       </div>

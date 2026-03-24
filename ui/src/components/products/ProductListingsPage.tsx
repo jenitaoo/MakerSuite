@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ProductToolbar from "./ProductToolbar";
 import ProductTable from "./ProductTable";
@@ -29,6 +30,7 @@ export default function ProductListingsPage() {
   const [prevUrl, setPrevUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Build query URL for page and optional search/filter
   const buildUrl = (pageNum: number) => {
@@ -91,8 +93,7 @@ export default function ProductListingsPage() {
   }, [products, search, filter]);
 
   const handleEdit = (product: Product) => {
-    // navigate to editor or open panel
-    window.location.href = `/products/${product.id}/edit`;
+    navigate(`/products/${product.id}/edit`);
   };
 
   const handleRefresh = async () => {
@@ -152,7 +153,7 @@ export default function ProductListingsPage() {
 
 
   const handleAdd = () => {
-    console.log("Add clicked");
+    navigate("/products/new");
   };
 
   return (
@@ -168,7 +169,7 @@ export default function ProductListingsPage() {
         filter={filter}
         onFilterChange={(value) => setFilter(value as "All" | "Etsy" | "MakerSuite" | "Shopify")}
         onRefresh={handleRefresh}
-        onAdd={handleAdd}
+        onCreateNewProduct={handleAdd}
       />
 
       {loading ? (

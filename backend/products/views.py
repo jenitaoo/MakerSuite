@@ -54,29 +54,46 @@ class ProductViewSet(viewsets.ModelViewSet):
         manager.create_missing_listings(product)
         return Response({"status": "created_missing"})
 
+    # This custom action pushes updates for the specific product to etsy.
+    # This gives us the POST /products/{id}/push-to-etsy/ endpoint.
+    # Note: if the product is not yet listed on Etsy, this will create a new listing.
+    # If it is already listed, it will update the existing listing.
     @action(detail=True, methods=["post"], url_path="push-to-etsy")
     def push_to_etsy(self, request, pk=None):
         product = self.get_object()
 
+        # Find an existing Etsy listing for this product, if any, to use as a reference for required fields and shop_id
         listing = ExternalProductListing.objects.filter(
-            product=product,
-            platform="Etsy"
+            owner=request.user.userprofile,
+            platform="Etsy",
+            shop_id__isnull=False
         ).first()
 
-        if not listing:
-            return Response(
-                {"error": "No Etsy listing linked to this product"},
-                status=404
-            )
-
         try:
-            user = request.user
-            etsy_token = user.etsy_token
+            etsy_token = request.user.etsy_token
             adapter = EtsyAdapter(
                 access_token=etsy_token.access_token,
                 etsy_user_id=etsy_token.etsy_user_id
             )
-            result = adapter.update_listing(listing, product)
+
+            if not listing:
+                # no Etsy listing exists yet — create one
+                result = adapter.create_listing(product, shop_id=etsy_token.etsy_user_id)
+            else:
+                # listing exists — update it
+                result = adapter.update_listing(listing, product)
+
+                # re-fetch from Etsy and update raw
+                listings_json = adapter.fetch_listings(listing.shop_id)
+                updated = next(
+                    (l for l in listings_json.get("results", [])
+                    if str(l.get("listing_id")) == listing.platform_listing_id),
+                    None
+                )
+                if updated:
+                    listing.raw = updated
+                    listing.save(update_fields=["raw"])
+
             return Response({"status": "pushed", "result": result})
         except Exception as e:
             return Response({"error": str(e)}, status=500)

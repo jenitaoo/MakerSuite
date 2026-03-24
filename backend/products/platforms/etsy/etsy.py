@@ -91,10 +91,57 @@ class EtsyAdapter(BasePlatformAdapter):
         return response.json()
 
 
-    def create_listing(self, product):
-        # Step 1: send product data to Etsy
-        # Step 2: return Etsy listing ID
-        pass
+    def create_listing(self, product, shop_id, reference_listing_raw=None):
+        """
+        Create a new draft listing on Etsy.
+        Requires shop_id and uses reference_listing_raw to pull required
+        shop-specific fields (shipping_profile_id, return_policy_id, taxonomy_id).
+        Needs readiness state too, like the inventory endpoint.
+        """
+        url = f"{self.BASE_URL}/shops/{shop_id}/listings"
+
+        # these fields are required by Etsy and must come from the seller's shop
+        # we read them from an existing listing if available, otherwise use safe defaults
+        shipping_profile_id = None
+        return_policy_id = None
+        taxonomy_id = 1239  # default taxid for now is for jewellery > rings
+
+        if reference_listing_raw:
+            shipping_profile_id = reference_listing_raw.get("shipping_profile_id")
+            return_policy_id = reference_listing_raw.get("return_policy_id")
+            taxonomy_id = reference_listing_raw.get("taxonomy_id", taxonomy_id)
+
+        if not shipping_profile_id:
+            raise ValueError(
+                "No shipping_profile_id available. "
+                "Ensure at least one Etsy listing exists in the database to use as a reference."
+            )
+
+        if not return_policy_id:
+            raise ValueError(
+                "No return_policy_id available. "
+                "Ensure at least one Etsy listing exists in the database to use as a reference."
+            )
+
+        payload = {
+            "title": product.title,
+            "description": product.description or "",
+            "price": float(product.internal_price),
+            "quantity": product.internal_quantity or 1,
+            "who_made": "i_did",
+            "when_made": "made_to_order",
+            "taxonomy_id": taxonomy_id,
+            "shipping_profile_id": shipping_profile_id,
+            "return_policy_id": return_policy_id,
+            "should_auto_renew": True,
+            "is_taxable": True,
+            "type": "physical",
+            "readiness_state_id": reference_listing_raw.get("readiness_state_id", 1404120877583),
+        }
+
+        response = requests.post(url, headers=self._headers(), json=payload)
+        response.raise_for_status()
+        return response.json()
 
     def update_listing(self, listing, product):
         """
