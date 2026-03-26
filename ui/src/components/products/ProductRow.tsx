@@ -7,6 +7,8 @@
  * will add them later when we have ExternalProductListing data available.
  */
 
+import "../../index.css"
+
 export type Product = {
   id: number;
   owner: number;

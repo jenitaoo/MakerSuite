@@ -1,5 +1,7 @@
 import ProductListingsPage from "../components/products/ProductListingsPage";
 import "../styles/productListings.css";
+import "../index.css"
+
 
 export default function CrossListPage() {
   return (

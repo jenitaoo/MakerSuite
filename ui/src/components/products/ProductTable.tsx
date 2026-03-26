@@ -1,4 +1,5 @@
 import ProductRow, { Product } from "./ProductRow";
+import "../../index.css"
 
 type ProductTableProps = {
   products: Product[];
