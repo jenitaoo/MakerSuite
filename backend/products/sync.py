@@ -41,3 +41,9 @@ class SyncManager:
         for platform, adapter in self.adapters.items():
             if platform not in existing_platforms:
                 adapter.create_listing(product)
+
+                # Add platform to product
+                platform_name = platform.capitalize()  # "etsy" -> "Etsy"
+                if platform_name not in product.platforms:
+                    product.platforms.append(platform_name)
+                    product.save(update_fields=["platforms"])

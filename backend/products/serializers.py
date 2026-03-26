@@ -8,7 +8,6 @@ from .models import Product, ExternalProductListing
 class ProductSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
     image_url = serializers.SerializerMethodField()
-    platform = serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
         listing = obj.externalproductlisting_set.first()
@@ -24,10 +23,10 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'owner',
             'image_url',
+            'platforms',
             'title',
             'description',
             'sku',
-            'platform',
             'internal_price',
             'internal_quantity',
             'created_at',

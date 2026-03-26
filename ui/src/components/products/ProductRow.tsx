@@ -14,7 +14,7 @@ export type Product = {
   title: string;
   description?: string | null;
   sku?: string | null;
-  platform?: string | null;
+  platforms: string[];
   internal_price: string;
   internal_quantity: number;
   created_at: string;
@@ -41,7 +41,11 @@ export default function ProductRow({ product, onEdit }: ProductRowProps) {
       <td className="product-row__name">{product.title}</td>
       <td className="product-row__price">€{product.internal_price}</td>
       <td className="product-row__qty">{product.internal_quantity}</td>
-      <td className="product-row__platform">{product.platform ?? "MakerSuite Only"}</td>
+      <td className="product-row__platform">
+        <div className="product-row__platforms">
+          {(product.platforms.join(", ") ?? "MakerSuite")}
+        </div>
+      </td>
       <td className="product-row__edit">
         <button
           type="button"

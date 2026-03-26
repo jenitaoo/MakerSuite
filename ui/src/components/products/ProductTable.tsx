@@ -15,7 +15,7 @@ export default function ProductTable({ products, onEdit }: ProductTableProps) {
             <th>Name</th>
             <th>Price</th>
             <th>Qty</th>
-            <th>Platform</th>
+            <th>Platforms</th>
             <th>Edit</th>
           </tr>
         </thead>

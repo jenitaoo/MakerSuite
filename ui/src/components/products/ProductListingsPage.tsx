@@ -87,7 +87,7 @@ export default function ProductListingsPage() {
       const matchesSearch =
         search.trim().length === 0 ||
         (p.title || "").toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === "All" || (p as { platform: string }).platform === filter;
+      const matchesFilter = filter === "All" || (p.platforms ?? []).includes(filter);
       return matchesSearch && matchesFilter;
     });
   }, [products, search, filter]);

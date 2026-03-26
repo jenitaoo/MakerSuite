@@ -1,38 +1,31 @@
-# products/importers/etsy_importer.py
 from django.db import transaction
 from django.utils import timezone
-
 from products.models import ExternalProductListing, Product
 
 class EtsyImporter:
     @staticmethod
     def import_listing(listing_json, owner):
-        """
-        Convert Etsy listing JSON into ExternalProductListing and ensure an associated Product exists.
-        Always creates or links an internal Product for every imported Etsy listing.
-        """
-        # Normalised fields
         title = listing_json.get("title", "") or "Untitled"
         description = listing_json.get("description", "") or ""
-        # Etsy price in cents
+
         price_amount = None
         try:
             price_amount = listing_json["price"]["amount"] / 100
         except Exception:
-            # fallback if price structure differs
             price_amount = listing_json.get("price", {}).get("amount") or None
 
         currency = listing_json.get("price", {}).get("currency_code") or listing_json.get("currency") or None
         quantity = listing_json.get("quantity", 0)
         platform_id = str(listing_json.get("listing_id"))
 
-        # Extract first image URL (rank=1)
         images = listing_json.get("images") or []
         first_image = next((img for img in images if img.get("rank") == 1), None)
         image_url = first_image.get("url_570xN") if first_image else None
 
+        skus = listing_json.get("skus") or []
+        sku = skus[0] if skus else None
+
         with transaction.atomic():
-            # Create or update the external listing
             listing, created = ExternalProductListing.objects.update_or_create(
                 owner=owner,
                 platform="Etsy",
@@ -49,32 +42,35 @@ class EtsyImporter:
                 }
             )
 
-            # Force save image URL regardless of linked state
             if image_url:
                 ExternalProductListing.objects.filter(pk=listing.pk).update(listing_image_url=image_url)
 
-            # If already linked, return early
+            # if already linked to a product, just update it and return
             if listing.product is not None:
+                p = listing.product
+                p.title = title
+                p.description = description
+                p.internal_price = price_amount
+                p.internal_quantity = quantity
+                if "Etsy" not in p.platforms:
+                    p.platforms.append("Etsy")
+                p.save(update_fields=["title", "description", "internal_price", "internal_quantity", "platforms"])
                 listing.linked_at = listing.linked_at or timezone.now()
                 listing.save(update_fields=["linked_at"])
                 return listing
 
-            # Try to find an existing Product to link to
+            # not yet linked — find or create a Product
             product = None
 
-            # 1) Try SKU from raw (common places)
-            # Etsy may store SKU in different places; try a few keys
-            skus = listing_json.get("skus") or []
-            sku = skus[0] if skus else None
-
+            # only match by SKU if that product has no Etsy listing already
             if sku:
-                product = Product.objects.filter(owner=owner, sku=sku).first()
+                candidate = Product.objects.filter(owner=owner, sku=sku).first()
+                if candidate and not ExternalProductListing.objects.filter(
+                    product=candidate, platform="Etsy"
+                ).exists():
+                    product = candidate
 
-            # 2) Try exact title match (case-insensitive)
-            if not product and title:
-                product = Product.objects.filter(owner=owner, title__iexact=title).first()
-
-            # 3) Create a new Product if none found
+            # create a new Product if no match found
             if not product:
                 product = Product.objects.create(
                     owner=owner,
@@ -82,10 +78,14 @@ class EtsyImporter:
                     description=description,
                     sku=sku or None,
                     internal_price=price_amount,
-                    internal_quantity=quantity
+                    internal_quantity=quantity,
+                    platforms=["MakerSuite", "Etsy"],
                 )
+            else:
+                if "Etsy" not in product.platforms:
+                    product.platforms.append("Etsy")
+                    product.save(update_fields=["platforms"])
 
-            # Link listing -> product
             listing.product = product
             listing.linked_at = timezone.now()
             listing.save(update_fields=["product", "linked_at"])

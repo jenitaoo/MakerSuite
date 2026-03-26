@@ -62,11 +62,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     def push_to_etsy(self, request, pk=None):
         product = self.get_object()
 
-        # Find an existing Etsy listing for this product, if any, to use as a reference for required fields and shop_id
-        listing = ExternalProductListing.objects.filter(
-            owner=request.user.userprofile,
-            platform="Etsy",
-            shop_id__isnull=False
+        # find listing linked to THIS product
+        linked_listing = ExternalProductListing.objects.filter(
+            product=product,
+            platform="Etsy"
         ).first()
 
         try:
@@ -76,25 +75,79 @@ class ProductViewSet(viewsets.ModelViewSet):
                 etsy_user_id=etsy_token.etsy_user_id
             )
 
-            if not listing:
-                # no Etsy listing exists yet — create one
-                result = adapter.create_listing(product, shop_id=etsy_token.etsy_user_id)
+            if not linked_listing:
+                # no Etsy listing linked to this product yet — create one
+                # use any existing listing as reference for shop-specific fields
+                reference = ExternalProductListing.objects.filter(
+                    owner=request.user.userprofile,
+                    platform="Etsy",
+                    shop_id__isnull=False
+                ).first()
+
+                reference_raw = reference.raw if reference else None
+                shop_id = reference.shop_id if reference else None
+
+                if not shop_id:
+                    return Response(
+                        {"error": "No shop_id available. Refresh Database first."},
+                        status=400
+                    )
+
+                result = adapter.create_listing(product, shop_id, reference_raw)
+                new_listing_id = str(result.get("listing_id"))
+
+                # fetch the new listing directly to get full raw data
+                import requests as req
+                listing_res = req.get(
+                    f"https://api.etsy.com/v3/application/listings/{new_listing_id}",
+                    headers=adapter._headers(),
+                    params={"includes": "Images"}
+                )
+                raw_data = listing_res.json() if listing_res.ok else result
+
+                # save the new ExternalProductListing
+                ExternalProductListing.objects.create(
+                    owner=request.user.userprofile,
+                    product=product,
+                    platform="Etsy",
+                    platform_listing_id=new_listing_id,
+                    shop_id=shop_id,
+                    listing_title=product.title,
+                    listing_description=product.description,
+                    listing_price=product.internal_price,
+                    listing_quantity=product.internal_quantity,
+                    raw=raw_data,
+                )
+
+                # add Etsy to platforms
+                if "Etsy" not in product.platforms:
+                    product.platforms.append("Etsy")
+                    product.save(update_fields=["platforms"])
+
+                return Response({"status": "created", "listing_id": new_listing_id})
+
             else:
                 # listing exists — update it
-                result = adapter.update_listing(listing, product)
+                result = adapter.update_listing(linked_listing, product)
 
                 # re-fetch from Etsy and update raw
-                listings_json = adapter.fetch_listings(listing.shop_id)
+                listings_json = adapter.fetch_listings(linked_listing.shop_id)
                 updated = next(
                     (l for l in listings_json.get("results", [])
-                    if str(l.get("listing_id")) == listing.platform_listing_id),
+                    if str(l.get("listing_id")) == linked_listing.platform_listing_id),
                     None
                 )
                 if updated:
-                    listing.raw = updated
-                    listing.save(update_fields=["raw"])
+                    linked_listing.raw = updated  # assign new dict, not mutate
+                    linked_listing.save(update_fields=["raw"])
 
-            return Response({"status": "pushed", "result": result})
+                # add Etsy to platforms
+                if "Etsy" not in product.platforms:
+                    product.platforms.append("Etsy")
+                    product.save(update_fields=["platforms"])
+
+                return Response({"status": "pushed", "result": result})
+
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
@@ -114,4 +167,7 @@ class ExternalProductListingViewSet(viewsets.ModelViewSet):
         return ExternalProductListing.objects.filter(owner=self.request.user.userprofile)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user.userprofile)
+        serializer.save(
+            owner=self.request.user.userprofile,
+            platforms=["MakerSuite"]
+        )
