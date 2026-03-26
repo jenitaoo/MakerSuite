@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+from dotenv import load_dotenv
 from pathlib import Path
 import os
 
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-wzw$+0!rfx80^kr4e8_bhlda2+1jtq6%n$p+05!)z1apv*_)-+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend']
 
 
 # Application definition
@@ -38,15 +39,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Local apps
-    'authentication',
+    'authentication.apps.AuthenticationConfig',
+    'products',
+    'etsy',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,7 +59,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Add this line
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -133,9 +137,6 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, restrict in production
-CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -143,11 +144,37 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_HTTPONLY = False  # Must be False so JavaScript can read it
+
+# CORS
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+# Cookies for cross-site requests (React → Django)
+# Don’t force a domain; let Django use host-only cookies
+SESSION_COOKIE_DOMAIN = "localhost"
+CSRF_COOKIE_DOMAIN = "localhost"
+
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# HTTP is fine in dev
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+# Get environment variables
+load_dotenv()
+# Etsy OAuth v3 uses the API Keystring as the client_id
+ETSY_KEYSTRING = os.getenv("ETSY_KEYSTRING")
+ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET")
+# Redirect URI must match EXACTLY what you registered in Etsy Developer Portal
+ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
+# Space-separated scopes (Etsy requires URL-encoded later)
+ETSY_SCOPES = os.getenv("ETSY_SCOPES", "address_r email_r shops_r shops_w listings_r listings_w")
+ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"

@@ -11,7 +11,7 @@ const Dashboard = () => {
   return (
     <div>
       <h2>Dashboard</h2>
-      {auth?.user ? <h3>Welcome, {auth.user.username}!</h3> : <p>No user data found</p>}
+      {auth?.user ? <h3>Welcome, {auth.user.username}!!!</h3> : <p>No user data found!!</p>}
     </div>
   );
 };

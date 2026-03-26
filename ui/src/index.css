@@ -1,15 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Chonburi&family=Domine:wght@300;400;500;600;700&display=swap');
+
+/* --------------------------------------------------
+   TAILWIND LAYERS (must always be first)
+-------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* --------------------------------------------------
+   GLOBAL RESET
+-------------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure React root fills the viewport */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------
+   ROOT THEME VARIABLES
+-------------------------------------------------- */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /** COLOURS **/
+  /* Core brand */
+  --color-primary: #BE816E; /* Red Brick */
+  --color-primary-hover: #A86F5E;
+
+  /* Neutrals / Off‑whites */
+  --color-bg: #d0aa86;       /* Cream */
+  --color-bg-alt: #dfb698;   /* Soft Peach */
+  --color-surface: #ceab8a;  /* Beach Sand */
+
+  /* Greens */
+  --color-accent-green: #C8C6BD; /* Spring Sage */
+  --color-accent-green-dark: #858E79; /* Reseda Gree   n */
+
+  /* Text (you said: text should be white on these) */
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.75);
+
+  /* Borders */
+  --color-border: rgba(0, 0, 0, 0.15);
+
+  /* Semantic tokens */
+  --color-success: #7A8F6A; /* earthy green */
+  --color-warning: #D9A05B; /* warm sand */
+  --color-error: #C46A55;   /* muted clay red */
+  color-scheme: light dark;
+
+
+  /** Typography **/
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --font-heading: 'Chonburi', serif;
+  --font-body: 'Domine', serif;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,57 +71,190 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+.dark {
+  /* Core brand */
+  --color-primary: #D89A87; /* lighter red brick for contrast */
+  --color-primary-hover: #E3A896;
+
+  /* Neutrals */
+  --color-bg: #fff9ee;        /* charcoal earth */
+  --color-bg-alt: #22221F;    /* slightly lighter */
+  --color-surface: #2E2C29;   /* warm dark stone */
+
+  --color-accent-green: #9FA89A; /* softened sage */
+  --color-accent-green-dark: #6F776A;
+
+  /* Text */
+  --color-text: #F5F5F5;
+  --color-text-muted: rgba(245, 245, 245, 0.7);
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.1);
+
+  /* Semantic tokens */
+  --color-success: #8FAF7A; /* brighter for dark mode */
+  --color-warning: #E3B06A;
+  --color-error: #D47C68;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
+/* --------------------------------------------------
+   TYPOGRAPHY
+-------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-primary);
+}
+
+/* --------------------------------------------------
+   MAIN CONTENT LAYOUT
+-------------------------------------------------- */
+.app {
+  flex-direction: column;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.main-content {
+  flex: 1;
+  width: 100%;
+  padding: 0;
+  overflow-y: auto;
 }
 
-button,
-.auth-button {
-  padding: 0.8rem;
-  background-color: #4c7bf3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+/* --------------------------------------------------
+   AUTH PAGES
+-------------------------------------------------- */
+.auth-container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
   font-weight: bold;
 }
 
-button:hover,
-.auth-button:hover {
-  background-color: #3a67d4;
+.form-group input {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-button:disabled,
-.auth-button:disabled {
-  background-color: #cccccc;
+.error {
+  color: #ff3333;
+  font-size: 0.8rem;
+}
+
+.error-message {
+  background-color: #ffeeee;
+  color: #ff3333;
+  padding: 0.8rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.auth-link {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.auth-link a {
+  color: #4c7bf3;
+  text-decoration: none;
+}
+
+/* --------------------------------------------------
+   DASHBOARD
+-------------------------------------------------- */
+.dashboard-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-message {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.logout-btn {
+  margin-top: 1.5rem;
+}
+
+/* --------------------------------------------------
+   PRODUCT TABLE
+-------------------------------------------------- */
+.product-row__photo-placeholder {
+  width: 6rem;
+  height: 6rem;
+}
+
+.product-row__photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .product-row__photo-placeholder {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+.btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.product-toolbar__filter-select {
+  height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background-color: #f1f2f4;
+  color: #596780;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.product-toolbar__filter-select:focus {
+  outline: none;
+  border-color: #818263;
+}
+
+/* --------------------------------------------------
+   LINK HOVER (safe override)
+-------------------------------------------------- */
+a:hover {
+  transition: 0.2s ease;
 }

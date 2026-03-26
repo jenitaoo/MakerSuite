@@ -1,30 +1,61 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import './App.css';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import Navbar from "./components/Navbar";
+import PrivateRoute from "./components/PrivateRoute";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import CrossList from "./pages/CrossList";
+import CreateProductListing from "./pages/CreateProductListing";
+import EditProductListing from "./pages/EditProductListing";
+import "./App.css";
 
-function App() {
+// layout wrapper that includes Navbar and Toaster
+function AppLayout() {
   return (
-    <BrowserRouter>
-      <div className="app">
-        <Navbar />
-        <main className="main-content flex justify-center items-center min-h-screen">
-          <Routes>
-            <Route path="/" element={<Navigate to="/login" />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route element={<PrivateRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-            </Route>
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+    <div className="app">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            border: "1px solid #713200",
+            padding: "16px",
+            color: "#713200",
+          },
+          iconTheme: {
+            primary: "#713200",
+            secondary: "#FFFAEE",
+          },
+        }}
+      />
+      <Navbar />
+      <main className="main-content">
+        <Outlet />
+      </main>
+    </div>
   );
 }
 
-export default App;
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      { path: "/", element: <Navigate to="/login" /> },
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <Signup /> },
+      {
+        element: <PrivateRoute />,
+        children: [
+          { path: "/dashboard", element: <Dashboard /> },
+          { path: "/crosslist", element: <CrossList /> },
+          { path: "/products/new", element: <CreateProductListing /> },
+          { path: "/products/:id/edit", element: <EditProductListing /> },
+        ],
+      },
+    ],
+  },
+]);
+
+export default function App() {
+  return <RouterProvider router={router} />;
+}

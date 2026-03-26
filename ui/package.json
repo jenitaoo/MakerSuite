@@ -10,14 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@heroicons/react": "^2.1.1",
+    "@iconify-json/tabler": "^1.2.32",
+    "@iconify/tailwind": "^1.2.0",
+    "@material-tailwind/react": "^2.1.0",
     "axios": "^1.8.1",
     "formik": "^2.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.2.0",
-    "yup": "^1.6.1",
-    "@material-tailwind/react": "^2.1.0",
-    "@heroicons/react": "^2.1.1"
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

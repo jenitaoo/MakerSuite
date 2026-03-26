@@ -26,6 +26,7 @@ const Login = () => {
     try {
       await authService.login(values);
       navigate("/dashboard");
+      window.location.reload();
     } catch (err) {
       setError(typeof err === "string" ? err : "Invalid credentials");
     } finally {
