@@ -118,9 +118,6 @@ class MakeViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         make = self.get_object()
 
-        if make.status == Make.STATUS_COMPLETED:
-            return Response({"error": "This make is already completed"}, status=400)
-
         units_produced = request.data.get("units_produced")
         deduct_materials = request.data.get("deduct_materials", False)
         notes = request.data.get("notes", "")
@@ -130,36 +127,27 @@ class MakeViewSet(viewsets.ModelViewSet):
 
         try:
             units_produced = int(units_produced)
-            if units_produced < 0:
+            if units_produced <= 0:
                 raise ValueError
         except (ValueError, TypeError):
-            return Response({"error": "units_produced must be a non-negative integer"}, status=400)
+            return Response({"error": "units_produced must be a positive integer"}, status=400)
 
-        # update make
-        make.status = Make.STATUS_COMPLETED
-        make.units_produced = units_produced
-        make.completed_at = timezone.now()
-        make.save(update_fields=["status", "units_produced", "completed_at"])
+        make.units_produced += units_produced
+        make.save(update_fields=["units_produced"])
 
-        # update linked product quantity
         if make.product:
             make.product.internal_quantity = (make.product.internal_quantity or 0) + units_produced
             make.product.save(update_fields=["internal_quantity"])
 
-        # deduct materials if requested and quantities are set
         if deduct_materials:
             for make_material in make.make_materials.all():
                 if make_material.quantity_used is not None:
                     mat = make_material.material
                     deduct_qty = float(make_material.quantity_used)
-
                     if deduct_qty > float(mat.quantity):
-                        # deduct whatever is available, log a warning
                         deduct_qty = float(mat.quantity)
-
                     mat.quantity -= deduct_qty
                     mat.save(update_fields=["quantity"])
-
                     InventoryLog.objects.create(
                         owner=request.user.userprofile,
                         material=mat,

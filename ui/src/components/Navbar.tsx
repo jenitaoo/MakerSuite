@@ -45,6 +45,7 @@ const Navbar = () => {
             <>
               <Link to="/dashboard" className="hover:text-[var(--color-primary)]">Dashboard</Link>
               <Link to="/crosslist" className="hover:text-[var(--color-primary)]">Cross List</Link>
+              <Link to="/inventory" className="hover:text-[var(--color-primary)]">Inventory</Link>
               <Link to="/settings" className="hover:text-[var(--color-primary)]">Settings</Link>
               <button onClick={handleLogout} className="hover:text-[var(--color-primary)]">
                 Logout
@@ -79,6 +80,7 @@ const Navbar = () => {
             <>
               <Link to="/dashboard" onClick={() => setToggleMenu(false)}>Dashboard</Link>
               <Link to="/crosslist" onClick={() => setToggleMenu(false)}>Cross List</Link>
+              <Link to="/inventory" onClick={() => setToggleMenu(false)}>Inventory</Link>
               <Link to="/settings" onClick={() => setToggleMenu(false)}>Settings</Link>
               <button onClick={handleLogout}>Logout</button>
             </>

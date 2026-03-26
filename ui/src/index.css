@@ -42,12 +42,18 @@ body,
   --color-surface: #ceab8a;  /* Beach Sand */
 
   /* Greens */
-  --color-accent-green: #C8C6BD; /* Spring Sage */
-  --color-accent-green-dark: #858E79; /* Reseda Gree   n */
+  --color-accent-green: #c2c395; /* Spring Sage */
+  --color-accent-green-dark: #818263; /* Reseda Green */
+  --color-accent-green-darker: #707056; /* Darker Sage */
+
+  /* Whites */
+  --color-accent-white: #f5f5f5; /* Off‑white for accents */
+  --color-accent-white-muted: rgba(239, 236, 233, 0.7); /* Muted off‑white for subtle accents */
 
   /* Text (you said: text should be white on these) */
   --color-text: #ffffff;
   --color-text-muted: rgba(255, 255, 255, 0.75);
+  --color-text-content: #333333; /* Dark Charcoal for content text */
 
   /* Borders */
   --color-border: rgba(0, 0, 0, 0.15);

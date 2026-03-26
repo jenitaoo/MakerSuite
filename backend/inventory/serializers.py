@@ -3,15 +3,15 @@ from .models import RawMaterial, Make, MakeMaterial, SaleTag, SaleLog, Inventory
 
 
 class RawMaterialSerializer(serializers.ModelSerializer):
+    is_low_stock = serializers.ReadOnlyField()
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
-    is_low_stock = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = RawMaterial
         fields = [
-            'id', 'owner', 'name', 'unit', 'quantity',
+            'id', 'owner', 'name', 'unit_type', 'quantity',
             'low_stock_threshold', 'cost_per_unit',
-            'source', 'brand', 'supplier_url', 'sku',
+            'source', 'brand', 'supplier', 'sku',
             'notes', 'custom_fields', 'is_low_stock',
             'created_at', 'updated_at',
         ]
@@ -19,14 +19,12 @@ class RawMaterialSerializer(serializers.ModelSerializer):
 
 
 class MakeMaterialSerializer(serializers.ModelSerializer):
-    material_name = serializers.CharField(source='material.name', read_only=True)
-    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    material_name = serializers.ReadOnlyField(source='material.name')
+    material_unit_type = serializers.ReadOnlyField(source='material.unit_type')
 
     class Meta:
         model = MakeMaterial
-        fields = ['id', 'make', 'material', 'material_name', 'material_unit', 'quantity_used']
-        read_only_fields = ['id']
-
+        fields = ['id', 'material', 'material_name', 'material_unit_type', 'quantity_used']
 
 class SaleTagSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -68,13 +66,13 @@ class MakeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Make
         fields = [
-            'id', 'owner', 'name', 'status', 'product', 'product_title',
+            'id', 'owner', 'name', 'product', 'product_title',
             'units_produced', 'units_sold', 'available_units',
-            'date_made', 'notes', 'completed_at',
+            'date_made', 'notes',
             'make_materials', 'salelogs',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'completed_at', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class InventoryLogSerializer(serializers.ModelSerializer):

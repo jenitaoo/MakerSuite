@@ -8,22 +8,22 @@ from products.models import Product
 
 class RawMaterial(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    sku = models.CharField(max_length=100, blank=True, null=True)
     name = models.CharField(max_length=255)
-    unit = models.CharField(max_length=50)
+    unit_type = models.CharField(max_length=50)  # e.g. "balls", "grams", "metres", "sheets"
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     low_stock_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=10, null=True, blank=True)
     cost_per_unit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     source = models.CharField(max_length=255, blank=True, null=True)
     brand = models.CharField(max_length=255, blank=True, null=True)
-    supplier = models.URLField(blank=True, null=True)
+    supplier = models.CharField(max_length=500, blank=True, null=True)
+    sku = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     custom_fields = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} ({self.unit})"
+        return f"{self.name} ({self.quantity} {self.unit_type})"
 
     @property
     def is_low_stock(self):
@@ -31,24 +31,13 @@ class RawMaterial(models.Model):
             return False
         return self.quantity <= self.low_stock_threshold
 
-
 class Make(models.Model):
-    STATUS_IN_PROGRESS = "in_progress"
-    STATUS_COMPLETED = "completed"
-    STATUS_CHOICES = [
-        (STATUS_IN_PROGRESS, "In Progress"),
-        (STATUS_COMPLETED, "Completed"),
-    ]
-
-    id = models.AutoField(primary_key=True)
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_IN_PROGRESS)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     units_produced = models.PositiveIntegerField(default=0)
     date_made = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -62,7 +51,6 @@ class Make(models.Model):
     @property
     def available_units(self):
         return self.units_produced - self.units_sold
-
 
 class MakeMaterial(models.Model):
     make = models.ForeignKey(Make, on_delete=models.CASCADE, related_name="make_materials")
