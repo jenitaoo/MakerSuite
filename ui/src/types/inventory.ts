@@ -2,7 +2,7 @@ export type RawMaterial = {
   id: number;
   owner: number;
   name: string;
-  unit_type: string;        // e.g. "balls", "grams", "metres"
+  unit_type: string;
   quantity: string;
   low_stock_threshold: string | null;
   cost_per_unit: string | null;
@@ -17,12 +17,22 @@ export type RawMaterial = {
   updated_at: string;
 };
 
-export type MakeMaterial = {
+export type ProjectMaterial = {
   id: number;
   material: number;
   material_name: string;
-  material_unit_type: string;   // renamed from material_unit
+  material_unit_type: string;
   quantity_used: string | null;
+};
+
+export type MakeLog = {
+  id: number;
+  project: number;
+  units_made: number;
+  date_made: string | null;
+  notes: string | null;
+  deducted_materials: boolean;
+  created_at: string;
 };
 
 export type SaleTag = {
@@ -35,7 +45,7 @@ export type SaleTag = {
 export type SaleLog = {
   id: number;
   owner: number;
-  make: number;
+  project: number;
   units_sold: number;
   sale_date: string;
   notes: string | null;
@@ -44,19 +54,19 @@ export type SaleLog = {
   created_at: string;
 };
 
-export type Make = {
+export type Project = {
   id: number;
   owner: number;
   name: string;
   product: number | null;
   product_title: string | null;
-  units_produced: number;
-  available_units: number;
+  units_made: number;
   units_sold: number;
-  date_made: string | null;
+  in_stock: number;
   notes: string | null;
-  make_materials: MakeMaterial[];
-  salelogs: SaleLog[];
+  project_materials: ProjectMaterial[];
+  make_logs: MakeLog[];
+  sale_logs: SaleLog[];
   created_at: string;
   updated_at: string;
 };
@@ -66,9 +76,9 @@ export type InventoryLog = {
   owner: number;
   material: number | null;
   material_name: string | null;
-  make: number | null;
-  make_name: string | null;
-  change_type: "restock" | "make_completion" | "manual_add" | "manual_deduct" | "sale";
+  project: number | null;
+  project_name: string | null;
+  change_type: "restock" | "make" | "manual_add" | "manual_deduct" | "sale";
   quantity_change: string;
   notes: string | null;
   created_at: string;

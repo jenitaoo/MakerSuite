@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { createMake } from "../../services/inventoryApi";
+import { createProject } from "../../services/inventoryApi";
 import { getCookie } from "../../services/api";
 
 type Product = { id: number; title: string };
@@ -10,10 +10,9 @@ type Props = {
   onCreated: () => void;
 };
 
-export default function CreateMakeModal({ onClose, onCreated }: Props) {
+export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [productId, setProductId] = useState<number | "">("");
-  const [dateMade, setDateMade] = useState("");
   const [notes, setNotes] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
@@ -38,16 +37,15 @@ export default function CreateMakeModal({ onClose, onCreated }: Props) {
     }
     setSaving(true);
     try {
-      await createMake({
+      await createProject({
         name,
         product: productId || null,
-        date_made: dateMade || null,
         notes: notes || null,
       });
-      toast.success("Make created");
+      toast.success("Project created");
       onCreated();
     } catch {
-      toast.error("Failed to create make");
+      toast.error("Failed to create project");
     } finally {
       setSaving(false);
     }
@@ -57,20 +55,18 @@ export default function CreateMakeModal({ onClose, onCreated }: Props) {
     <div className="inv-modal-overlay">
       <div className="inv-modal">
         <div className="inv-modal__header">
-          <span className="inv-modal__title">Log a Make</span>
+          <span className="inv-modal__title">New Project</span>
           <button type="button" className="inv-modal__close" onClick={onClose}>✕</button>
         </div>
-
         <div className="inv-modal__body">
           <div className="inv-field">
             <label>Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Light Tea Rose Rings — Batch 3"
+              placeholder="e.g. Miffy Plushie, Light Tea Rose Rings"
             />
           </div>
-
           <div className="inv-field">
             <label>Link to Product (optional)</label>
             <select
@@ -82,39 +78,29 @@ export default function CreateMakeModal({ onClose, onCreated }: Props) {
                 <option key={p.id} value={p.id}>{p.title}</option>
               ))}
             </select>
+            <span className="inv-field__hint">
+              Link this project to a product listing to keep quantities in sync.
+            </span>
           </div>
-
-          <div className="inv-field">
-            <label>Date Made (optional)</label>
-            <input
-              type="date"
-              value={dateMade}
-              onChange={(e) => setDateMade(e.target.value)}
-            />
-          </div>
-
           <div className="inv-field">
             <label>Notes (optional)</label>
             <textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any notes about this make..."
+              placeholder="Any notes about this project..."
             />
           </div>
         </div>
-
         <div className="inv-modal__footer">
-          <button type="button" className="inv-btn" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" className="inv-btn" onClick={onClose}>Cancel</button>
           <button
             type="button"
             className="inv-btn inv-btn--primary"
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Saving..." : "Create Make"}
+            {saving ? "Creating..." : "Create Project"}
           </button>
         </div>
       </div>

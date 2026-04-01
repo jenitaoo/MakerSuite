@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import RawMaterial, Make, MakeMaterial, SaleTag, SaleLog, InventoryLog
+from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, SaleLog, InventoryLog
 
 
 class RawMaterialSerializer(serializers.ModelSerializer):
@@ -18,13 +18,24 @@ class RawMaterialSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
-class MakeMaterialSerializer(serializers.ModelSerializer):
+class ProjectMaterialSerializer(serializers.ModelSerializer):
     material_name = serializers.ReadOnlyField(source='material.name')
     material_unit_type = serializers.ReadOnlyField(source='material.unit_type')
 
     class Meta:
-        model = MakeMaterial
+        model = ProjectMaterial
         fields = ['id', 'material', 'material_name', 'material_unit_type', 'quantity_used']
+
+
+class MakeLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MakeLog
+        fields = [
+            'id', 'project', 'units_made', 'date_made',
+            'notes', 'deducted_materials', 'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
 
 class SaleTagSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -40,8 +51,8 @@ class SaleLogSerializer(serializers.ModelSerializer):
     tags = SaleTagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=SaleTag.objects.all(),
         write_only=True,
+        queryset=SaleTag.objects.all(),
         source='tags',
         required=False,
     )
@@ -49,27 +60,31 @@ class SaleLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleLog
         fields = [
-            'id', 'owner', 'make', 'units_sold', 'sale_date',
+            'id', 'owner', 'project', 'units_sold', 'sale_date',
             'notes', 'tags', 'tag_ids', 'source', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']
 
 
-class MakeSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
-    units_sold = serializers.IntegerField(read_only=True)
-    available_units = serializers.IntegerField(read_only=True)
-    make_materials = MakeMaterialSerializer(many=True, read_only=True)
-    salelogs = SaleLogSerializer(many=True, read_only=True)
-    product_title = serializers.CharField(source='product.title', read_only=True)
+    units_made = serializers.ReadOnlyField()
+    units_sold = serializers.ReadOnlyField()
+    in_stock = serializers.ReadOnlyField()
+    project_materials = ProjectMaterialSerializer(many=True, read_only=True)
+    make_logs = MakeLogSerializer(many=True, read_only=True)
+    sale_logs = SaleLogSerializer(many=True, read_only=True)
+    product_title = serializers.SerializerMethodField()
+
+    def get_product_title(self, obj):
+        return obj.product.title if obj.product else None
 
     class Meta:
-        model = Make
+        model = Project
         fields = [
             'id', 'owner', 'name', 'product', 'product_title',
-            'units_produced', 'units_sold', 'available_units',
-            'date_made', 'notes',
-            'make_materials', 'salelogs',
+            'units_made', 'units_sold', 'in_stock',
+            'notes', 'project_materials', 'make_logs', 'sale_logs',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -77,14 +92,20 @@ class MakeSerializer(serializers.ModelSerializer):
 
 class InventoryLogSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
-    material_name = serializers.CharField(source='material.name', read_only=True)
-    make_name = serializers.CharField(source='make.name', read_only=True)
+    material_name = serializers.SerializerMethodField()
+    project_name = serializers.SerializerMethodField()
+
+    def get_material_name(self, obj):
+        return obj.material.name if obj.material else None
+
+    def get_project_name(self, obj):
+        return obj.project.name if obj.project else None
 
     class Meta:
         model = InventoryLog
         fields = [
             'id', 'owner', 'material', 'material_name',
-            'make', 'make_name', 'change_type',
+            'project', 'project_name', 'change_type',
             'quantity_change', 'notes', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']

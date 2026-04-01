@@ -1,62 +1,62 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getMakes, createMake, deleteMake } from "../../services/inventoryApi";
-import { Make } from "../../types/inventory";
-import CreateMakeModal from "./CreateMakeModal";
+import { getProjects, deleteProject } from "../../services/inventoryApi";
+import { Project } from "../../types/inventory";
+import CreateProjectModal from "./CreateProjectModal";
 import LogMakeSaleModal from "./LogMakeSaleModal";
 
-export default function MakesTab() {
+export default function ProjectsTab() {
   const navigate = useNavigate();
-  const [makes, setMakes] = useState<Make[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [logTarget, setLogTarget] = useState<Make | null>(null);
+  const [logSaleTarget, setLogSaleTarget] = useState<Project | null>(null);
 
-  const fetchMakes = async () => {
+  const fetchProjects = async () => {
     try {
-      const data = await getMakes();
-      setMakes(data.results ?? data);
-    } catch (err) {
-      toast.error("Failed to load makes");
+      const data = await getProjects();
+      setProjects(data.results ?? data);
+    } catch {
+      toast.error("Failed to load projects");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMakes();
+    fetchProjects();
   }, []);
 
-  const handleDelete = async (make: Make) => {
+  const handleDelete = async (project: Project) => {
     const confirmed = window.confirm(
-      `Delete "${make.name}"? This will also delete all linked sales and inventory logs.`
+      `Delete "${project.name}"? This will also delete all linked makes, sales and inventory logs.`
     );
     if (!confirmed) return;
     try {
-      await deleteMake(make.id);
-      toast.success("Make deleted");
-      fetchMakes();
+      await deleteProject(project.id);
+      toast.success("Project deleted");
+      fetchProjects();
     } catch {
-      toast.error("Failed to delete make");
+      toast.error("Failed to delete project");
     }
   };
 
-  const availableBadge = (available: number) =>
-    available > 0 ? (
-      <span className="inv-badge inv-badge--success">{available}</span>
+  const inStockBadge = (inStock: number) =>
+    inStock > 0 ? (
+      <span className="inv-badge inv-badge--success">{inStock}</span>
     ) : (
       <span className="inv-badge inv-badge--neutral">0</span>
     );
 
-  if (loading) return <div className="inv-empty">Loading makes...</div>;
+  if (loading) return <div className="inv-empty">Loading projects...</div>;
 
   return (
     <div>
       <div className="inv-toolbar">
         <div className="inv-toolbar__left">
-          <span style={{ fontSize: "0.9rem", color: "var(--color-text-secondary)" }}>
-            {makes.length} {makes.length === 1 ? "make" : "makes"}
+          <span style={{ fontSize: "0.875rem", color: "#596780" }}>
+            {projects.length} {projects.length === 1 ? "project" : "projects"}
           </span>
         </div>
         <button
@@ -64,13 +64,13 @@ export default function MakesTab() {
           className="inv-btn inv-btn--primary"
           onClick={() => setShowCreateModal(true)}
         >
-          + Log a Make
+          + New Project
         </button>
       </div>
 
-      {makes.length === 0 ? (
+      {projects.length === 0 ? (
         <div className="inv-empty">
-          No makes yet! Click "Log a Make" to get started.
+          No projects yet — click "New Project" to get started.
         </div>
       ) : (
         <div className="inv-table-wrapper">
@@ -78,17 +78,17 @@ export default function MakesTab() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Date Made</th>
-                <th>Units Produced</th>
-                <th>Available</th>
+                <th>Units Made</th>
+                <th>In Stock</th>
                 <th>Sold</th>
                 <th>Linked Product</th>
+                <th>Last Updated</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {makes.map((make) => (
-                <tr key={make.id}>
+              {projects.map((project) => (
+                <tr key={project.id}>
                   <td>
                     <button
                       type="button"
@@ -96,28 +96,28 @@ export default function MakesTab() {
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "var(--color-text-primary)",
+                        color: "#000000",
                         fontWeight: 500,
                         padding: 0,
                         textAlign: "left",
+                        fontSize: "0.875rem",
                       }}
-                      onClick={() => navigate(`/inventory/makes/${make.id}`)}
+                      onClick={() => navigate(`/inventory/projects/${project.id}`)}
                     >
-                      {make.name}
+                      {project.name}
                     </button>
                   </td>
-                  <td>{make.date_made ?? "—"}</td>
-                  <td>{make.units_produced}</td>
-                  <td>{availableBadge(make.available_units)}</td>
-                  <td>{make.units_sold}</td>
+                  <td>{project.units_made}</td>
+                  <td>{inStockBadge(project.in_stock)}</td>
+                  <td>{project.units_sold}</td>
                   <td>
-                    {make.product ? (
+                    {project.product ? (
                       <button
                         type="button"
                         className="inv-btn inv-btn--sm"
-                        onClick={() => navigate(`/products/${make.product}/edit`)}
+                        onClick={() => navigate(`/products/${project.product}/edit`)}
                       >
-                        {make.product_title ?? `Product #${make.product}`}
+                        {project.product_title ?? `Product #${project.product}`}
                       </button>
                     ) : (
                       <button
@@ -129,26 +129,30 @@ export default function MakesTab() {
                       </button>
                     )}
                   </td>
+                  <td style={{ color: "#596780", fontSize: "0.8rem" }}>
+                    {new Date(project.updated_at).toLocaleDateString()}
+                  </td>
                   <td>
                     <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                       <button
                         type="button"
                         className="inv-btn inv-btn--sm"
-                        onClick={() => navigate(`/inventory/makes/${make.id}`)}
+                        onClick={() => navigate(`/inventory/projects/${project.id}`)}
                       >
                         View
                       </button>
                       <button
                         type="button"
                         className="inv-btn inv-btn--sm"
-                        onClick={() => setLogTarget(make)}
+                        onClick={() => setLogSaleTarget(project)}
+                        disabled={project.in_stock === 0}
                       >
                         Log Sale
                       </button>
                       <button
                         type="button"
                         className="inv-btn inv-btn--sm inv-btn--danger"
-                        onClick={() => handleDelete(make)}
+                        onClick={() => handleDelete(project)}
                       >
                         Delete
                       </button>
@@ -162,22 +166,22 @@ export default function MakesTab() {
       )}
 
       {showCreateModal && (
-        <CreateMakeModal
+        <CreateProjectModal
           onClose={() => setShowCreateModal(false)}
           onCreated={() => {
             setShowCreateModal(false);
-            fetchMakes();
+            fetchProjects();
           }}
         />
       )}
 
-      {logTarget && (
+      {logSaleTarget && (
         <LogMakeSaleModal
-          make={logTarget}
-          onClose={() => setLogTarget(null)}
+          project={logSaleTarget}
+          onClose={() => setLogSaleTarget(null)}
           onLogged={() => {
-            setLogTarget(null);
-            fetchMakes();
+            setLogSaleTarget(null);
+            fetchProjects();
           }}
         />
       )}

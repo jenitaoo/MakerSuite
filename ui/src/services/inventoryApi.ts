@@ -8,7 +8,7 @@ const headers = () => ({
   "X-CSRFToken": getCookie("csrftoken") ?? "",
 });
 
-// Raw Materials
+// ── Raw Materials ─────────────────────────────────────────────
 
 export async function getMaterials() {
   const res = await fetch(`${BASE}/materials/`, {
@@ -81,10 +81,10 @@ export async function getMaterialLogs(id: number) {
   return res.json();
 }
 
-//  Makes
+// ── Projects ──────────────────────────────────────────────────
 
-export async function getMakes() {
-  const res = await fetch(`${BASE}/makes/`, {
+export async function getProjects() {
+  const res = await fetch(`${BASE}/projects/`, {
     credentials: "include",
     headers: headers(),
   });
@@ -92,8 +92,8 @@ export async function getMakes() {
   return res.json();
 }
 
-export async function getMake(id: number) {
-  const res = await fetch(`${BASE}/makes/${id}/`, {
+export async function getProject(id: number) {
+  const res = await fetch(`${BASE}/projects/${id}/`, {
     credentials: "include",
     headers: headers(),
   });
@@ -101,8 +101,8 @@ export async function getMake(id: number) {
   return res.json();
 }
 
-export async function createMake(data: Record<string, unknown>) {
-  const res = await fetch(`${BASE}/makes/`, {
+export async function createProject(data: Record<string, unknown>) {
+  const res = await fetch(`${BASE}/projects/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
@@ -112,8 +112,8 @@ export async function createMake(data: Record<string, unknown>) {
   return res.json();
 }
 
-export async function updateMake(id: number, data: Record<string, unknown>) {
-  const res = await fetch(`${BASE}/makes/${id}/`, {
+export async function updateProject(id: number, data: Record<string, unknown>) {
+  const res = await fetch(`${BASE}/projects/${id}/`, {
     method: "PATCH",
     credentials: "include",
     headers: headers(),
@@ -123,8 +123,8 @@ export async function updateMake(id: number, data: Record<string, unknown>) {
   return res.json();
 }
 
-export async function deleteMake(id: number) {
-  const res = await fetch(`${BASE}/makes/${id}/`, {
+export async function deleteProject(id: number) {
+  const res = await fetch(`${BASE}/projects/${id}/`, {
     method: "DELETE",
     credentials: "include",
     headers: headers(),
@@ -132,17 +132,29 @@ export async function deleteMake(id: number) {
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function completeMake(
+export async function logMake(
   id: number,
-  units_produced: number,
-  deduct_materials: boolean,
-  notes?: string
+  data: {
+    units_made: number;
+    date_made?: string;
+    deduct_materials?: boolean;
+    notes?: string;
+  }
 ) {
-  const res = await fetch(`${BASE}/makes/${id}/complete/`, {
+  const res = await fetch(`${BASE}/projects/${id}/log-make/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
-    body: JSON.stringify({ units_produced, deduct_materials, notes }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function getMakeLogs(id: number) {
+  const res = await fetch(`${BASE}/projects/${id}/make-logs/`, {
+    credentials: "include",
+    headers: headers(),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -158,7 +170,7 @@ export async function logSale(
     notes?: string;
   }
 ) {
-  const res = await fetch(`${BASE}/makes/${id}/log-sale/`, {
+  const res = await fetch(`${BASE}/projects/${id}/log-sale/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
@@ -168,7 +180,7 @@ export async function logSale(
   return res.json();
 }
 
-export async function getMakeSales(
+export async function getProjectSales(
   id: number,
   filters?: { tags?: number[]; date_from?: string; date_to?: string }
 ) {
@@ -177,7 +189,7 @@ export async function getMakeSales(
   if (filters?.date_from) params.set("date_from", filters.date_from);
   if (filters?.date_to) params.set("date_to", filters.date_to);
 
-  const res = await fetch(`${BASE}/makes/${id}/sales/?${params.toString()}`, {
+  const res = await fetch(`${BASE}/projects/${id}/sales/?${params.toString()}`, {
     credentials: "include",
     headers: headers(),
   });
@@ -185,8 +197,8 @@ export async function getMakeSales(
   return res.json();
 }
 
-export async function getMakeMaterials(id: number) {
-  const res = await fetch(`${BASE}/makes/${id}/materials/`, {
+export async function getProjectMaterials(id: number) {
+  const res = await fetch(`${BASE}/projects/${id}/materials/`, {
     credentials: "include",
     headers: headers(),
   });
@@ -194,12 +206,12 @@ export async function getMakeMaterials(id: number) {
   return res.json();
 }
 
-export async function addMakeMaterial(
+export async function addProjectMaterial(
   id: number,
   material_id: number,
   quantity_used?: number
 ) {
-  const res = await fetch(`${BASE}/makes/${id}/materials/`, {
+  const res = await fetch(`${BASE}/projects/${id}/materials/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
@@ -209,8 +221,8 @@ export async function addMakeMaterial(
   return res.json();
 }
 
-export async function removeMakeMaterial(makeId: number, materialId: number) {
-  const res = await fetch(`${BASE}/makes/${makeId}/materials/${materialId}/`, {
+export async function removeProjectMaterial(projectId: number, materialId: number) {
+  const res = await fetch(`${BASE}/projects/${projectId}/materials/${materialId}/`, {
     method: "DELETE",
     credentials: "include",
     headers: headers(),
@@ -218,7 +230,7 @@ export async function removeMakeMaterial(makeId: number, materialId: number) {
   if (!res.ok) throw new Error(await res.text());
 }
 
-// Sale Tags
+// ── Sale Tags ─────────────────────────────────────────────────
 
 export async function getTags() {
   const res = await fetch(`${BASE}/tags/`, {

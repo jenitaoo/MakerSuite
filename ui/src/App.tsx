@@ -10,7 +10,7 @@ import CreateProductListing from "./pages/CreateProductListing";
 import EditProductListing from "./pages/EditProductListing";
 import "./App.css";
 import InventoryPage from "./pages/InventoryPage";
-import MakeDetailPage from "./pages/MakeDetailPage";
+import ProjectDetailPage from "./pages/ProjectDetailPage";
 
 // layout wrapper that includes Navbar and Toaster
 function AppLayout() {
@@ -53,7 +53,7 @@ const router = createBrowserRouter([
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
           { path: "/inventory", element: <InventoryPage /> },
-          { path: "/inventory/makes/:id", element: <MakeDetailPage /> },
+          { path: "/inventory/projects/:id", element: <ProjectDetailPage /> },
         ],
       },
     ],

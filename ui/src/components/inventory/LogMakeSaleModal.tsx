@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { logSale, getTags, createTag } from "../../services/inventoryApi";
-import { Make, SaleTag } from "../../types/inventory";
+import { Project, SaleTag } from "../../types/inventory";
 
 type Props = {
-  make: Make;
+  project: Project;
   onClose: () => void;
   onLogged: () => void;
 };
 
-export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
+export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) {
   const [unitsSold, setUnitsSold] = useState(1);
   const [saleDate, setSaleDate] = useState(new Date().toISOString().split("T")[0]);
   const [source, setSource] = useState<"manual" | "etsy">("manual");
@@ -44,13 +44,13 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
   };
 
   const handleSave = async () => {
-    if (unitsSold > make.available_units) {
-      toast.error(`Only ${make.available_units} units available`);
+    if (unitsSold > project.in_stock) {
+      toast.error(`Only ${project.in_stock} in stock`);
       return;
     }
     setSaving(true);
     try {
-      await logSale(make.id, {
+      await logSale(project.id, {
         units_sold: unitsSold,
         sale_date: saleDate,
         tag_ids: selectedTagIds,
@@ -70,23 +70,21 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
     <div className="inv-modal-overlay">
       <div className="inv-modal">
         <div className="inv-modal__header">
-          <span className="inv-modal__title">Log Sale — {make.name}</span>
+          <span className="inv-modal__title">Log Sale — {project.name}</span>
           <button type="button" className="inv-modal__close" onClick={onClose}>✕</button>
         </div>
-
         <div className="inv-modal__body">
           <div className="inv-field">
             <label>Units Sold</label>
             <input
               type="number"
               min={1}
-              max={make.available_units}
+              max={project.in_stock}
               value={unitsSold}
               onChange={(e) => setUnitsSold(Number(e.target.value))}
             />
-            <span className="inv-field__hint">{make.available_units} available</span>
+            <span className="inv-field__hint">{project.in_stock} in stock</span>
           </div>
-
           <div className="inv-field">
             <label>Date</label>
             <input
@@ -95,7 +93,6 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
               onChange={(e) => setSaleDate(e.target.value)}
             />
           </div>
-
           <div className="inv-field">
             <label>Source</label>
             <div className="inv-toggle">
@@ -115,7 +112,6 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
               </button>
             </div>
           </div>
-
           <div className="inv-field">
             <label>Tags</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.5rem" }}>
@@ -123,10 +119,10 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
                 <button
                   key={tag.id}
                   type="button"
-                  className={`inv-tag ${selectedTagIds.includes(tag.id) ? "inv-tag--selected" : ""}`}
+                  className="inv-tag"
                   style={
                     selectedTagIds.includes(tag.id)
-                      ? { background: "var(--color-text-primary)", color: "var(--color-background-primary)" }
+                      ? { background: "#818263", color: "#ffffff" }
                       : {}
                   }
                   onClick={() => toggleTag(tag.id)}
@@ -151,24 +147,21 @@ export default function LogMakeSaleModal({ make, onClose, onLogged }: Props) {
                 + Add
               </button>
             </div>
-            <span className="inv-field__hint">Click a tag to select it. Press Enter or click + Add to create a new tag.</span>
+            <span className="inv-field__hint">
+              Click a tag to select it. Press Enter or + Add to create a new one.
+            </span>
           </div>
-
           <div className="inv-field">
             <label>Notes (optional)</label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any notes about this sale..."
             />
           </div>
         </div>
-
         <div className="inv-modal__footer">
-          <button type="button" className="inv-btn" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" className="inv-btn" onClick={onClose}>Cancel</button>
           <button
             type="button"
             className="inv-btn inv-btn--primary"

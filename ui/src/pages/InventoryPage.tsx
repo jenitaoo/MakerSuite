@@ -1,12 +1,12 @@
 import { useState } from "react";
-import MakesTab from "../components/inventory/MakesTab";
+import ProjectsTab from "../components/inventory/ProjectsTab";
 import MaterialsTab from "../components/inventory/MaterialsTab";
 import "../styles/inventory.css";
 
-type Tab = "makes" | "materials";
+type Tab = "projects" | "materials";
 
 export default function InventoryPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("makes");
+  const [activeTab, setActiveTab] = useState<Tab>("projects");
 
   return (
     <div className="inventory-page">
@@ -15,13 +15,13 @@ export default function InventoryPage() {
       </div>
 
       <div className="inventory-page__tabs">
-        <button
-          type="button"
-          className={`inventory-page__tab ${activeTab === "makes" ? "inventory-page__tab--active" : ""}`}
-          onClick={() => setActiveTab("makes")}
-        >
-          Makes
-        </button>
+      <button
+        type="button"
+        className={`inventory-page__tab ${activeTab === "projects" ? "inventory-page__tab--active" : ""}`}
+        onClick={() => setActiveTab("projects")}
+      >
+        Projects
+      </button>
         <button
           type="button"
           className={`inventory-page__tab ${activeTab === "materials" ? "inventory-page__tab--active" : ""}`}
@@ -32,7 +32,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="inventory-page__content">
-        {activeTab === "makes" ? <MakesTab /> : <MaterialsTab />}
+        {activeTab === "projects" ? <ProjectsTab /> : <MaterialsTab />}
       </div>
     </div>
   );

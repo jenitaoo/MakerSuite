@@ -2,10 +2,10 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import RawMaterial, Make, MakeMaterial, SaleTag, SaleLog, InventoryLog
+from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, SaleLog, InventoryLog
 from .serializers import (
-    RawMaterialSerializer, MakeSerializer, MakeMaterialSerializer,
-    SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
+    RawMaterialSerializer, ProjectSerializer, ProjectMaterialSerializer,
+    MakeLogSerializer, SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
 )
 
 
@@ -27,7 +27,6 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
 
         if not quantity:
             return Response({"error": "quantity is required"}, status=400)
-
         try:
             quantity = float(quantity)
             if quantity <= 0:
@@ -56,7 +55,6 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
 
         if not quantity:
             return Response({"error": "quantity is required"}, status=400)
-
         try:
             quantity = float(quantity)
             if quantity <= 0:
@@ -64,7 +62,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             return Response({"error": "quantity must be a positive number"}, status=400)
 
-        if quantity > material.quantity:
+        if quantity > float(material.quantity):
             return Response(
                 {"error": f"Cannot deduct {quantity} — only {material.quantity} in stock"},
                 status=400
@@ -94,56 +92,68 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         material = self.get_object()
-        if material.make_materials.exists():
+        if material.project_materials.exists():
             return Response(
-                {"error": "This material is linked to one or more makes. Remove it from those makes first."},
+                {"error": "This material is linked to one or more projects. Remove it from those projects first."},
                 status=400
             )
         return super().destroy(request, *args, **kwargs)
 
 
-class MakeViewSet(viewsets.ModelViewSet):
-    serializer_class = MakeSerializer
+class ProjectViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Make.objects.filter(
+        return Project.objects.filter(
             owner=self.request.user.userprofile
-        ).prefetch_related("make_materials__material", "salelogs__tags")
+        ).prefetch_related(
+            "project_materials__material",
+            "make_logs",
+            "sale_logs__tags",
+        )
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
 
-    @action(detail=True, methods=["post"])
-    def complete(self, request, pk=None):
-        make = self.get_object()
-
-        units_produced = request.data.get("units_produced")
+    @action(detail=True, methods=["post"], url_path="log-make")
+    def log_make(self, request, pk=None):
+        project = self.get_object()
+        units_made = request.data.get("units_made")
+        date_made = request.data.get("date_made")
         deduct_materials = request.data.get("deduct_materials", False)
         notes = request.data.get("notes", "")
 
-        if units_produced is None:
-            return Response({"error": "units_produced is required"}, status=400)
-
+        if units_made is None:
+            return Response({"error": "units_made is required"}, status=400)
         try:
-            units_produced = int(units_produced)
-            if units_produced <= 0:
+            units_made = int(units_made)
+            if units_made <= 0:
                 raise ValueError
         except (ValueError, TypeError):
-            return Response({"error": "units_produced must be a positive integer"}, status=400)
+            return Response({"error": "units_made must be a positive integer"}, status=400)
 
-        make.units_produced += units_produced
-        make.save(update_fields=["units_produced"])
+        make_log = MakeLog.objects.create(
+            project=project,
+            units_made=units_made,
+            date_made=date_made or None,
+            notes=notes or None,
+            deducted_materials=deduct_materials,
+        )
 
-        if make.product:
-            make.product.internal_quantity = (make.product.internal_quantity or 0) + units_produced
-            make.product.save(update_fields=["internal_quantity"])
+        # update linked product quantity
+        if project.product:
+            project.product.internal_quantity = (
+                project.product.internal_quantity or 0
+            ) + units_made
+            project.product.save(update_fields=["internal_quantity"])
 
+        # deduct materials if requested
         if deduct_materials:
-            for make_material in make.make_materials.all():
-                if make_material.quantity_used is not None:
-                    mat = make_material.material
-                    deduct_qty = float(make_material.quantity_used)
+            for pm in project.project_materials.all():
+                if pm.quantity_used is not None:
+                    mat = pm.material
+                    deduct_qty = float(pm.quantity_used)
                     if deduct_qty > float(mat.quantity):
                         deduct_qty = float(mat.quantity)
                     mat.quantity -= deduct_qty
@@ -151,17 +161,23 @@ class MakeViewSet(viewsets.ModelViewSet):
                     InventoryLog.objects.create(
                         owner=request.user.userprofile,
                         material=mat,
-                        make=make,
-                        change_type=InventoryLog.CHANGE_MAKE_COMPLETION,
+                        project=project,
+                        change_type=InventoryLog.CHANGE_MAKE,
                         quantity_change=-deduct_qty,
-                        notes=notes or f"Deducted for make: {make.name}",
+                        notes=notes or f"Deducted for make: {project.name}",
                     )
 
-        return Response(MakeSerializer(make).data)
+        return Response(MakeLogSerializer(make_log).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="make-logs")
+    def make_logs(self, request, pk=None):
+        project = self.get_object()
+        logs = project.make_logs.all().order_by("-created_at")
+        return Response(MakeLogSerializer(logs, many=True).data)
 
     @action(detail=True, methods=["post"], url_path="log-sale")
     def log_sale(self, request, pk=None):
-        make = self.get_object()
+        project = self.get_object()
         units_sold = request.data.get("units_sold")
         sale_date = request.data.get("sale_date")
         tag_ids = request.data.get("tag_ids", [])
@@ -180,9 +196,9 @@ class MakeViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             return Response({"error": "units_sold must be a positive integer"}, status=400)
 
-        if units_sold > make.available_units:
+        if units_sold > project.in_stock:
             return Response(
-                {"error": f"Cannot log {units_sold} sold — only {make.available_units} available"},
+                {"error": f"Cannot log {units_sold} sold — only {project.in_stock} in stock"},
                 status=400
             )
 
@@ -202,42 +218,40 @@ class MakeViewSet(viewsets.ModelViewSet):
 
         sale_log = SaleLog.objects.create(
             owner=request.user.userprofile,
-            make=make,
+            project=project,
             units_sold=units_sold,
             sale_date=sale_date,
             source=source,
-            notes=notes,
+            notes=notes or None,
         )
         sale_log.tags.set(tags)
 
         # update linked product quantity
-        if make.product:
-            make.product.internal_quantity = max(
-                0, (make.product.internal_quantity or 0) - units_sold
+        if project.product:
+            project.product.internal_quantity = max(
+                0, (project.product.internal_quantity or 0) - units_sold
             )
-            make.product.save(update_fields=["internal_quantity"])
+            project.product.save(update_fields=["internal_quantity"])
 
         InventoryLog.objects.create(
             owner=request.user.userprofile,
-            make=make,
+            project=project,
             change_type=InventoryLog.CHANGE_SALE,
             quantity_change=-units_sold,
-            notes=notes or f"Sale logged for make: {make.name}",
+            notes=notes or f"Sale logged for project: {project.name}",
         )
 
         return Response(SaleLogSerializer(sale_log).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["get"])
     def sales(self, request, pk=None):
-        make = self.get_object()
-        logs = make.salelogs.all().order_by("-sale_date")
+        project = self.get_object()
+        logs = project.sale_logs.all().order_by("-sale_date")
 
-        # filter by tag if provided
         tag_ids = request.query_params.getlist("tags")
         if tag_ids:
             logs = logs.filter(tags__id__in=tag_ids).distinct()
 
-        # filter by date range
         date_from = request.query_params.get("date_from")
         date_to = request.query_params.get("date_to")
         if date_from:
@@ -249,13 +263,13 @@ class MakeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get", "post"], url_path="materials")
     def materials(self, request, pk=None):
-        make = self.get_object()
+        project = self.get_object()
 
         if request.method == "GET":
-            make_materials = make.make_materials.all()
-            return Response(MakeMaterialSerializer(make_materials, many=True).data)
+            return Response(
+                ProjectMaterialSerializer(project.project_materials.all(), many=True).data
+            )
 
-        # POST — add a material to the make
         material_id = request.data.get("material_id")
         quantity_used = request.data.get("quantity_used", None)
 
@@ -270,33 +284,37 @@ class MakeViewSet(viewsets.ModelViewSet):
         except RawMaterial.DoesNotExist:
             return Response({"error": "Material not found"}, status=404)
 
-        make_material, created = MakeMaterial.objects.get_or_create(
-            make=make,
+        pm, created = ProjectMaterial.objects.get_or_create(
+            project=project,
             material=material,
             defaults={"quantity_used": quantity_used},
         )
 
         if not created:
-            make_material.quantity_used = quantity_used
-            make_material.save(update_fields=["quantity_used"])
+            pm.quantity_used = quantity_used
+            pm.save(update_fields=["quantity_used"])
 
         return Response(
-            MakeMaterialSerializer(make_material).data,
+            ProjectMaterialSerializer(pm).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
-    @action(detail=True, methods=["delete"], url_path="materials/(?P<material_id>[^/.]+)")
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="materials/(?P<material_id>[^/.]+)"
+    )
     def remove_material(self, request, pk=None, material_id=None):
-        make = self.get_object()
+        project = self.get_object()
         try:
-            make_material = MakeMaterial.objects.get(
-                make=make,
+            pm = ProjectMaterial.objects.get(
+                project=project,
                 material_id=material_id,
             )
-        except MakeMaterial.DoesNotExist:
-            return Response({"error": "Material not found on this make"}, status=404)
+        except ProjectMaterial.DoesNotExist:
+            return Response({"error": "Material not found on this project"}, status=404)
 
-        make_material.delete()
+        pm.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
