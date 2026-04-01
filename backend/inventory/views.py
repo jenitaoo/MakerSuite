@@ -7,7 +7,7 @@ from .serializers import (
     RawMaterialSerializer, ProjectSerializer, ProjectMaterialSerializer,
     MakeLogSerializer, SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
 )
-
+from decimal import Decimal
 
 class RawMaterialViewSet(viewsets.ModelViewSet):
     serializer_class = RawMaterialSerializer
@@ -153,9 +153,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for pm in project.project_materials.all():
                 if pm.quantity_used is not None:
                     mat = pm.material
-                    deduct_qty = float(pm.quantity_used)
-                    if deduct_qty > float(mat.quantity):
-                        deduct_qty = float(mat.quantity)
+                    deduct_qty = Decimal(str(pm.quantity_used))
+                    if deduct_qty > Decimal(str(mat.quantity)):
+                        deduct_qty = Decimal(str(mat.quantity))
                     mat.quantity -= deduct_qty
                     mat.save(update_fields=["quantity"])
                     InventoryLog.objects.create(
