@@ -84,6 +84,7 @@ export default function ProjectsTab() {
                 <th>Linked Product</th>
                 <th>Last Updated</th>
                 <th>Actions</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -139,24 +140,18 @@ export default function ProjectsTab() {
                         className="inv-btn inv-btn--sm"
                         onClick={() => navigate(`/inventory/projects/${project.id}`)}
                       >
-                        View
+                        View Materials
                       </button>
-                      <button
-                        type="button"
-                        className="inv-btn inv-btn--sm"
-                        onClick={() => setLogSaleTarget(project)}
-                        disabled={project.in_stock === 0}
-                      >
-                        Log Sale
-                      </button>
+                    </div>
+                  </td>
+                  <td>
                       <button
                         type="button"
                         className="inv-btn inv-btn--sm inv-btn--danger"
                         onClick={() => handleDelete(project)}
                       >
-                        Delete
+                        ✖
                       </button>
-                    </div>
                   </td>
                 </tr>
               ))}
