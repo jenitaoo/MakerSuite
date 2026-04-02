@@ -1,72 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Chonburi&family=Domine:wght@300;400;500;600;700&display=swap');
 
-/* --------------------------------------------------
-   TAILWIND LAYERS (must always be first)
--------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* --------------------------------------------------
-   GLOBAL RESET
--------------------------------------------------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Ensure React root fills the viewport */
-html,
-body,
-#root {
-  height: 100%;
-  width: 100%;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-/* --------------------------------------------------
-   ROOT THEME VARIABLES
--------------------------------------------------- */
+/* ── Shadcn CSS variables ─────────────────────────── */
 :root {
-  /** COLOURS **/
-  /* Core brand */
-  --color-primary: #BE816E; /* Red Brick */
+  /* shadcn component tokens */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #818263;
+  --primary-foreground: #ffffff;
+  --secondary: #c2c395;
+  --secondary-foreground: #333333;
+  --muted: #f1f2f4;
+  --muted-foreground: #596780;
+  --accent: #c2c395;
+  --accent-foreground: #333333;
+  --destructive: #C46A55;
+  --destructive-foreground: #ffffff;
+  --border: #e0e0e0;
+  --input: #e0e0e0;
+  --ring: #818263;
+  --radius: 8px;
+
+  /* MakerSuite brand variables */
+  --color-primary: #BE816E;
   --color-primary-hover: #A86F5E;
-
-  /* Neutrals / Off‑whites */
-  --color-bg: #d0aa86;       /* Cream */
-  --color-bg-alt: #dfb698;   /* Soft Peach */
-  --color-surface: #ceab8a;  /* Beach Sand */
-
-  /* Greens */
-  --color-accent-green: #c2c395; /* Spring Sage */
-  --color-accent-green-dark: #818263; /* Reseda Green */
-  --color-accent-green-darker: #707056; /* Darker Sage */
-
-  /* Whites */
-  --color-accent-white: #f5f5f5; /* Off‑white for accents */
-  --color-accent-white-muted: rgba(239, 236, 233, 0.7); /* Muted off‑white for subtle accents */
-
-  /* Text (you said: text should be white on these) */
+  --color-bg: #d0aa86;
+  --color-bg-alt: #dfb698;
+  --color-surface: #ceab8a;
+  --color-accent-green: #c2c395;
+  --color-accent-green-dark: #818263;
+  --color-accent-green-darker: #707056;
+  --color-accent-white: #f5f5f5;
+  --color-accent-white-muted: rgba(239, 236, 233, 0.7);
   --color-text: #ffffff;
   --color-text-muted: rgba(255, 255, 255, 0.75);
-  --color-text-content: #333333; /* Dark Charcoal for content text */
-
-  /* Borders */
+  --color-text-content: #333333;
   --color-border: rgba(0, 0, 0, 0.15);
+  --color-success: #7A8F6A;
+  --color-warning: #D9A05B;
+  --color-error: #C46A55;
 
-  /* Semantic tokens */
-  --color-success: #7A8F6A; /* earthy green */
-  --color-warning: #D9A05B; /* warm sand */
-  --color-error: #C46A55;   /* muted clay red */
-  color-scheme: light dark;
-
-  /** Typography **/
-  line-height: 1.5;
-  font-weight: 400;
+  /* MakerSuite fonts */
   --font-heading: 'Chonburi', serif;
   --font-body: 'Domine', serif;
 
@@ -74,49 +55,74 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light dark;
 }
 
 .dark {
-  /* Core brand */
-  --color-primary: #D89A87; /* lighter red brick for contrast */
+  --background: #1a1a18;
+  --foreground: #f5f5f5;
+  --card: #2E2C29;
+  --card-foreground: #f5f5f5;
+  --popover: #2E2C29;
+  --popover-foreground: #f5f5f5;
+  --primary: #c2c395;
+  --primary-foreground: #333333;
+  --secondary: #3a3a35;
+  --secondary-foreground: #f5f5f5;
+  --muted: #3a3a35;
+  --muted-foreground: rgba(245, 245, 245, 0.7);
+  --accent: #3a3a35;
+  --accent-foreground: #f5f5f5;
+  --destructive: #D47C68;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #c2c395;
+
+  --color-primary: #D89A87;
   --color-primary-hover: #E3A896;
-
-  /* Neutrals */
-  --color-bg: #fff9ee;        /* charcoal earth */
-  --color-bg-alt: #22221F;    /* slightly lighter */
-  --color-surface: #2E2C29;   /* warm dark stone */
-
-  --color-accent-green: #9FA89A; /* softened sage */
+  --color-bg: #1a1a18;
+  --color-bg-alt: #22221F;
+  --color-surface: #2E2C29;
+  --color-accent-green: #9FA89A;
   --color-accent-green-dark: #6F776A;
-
-  /* Text */
   --color-text: #F5F5F5;
   --color-text-muted: rgba(245, 245, 245, 0.7);
-
-  /* Borders */
   --color-border: rgba(255, 255, 255, 0.1);
-
-  /* Semantic tokens */
-  --color-success: #8FAF7A; /* brighter for dark mode */
+  --color-success: #8FAF7A;
   --color-warning: #E3B06A;
   --color-error: #D47C68;
 }
 
-/* --------------------------------------------------
-   TYPOGRAPHY
--------------------------------------------------- */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: var(--color-primary);
+/* ── Base layer ───────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    color: var(--color-primary);
+  }
 }
 
-/* --------------------------------------------------
-   MAIN CONTENT LAYOUT
--------------------------------------------------- */
+/* ── Layout ───────────────────────────────────────── */
 .app {
   flex-direction: column;
   min-height: 100vh;
@@ -129,9 +135,7 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
 }
 
-/* --------------------------------------------------
-   AUTH PAGES
--------------------------------------------------- */
+/* ── Auth pages ───────────────────────────────────── */
 .auth-container {
   max-width: 400px;
   margin: 2rem auto;
@@ -192,9 +196,7 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
 }
 
-/* --------------------------------------------------
-   DASHBOARD
--------------------------------------------------- */
+/* ── Dashboard ────────────────────────────────────── */
 .dashboard-container {
   max-width: 800px;
   margin: 0 auto;
@@ -209,13 +211,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2rem;
 }
 
-.logout-btn {
-  margin-top: 1.5rem;
-}
-
-/* --------------------------------------------------
-   PRODUCT TABLE
--------------------------------------------------- */
+/* ── Product table ────────────────────────────────── */
 .product-row__photo-placeholder {
   width: 6rem;
   height: 6rem;
@@ -227,13 +223,6 @@ h1, h2, h3, h4, h5, h6 {
   object-fit: cover;
   border-radius: 4px;
   display: block;
-}
-
-@media (max-width: 768px) {
-  .product-row__photo-placeholder {
-    width: 6rem;
-    height: 6rem;
-  }
 }
 
 .btn:disabled {
@@ -257,9 +246,7 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #818263;
 }
 
-/* --------------------------------------------------
-   LINK HOVER (safe override)
--------------------------------------------------- */
+/* ── Link hover ───────────────────────────────────── */
 a:hover {
   transition: 0.2s ease;
 }

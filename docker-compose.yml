@@ -42,7 +42,7 @@ services:
       - backend
     command: npm run dev -- --host
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=
     networks:
       - webapp_network
   pgadmin:
