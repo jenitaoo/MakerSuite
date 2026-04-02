@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'authentication.apps.AuthenticationConfig',
     'products',
     'etsy',
+    'inventory',
 ]
 
 MIDDLEWARE = [

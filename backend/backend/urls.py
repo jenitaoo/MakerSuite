@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/user/', UserView.as_view(), name='user'),
+    path('api/inventory/', include('inventory.urls')),
 
     # Etsy OAuth
     path("api/etsy/", include("etsy.urls")),

@@ -9,6 +9,8 @@ import CrossList from "./pages/CrossList";
 import CreateProductListing from "./pages/CreateProductListing";
 import EditProductListing from "./pages/EditProductListing";
 import "./App.css";
+import InventoryPage from "./pages/InventoryPage";
+import ProjectDetailPage from "./pages/ProjectDetailPage";
 
 // layout wrapper that includes Navbar and Toaster
 function AppLayout() {
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
           { path: "/crosslist", element: <CrossList /> },
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
+          { path: "/inventory", element: <InventoryPage /> },
+          { path: "/inventory/projects/:id", element: <ProjectDetailPage /> },
         ],
       },
     ],
