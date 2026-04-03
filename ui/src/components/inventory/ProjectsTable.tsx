@@ -79,13 +79,14 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
       cell: ({ row }) => {
         const project = row.original;
         return project.product ? (
-          <button className="text-sm hover:underline text-left" onClick={() => navigate(`/products/${project.product}/edit`)}>
+          <button
+            className="text-sm hover:underline text-left max-w-[70ch] truncate block"
+            onClick={() => navigate(`/products/${project.product}/edit`)}
+          >
             {project.product_title}
           </button>
         ) : (
-          <button className="text-sm text-gray-400 hover:text-black" onClick={() => navigate("/products/new")}>
-            + Link Product
-          </button>
+          <span className="text-sm text-muted-foreground">—</span>
         );
       },
     },
