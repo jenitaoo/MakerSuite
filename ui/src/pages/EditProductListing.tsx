@@ -6,12 +6,14 @@ import { getCookie } from "../services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+
+type Tab = "editor" | "etsy-preview" | "shopify";
 
 type EtsyEditableFields = {
   title: string;
@@ -41,10 +43,10 @@ export default function EditProductListing() {
   const etsyListing: ExternalListing | undefined = externalListings.find((l) => l.platform === "Etsy");
   const raw: EtsyRaw | undefined = etsyListing?.raw;
 
+  const [activeTab, setActiveTab] = useState<Tab>("editor");
   const [internal, setInternal] = useState<InternalEditableFields | null>(null);
   const [etsy, setEtsy] = useState<EtsyEditableFields | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -159,6 +161,12 @@ export default function EditProductListing() {
     return <p className="text-center text-destructive py-12">{error ?? "Product not found"}</p>;
   }
 
+  const tabs: { key: Tab; label: string; disabled?: boolean }[] = [
+    { key: "editor", label: "Product Editor" },
+    { key: "etsy-preview", label: "Etsy Preview" },
+    { key: "shopify", label: "Shopify", disabled: true },
+  ];
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
       {/* Header */}
@@ -166,69 +174,92 @@ export default function EditProductListing() {
         <button
           type="button"
           className="text-white text-sm mb-2 hover:underline"
-          onClick={() => previewOpen ? setPreviewOpen(false) : navigate("/crosslist")}
+          onClick={() => navigate("/crosslist")}
         >
-          ← {previewOpen ? "Back to Editor" : "Back"}
+          ← Back
         </button>
         <h1 className="text-3xl font-bold text-white">{product.title}</h1>
       </div>
 
-      {!previewOpen && (
-        <div className="space-y-6">
-
-          {/* Connections */}
-          <Card className="bg-[#fdf8f6]">
-            <CardHeader>
-              <CardTitle>Connections</CardTitle>
-            </CardHeader>
-            <CardContent className="flex gap-2 flex-wrap">
-              <Button
-                variant={etsyListing ? "default" : "outline"}
-                size="sm"
-                onClick={() => etsyListing && setPreviewOpen(true)}
-                disabled={!etsyListing}
+      <Card className="bg-[#fdf8f6]">
+        {/* Tab bar */}
+        <div className="px-6 pt-6 border-b border-border">
+          <div className="flex gap-1">
+            {tabs.map(({ key, label, disabled }) => (
+              <button
+                key={key}
+                type="button"
+                disabled={disabled}
+                onClick={() => !disabled && setActiveTab(key)}
+                className={[
+                  "px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors",
+                  disabled
+                    ? "border-transparent text-muted-foreground opacity-40 cursor-not-allowed"
+                    : activeTab === key
+                    ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                ].join(" ")}
               >
-                {etsyListing ? "Etsy ↗" : "Etsy (not linked)"}
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                Shopify (coming soon)
-              </Button>
-            </CardContent>
-          </Card>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* Product Photos */}
-          <Card className="bg-[#fdf8f6]">
-            <CardHeader>
-              <CardTitle>Product Photos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {images.length > 0 ? (
-                <div className="space-y-3">
-                  <img
-                    src={images[selectedImage]["url_570xN"]}
-                    alt={images[selectedImage]?.alt_text ?? product.title}
-                    className="w-full max-h-80 object-contain rounded-md border border-border"
-                  />
-                  <div className="flex gap-2 flex-wrap">
-                    {images.map((img, i) => (
-                      <img
-                        key={img.listing_image_id}
-                        src={img["url_570xN"]}
-                        alt={img.alt_text ?? `Photo ${i + 1}`}
-                        onClick={() => setSelectedImage(i)}
-                        className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-colors ${
-                          i === selectedImage ? "border-[hsl(var(--primary))]" : "border-transparent"
-                        }`}
-                      />
-                    ))}
-                  </div>
+        <CardContent className="p-6">
+
+          {/* ── Tab 1: Product Editor ── */}
+          {activeTab === "editor" && (
+            <div className="space-y-6">
+
+              {/* Connections */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Connections</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant={etsyListing ? "default" : "outline"}
+                    size="sm"
+                    disabled={!etsyListing}
+                  >
+                    {etsyListing ? "Etsy ↗" : "Etsy (not linked)"}
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    Shopify (coming soon)
+                  </Button>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {etsyListing ? "No photos available" : "No Etsy listing linked — push to Etsy to add photos"}
-                </p>
-              )}
-              <div>
+              </div>
+
+              <Separator />
+
+              {/* Product Photos */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Product Photos</p>
+                {images.length > 0 ? (
+                  <>
+                    <img
+                      src={images[selectedImage]["url_570xN"]}
+                      alt={images[selectedImage]?.alt_text ?? product.title}
+                      className="w-full max-h-80 object-contain rounded-md border border-border"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {images.map((img, i) => (
+                        <img
+                          key={img.listing_image_id}
+                          src={img["url_570xN"]}
+                          alt={img.alt_text ?? `Photo ${i + 1}`}
+                          onClick={() => setSelectedImage(i)}
+                          className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-colors ${
+                            i === selectedImage ? "border-[hsl(var(--primary))]" : "border-transparent"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {etsyListing ? "No photos available" : "No Etsy listing linked — push to Etsy to add photos"}
+                  </p>
+                )}
                 <Label
                   className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-border text-sm hover:bg-muted transition-colors ${
                     uploadingImage || !etsyListing ? "opacity-50 cursor-not-allowed" : ""
@@ -244,192 +275,192 @@ export default function EditProductListing() {
                   {uploadingImage ? "Uploading..." : "Upload New Photo"}
                 </Label>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Etsy Fields */}
-          {etsy && (
-            <Card className="bg-[#fdf8f6]">
-              <CardHeader>
-                <CardTitle>
-                  Etsy Fields{" "}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    synced from your Etsy listing
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input value={etsy.title} onChange={(e) => updateEtsy({ title: e.target.value })} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea rows={8} value={etsy.description} onChange={(e) => updateEtsy({ description: e.target.value })} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tags</Label>
-                  <Input
-                    value={etsy.tags.join(", ")}
-                    onChange={(e) => updateEtsy({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Materials</Label>
-                  <Input
-                    value={etsy.materials.join(", ")}
-                    onChange={(e) => updateEtsy({ materials: e.target.value.split(",").map((m) => m.trim()).filter(Boolean) })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Who Made</Label>
-                    <Select value={etsy.who_made} onValueChange={(v) => updateEtsy({ who_made: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="i_did">I did</SelectItem>
-                        <SelectItem value="someone_else">Someone else</SelectItem>
-                        <SelectItem value="collective">A collective</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>When Made</Label>
-                    <Select value={etsy.when_made} onValueChange={(v) => updateEtsy({ when_made: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="made_to_order">Made to order</SelectItem>
-                        <SelectItem value="2020_2025">2020–2025</SelectItem>
-                        <SelectItem value="2010_2019">2010–2019</SelectItem>
-                        <SelectItem value="2000_2009">2000–2009</SelectItem>
-                        <SelectItem value="before_2000">Before 2000</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Listing Type</Label>
-                    <Select value={etsy.listing_type} onValueChange={(v) => updateEtsy({ listing_type: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="physical">Physical</SelectItem>
-                        <SelectItem value="digital">Digital</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex gap-6">
-                  <div className="flex items-center gap-2">
-                    <Checkbox checked={etsy.should_auto_renew} onCheckedChange={(v) => updateEtsy({ should_auto_renew: !!v })} />
-                    <Label>Auto Renew</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox checked={etsy.is_taxable} onCheckedChange={(v) => updateEtsy({ is_taxable: !!v })} />
-                    <Label>Taxable</Label>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Internal Fields */}
-          <Card className="bg-[#fdf8f6]">
-            <CardHeader>
-              <CardTitle>Internal Fields</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Internal Price (€)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={internal.internal_price}
-                    onChange={(e) => updateInternal({ internal_price: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Internal Quantity</Label>
-                  <Input
-                    type="number"
-                    value={internal.internal_quantity}
-                    onChange={(e) => updateInternal({ internal_quantity: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>SKU</Label>
-                  <Input value={internal.sku} onChange={(e) => updateInternal({ sku: e.target.value })} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Button onClick={handleSaveToAll}>Save to All</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveInternally}>Save Internally</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveToEtsy}>Save to Etsy</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} disabled>Save to Shopify (Disabled)</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Etsy Preview */}
-      {previewOpen && (
-        <Card className="bg-[#fdf8f6]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Etsy Preview</CardTitle>
-              {raw?.url && (
-                <a href={raw.url} target="_blank" rel="noreferrer" className="text-sm text-[hsl(var(--primary))] hover:underline">
-                  View on Etsy ↗
-                </a>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {images.length > 0 && (
-              <img src={images[0]["url_570xN"]} alt={product.title} className="w-full max-h-96 object-contain rounded-md" />
-            )}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">{raw?.title}</h2>
-              <p className="text-xl font-bold text-[hsl(var(--primary))]">
-                {raw?.price ? `${(raw.price.amount / raw.price.divisor).toFixed(2)} ${raw.price.currency_code}` : "—"}
-              </p>
-              <div className="flex gap-4 text-sm text-muted-foreground">
-                <span>{raw?.views} views</span>
-                <span>{raw?.num_favorers} favourites</span>
-                <span>{raw?.quantity} in stock</span>
-              </div>
 
               <Separator />
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</p>
-                <div className="flex flex-wrap gap-1">
-                  {raw?.tags?.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+              {/* Internal Fields */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium">Internal Fields</p>
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input value={internal.title} onChange={(e) => updateInternal({ title: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea rows={4} value={internal.description} onChange={(e) => updateInternal({ description: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={internal.internal_price}
+                      onChange={(e) => updateInternal({ internal_price: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      value={internal.internal_quantity}
+                      onChange={(e) => updateInternal({ internal_quantity: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SKU</Label>
+                    <Input value={internal.sku} onChange={(e) => updateInternal({ sku: e.target.value })} />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Materials</p>
-                <div className="flex flex-wrap gap-1">
-                  {raw?.materials?.map((m) => <Badge key={m} variant="outline">{m}</Badge>)}
-                </div>
+              {/* Etsy Fields */}
+              {etsy && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium">Etsy Fields</p>
+                      <p className="text-xs text-muted-foreground">synced from your Etsy listing</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Title</Label>
+                      <Input value={etsy.title} onChange={(e) => updateEtsy({ title: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea rows={8} value={etsy.description} onChange={(e) => updateEtsy({ description: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tags</Label>
+                      <Input
+                        value={etsy.tags.join(", ")}
+                        onChange={(e) => updateEtsy({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Materials</Label>
+                      <Input
+                        value={etsy.materials.join(", ")}
+                        onChange={(e) => updateEtsy({ materials: e.target.value.split(",").map((m) => m.trim()).filter(Boolean) })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Who Made</Label>
+                        <Select value={etsy.who_made} onValueChange={(v) => updateEtsy({ who_made: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="i_did">I did</SelectItem>
+                            <SelectItem value="someone_else">Someone else</SelectItem>
+                            <SelectItem value="collective">A collective</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>When Made</Label>
+                        <Select value={etsy.when_made} onValueChange={(v) => updateEtsy({ when_made: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="made_to_order">Made to order</SelectItem>
+                            <SelectItem value="2020_2025">2020–2025</SelectItem>
+                            <SelectItem value="2010_2019">2010–2019</SelectItem>
+                            <SelectItem value="2000_2009">2000–2009</SelectItem>
+                            <SelectItem value="before_2000">Before 2000</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Listing Type</Label>
+                        <Select value={etsy.listing_type} onValueChange={(v) => updateEtsy({ listing_type: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="physical">Physical</SelectItem>
+                            <SelectItem value="digital">Digital</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex gap-6">
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={etsy.should_auto_renew} onCheckedChange={(v) => updateEtsy({ should_auto_renew: !!v })} />
+                        <Label>Auto Renew</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={etsy.is_taxable} onCheckedChange={(v) => updateEtsy({ is_taxable: !!v })} />
+                        <Label>Taxable</Label>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {/* Save Actions */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button onClick={handleSaveToAll}>Save to All</Button>
+                <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveInternally}>Save Internally</Button>
+                <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveToEtsy}>Save to Etsy</Button>
+                <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} disabled>Save to Shopify (Disabled)</Button>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</p>
-                <p className="text-sm whitespace-pre-wrap">{raw?.description}</p>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+
+          {/* ── Tab 2: Etsy Preview ── */}
+          {activeTab === "etsy-preview" && (
+            <div className="space-y-4">
+              {!etsyListing ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No Etsy listing linked to this product.</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Etsy Preview</p>
+                    {raw?.url && (
+                      <a href={raw.url} target="_blank" rel="noreferrer" className="text-sm text-[hsl(var(--primary))] hover:underline">
+                        View on Etsy ↗
+                      </a>
+                    )}
+                  </div>
+                  {images.length > 0 && (
+                    <img src={images[0]["url_570xN"]} alt={product.title} className="w-full max-h-96 object-contain rounded-md" />
+                  )}
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold">{raw?.title}</h2>
+                    <p className="text-xl font-bold text-[hsl(var(--primary))]">
+                      {raw?.price ? `${(raw.price.amount / raw.price.divisor).toFixed(2)} ${raw.price.currency_code}` : "—"}
+                    </p>
+                    <div className="flex gap-4 text-sm text-muted-foreground">
+                      <span>{raw?.views} views</span>
+                      <span>{raw?.num_favorers} favourites</span>
+                      <span>{raw?.quantity} in stock</span>
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</p>
+                      <div className="flex flex-wrap gap-1">
+                        {raw?.tags?.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Materials</p>
+                      <div className="flex flex-wrap gap-1">
+                        {raw?.materials?.map((m) => <Badge key={m} variant="outline">{m}</Badge>)}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</p>
+                      <p className="text-sm whitespace-pre-wrap">{raw?.description}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+        </CardContent>
+      </Card>
     </div>
   );
 }

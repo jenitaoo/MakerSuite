@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import ProductTable from "./ProductTable";
 import { getCookie } from "../../services/api.ts";
 import { Card, CardContent } from "@/components/ui/card";
+import { Product } from "../../types/product";
 
 type ApiPage<T> = {
   count: number;
