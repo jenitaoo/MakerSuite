@@ -1,4 +1,4 @@
-import { useState, useContext, useRef } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { AuthContext } from "../context/AuthContext";
@@ -35,7 +35,7 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const { register: regProfile, handleSubmit: handleProfileSubmit, formState: { isSubmitting: profileSubmitting } } =
+    const { register: regProfile, handleSubmit: handleProfileSubmit, reset: resetProfile, formState: { isSubmitting: profileSubmitting } } =
     useForm<ProfileValues>({
       defaultValues: {
         full_name: auth?.user?.full_name ?? "",
@@ -43,6 +43,17 @@ const Profile = () => {
         email: auth?.user?.email ?? "",
       },
     });
+
+
+    useEffect(() => {
+    if (auth?.user) {
+        resetProfile({
+        full_name: auth.user.full_name ?? "",
+        username: auth.user.username ?? "",
+        email: auth.user.email ?? "",
+        });
+    }
+    }, [auth?.user]);
 
   const { register: regPassword, handleSubmit: handlePasswordSubmit, reset: resetPassword, watch,
     formState: { isSubmitting: passwordSubmitting, errors: passwordErrors } } =
