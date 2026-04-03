@@ -4,14 +4,20 @@ import { Button } from "@/components/ui/button";
 import { getProjects, deleteProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
 import CreateProjectModal from "./CreateProjectModal";
-import LogMakeSaleModal from "./LogMakeSaleModal";
+import ProjectLogActionModal from "./ProjectLogActionModal";
+import ProjectHistoryModal from "./ProjectHistoryModal";
+import ProjectMaterialsModal from "./ProjectMaterialsModal";
+import EditProjectModal from "./EditProjectModal";
 import ProjectsTable from "./ProjectsTable";
 
 export default function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [logSaleTarget, setLogSaleTarget] = useState<Project | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [logTarget, setLogTarget] = useState<Project | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<Project | null>(null);
+  const [materialsTarget, setMaterialsTarget] = useState<Project | null>(null);
+  const [editTarget, setEditTarget] = useState<Project | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -27,9 +33,7 @@ export default function ProjectsTab() {
   useEffect(() => { fetchProjects(); }, []);
 
   const handleDelete = async (project: Project) => {
-    const confirmed = window.confirm(
-      `Delete "${project.name}"? This will also delete all linked makes, sales and inventory logs.`
-    );
+    const confirmed = window.confirm(`Delete "${project.name}"? This will also delete all linked makes, sales and inventory logs.`);
     if (!confirmed) return;
     try {
       await deleteProject(project.id);
@@ -40,34 +44,37 @@ export default function ProjectsTab() {
     }
   };
 
-  if (loading) return <div className="inv-empty">Loading projects...</div>;
+  if (loading) return <p className="text-sm text-muted-foreground text-center py-8">Loading projects...</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowCreateModal(true)}>
-          + New Project
-        </Button>
+        <Button onClick={() => setShowCreate(true)}>+ New Project</Button>
       </div>
 
       <ProjectsTable
         projects={projects}
         onDelete={handleDelete}
-        onLogSale={setLogSaleTarget}
+        onLogAction={setLogTarget}
+        onHistory={setHistoryTarget}
+        onMaterials={setMaterialsTarget}
+        onEdit={setEditTarget}
       />
 
-      {showCreateModal && (
-        <CreateProjectModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => { setShowCreateModal(false); fetchProjects(); }}
-        />
+      {showCreate && (
+        <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
       )}
-      {logSaleTarget && (
-        <LogMakeSaleModal
-          project={logSaleTarget}
-          onClose={() => setLogSaleTarget(null)}
-          onLogged={() => { setLogSaleTarget(null); fetchProjects(); }}
-        />
+      {logTarget && (
+        <ProjectLogActionModal project={logTarget} onClose={() => setLogTarget(null)} onLogged={() => { setLogTarget(null); fetchProjects(); }} />
+      )}
+      {historyTarget && (
+        <ProjectHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
+      )}
+      {materialsTarget && (
+        <ProjectMaterialsModal project={materialsTarget} onClose={() => setMaterialsTarget(null)} onSaved={() => { setMaterialsTarget(null); fetchProjects(); }} />
+      )}
+      {editTarget && (
+        <EditProjectModal project={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchProjects(); }} />
       )}
     </div>
   );

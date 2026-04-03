@@ -12,6 +12,10 @@ import {
 } from "../../services/inventoryApi";
 import { RawMaterial, InventoryLog } from "../../types/inventory";
 import MaterialsTable from "./MaterialsTable";
+import MaterialFormModal from "./MaterialFormModal";
+import RestockDeductModal from "./RestockDeductModal";
+import MaterialHistoryModal from "./MaterialHistoryModal";
+import MaterialDetailModal from "./MaterialDetailModal";
 
 export default function MaterialsTab() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
