@@ -228,7 +228,7 @@ export default function ProjectsTable({ projects, onDelete, onLogSale }: Props) 
       {/* toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Input
-          placeholder="Search projects..."
+          placeholder="🔎︎ Search projects..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="w-56 h-8 text-sm"

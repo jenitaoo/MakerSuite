@@ -223,7 +223,7 @@ export default function MaterialsTable({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <Input
-            placeholder="Search materials..."
+            placeholder="🔎︎ Search materials..."
             value={globalFilter}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
             className="w-56 h-8 text-sm"

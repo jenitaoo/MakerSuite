@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import ProductToolbar from "./ProductToolbar";
 import ProductTable from "./ProductTable";
-import { Product } from "./ProductRow";
-import Pagination from "./Pagination";
 import { getCookie } from "../../services/api.ts";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ApiPage<T> = {
   count: number;
@@ -23,7 +21,7 @@ export default function ProductListingsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"All" | "Etsy" | "MakerSuite" | "Shopify">("All");
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20); // matches backend page_size
+  const [pageSize] = useState(20);
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
@@ -32,20 +30,17 @@ export default function ProductListingsPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Build query URL for page and optional search/filter
   const buildUrl = (pageNum: number) => {
     const params = new URLSearchParams();
     params.set("page", String(pageNum));
     params.set("page_size", String(pageSize));
     if (search.trim()) params.set("search", search.trim());
     if (filter !== "All") params.set("platform", filter);
-    // endpoint: /api/product-list/
     return `/api/product-list/?${params.toString()}`;
   };
 
   async function fetchProducts(page: number) {
     const url = buildUrl(page);
-
     const res = await fetch(url, {
       credentials: "include",
       headers: {
@@ -53,19 +48,16 @@ export default function ProductListingsPage() {
         "X-CSRFToken": getCookie("csrftoken") ?? "",
       },
     });
-
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`${res.status} ${res.statusText} ${text}`);
     }
-
     return res.json() as Promise<ApiPage<Product>>;
   }
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-
     fetchProducts(page)
       .then((data) => {
         setProducts(data.results || []);
@@ -80,8 +72,6 @@ export default function ProductListingsPage() {
       .finally(() => setLoading(false));
   }, [page, pageSize, search, filter]);
 
-
-  // client-side filtering for any fields not supported by backend search
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch =
@@ -92,34 +82,24 @@ export default function ProductListingsPage() {
     });
   }, [products, search, filter]);
 
-  const handleEdit = (product: Product) => {
-    navigate(`/products/${product.id}/edit`);
-  };
+  const handleEdit = (product: Product) => navigate(`/products/${product.id}/edit`);
 
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      // Step 1 — get shop_id
       const shopRes = await fetch("/api/etsy/shop/", {
         credentials: "include",
-        headers: {
-          Accept: "application/json",
-          "X-CSRFToken": getCookie("csrftoken") ?? "",
-        },
+        headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
       });
       if (!shopRes.ok) throw new Error("Failed to fetch shop info");
       const shopData = await shopRes.json();
       const shopId = shopData.shop_id;
 
-      // Step 2 — trigger import with a promise toast
       await toast.promise(
         fetch(`/api/etsy/shops/${shopId}/import/`, {
           method: "POST",
           credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "X-CSRFToken": getCookie("csrftoken") ?? "",
-          },
+          headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         })
           .then(async (res) => {
             if (!res.ok) throw new Error("Import failed");
@@ -127,14 +107,11 @@ export default function ProductListingsPage() {
           })
           .then(async (data) => {
             const count = data.imported_listing_ids?.length ?? 0;
-
-            // Step 3 — refresh table
             const refreshed = await fetchProducts(page);
             setProducts(refreshed.results || []);
             setTotal(refreshed.count || 0);
             setNextUrl(cleanUrl(refreshed.next));
             setPrevUrl(cleanUrl(refreshed.previous));
-
             return count;
           }),
         {
@@ -151,47 +128,37 @@ export default function ProductListingsPage() {
     }
   };
 
+  const handleAdd = () => navigate("/products/new");
 
-  const handleAdd = () => {
-    navigate("/products/new");
-  };
-
-  return (
-    <section className="product-listings">
-      <div className="product-listings__header">
-        <h1>Product Listings</h1>
-        <div className="product-listings__actions" />
+return (
+    <div className="max-w-full mx-auto px-10 py-10 space-y-6">
+      {/* Title sits on gingham background, outside card */}
+      <div>
+        <h1 className="text-3xl font-bold text-white">Product Listings</h1>
+        <p className="text-white mt-1">Manage and sync your marketplace listings</p>
       </div>
 
-      <ProductToolbar
-        search={search}
-        onSearchChange={setSearch}
-        filter={filter}
-        onFilterChange={(value) => setFilter(value as "All" | "Etsy" | "MakerSuite" | "Shopify")}
-        onRefresh={handleRefresh}
-        onCreateNewProduct={handleAdd}
-      />
-
-      {loading ? (
-        <div>Loading products…</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : filteredProducts.length === 0 ? (
-        <div>No products found ( • ᴖ • ｡)</div>
-      ) : (
-        <>
-          <ProductTable products={filteredProducts} onEdit={handleEdit} />
-
-          <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={(p) => setPage(p)}
-            nextUrl={nextUrl}
-            prevUrl={prevUrl}
-          />
-        </>
-      )}
-    </section>
+      {/* Card starts at toolbar, matches inventory card */}
+      <Card className="bg-[#fdf8f6]">
+        <CardContent className="p-6 space-y-4">
+          {loading ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">Loading products…</p>
+          ) : error ? (
+            <p className="text-sm text-destructive py-8 text-center">{error}</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No products found ( • ᴖ • ｡)</p>
+          ) : (
+            <>
+              <ProductTable
+                products={filteredProducts}
+                onEdit={handleEdit}
+                onRefresh={handleRefresh}
+                onCreateNew={handleAdd}
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
