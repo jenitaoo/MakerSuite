@@ -131,7 +131,7 @@ export default function ProductListingsPage() {
           }),
         {
           loading: "Refreshing database…",
-          success: (count: number) => `Database refreshed: ${count} listings synced`,
+          success: (count: number) => `Database synced:\n${count} product listings from connected platforms synced`,
           error: (err: Error) => err.message === "etsy_token_expired" ? "" : "Failed to refresh database",
         }
       );
@@ -157,7 +157,7 @@ return (
       <Card className="bg-[#fdf8f6]">
         <CardContent className="p-6 space-y-4">
           {loading ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Loading products…</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">Loading products φ(*￣0￣)...</p>
           ) : error ? (
             <p className="text-sm text-destructive py-8 text-center">{error}</p>
           ) : filteredProducts.length === 0 ? (

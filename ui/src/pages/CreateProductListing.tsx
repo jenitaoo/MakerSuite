@@ -159,8 +159,8 @@ export default function CreateProductListing() {
       <div className="flex items-start gap-2 rounded-md bg-[#b5af8d] px-4 py-3 text-sm text-white">
         <span>𝐢</span>
         <p>
-          Create and save your product here first.<br />
-          Then use the editor to push it to Etsy or other platforms.
+          Create and save your new MakerSuite product here first.<br />
+          Then you can use the product editor to save it to Etsy or other platforms.
         </p>
       </div>
 
