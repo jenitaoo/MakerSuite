@@ -10,11 +10,6 @@ from .sync import SyncManager
 class ProductViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing internal products.
-    Supports:
-    - Listing all products for the authenticated user
-    - Creating new products
-    - Updating internal product details
-    - Deleting products
     """
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -25,19 +20,15 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
 
-    # This custom action retrieves a product along with its associated external listings in one response.
     @action(detail=True, methods=["get"])
     def with_listings(self, request, pk=None):
         product = self.get_object()
         listings = ExternalProductListing.objects.filter(product=product)
-
         return Response({
             "product": ProductSerializer(product).data,
             "external_listings": ExternalProductListingSerializer(listings, many=True).data
         })
 
-    # This custom action triggers synchronization of the specific product with all linked external platforms.
-    # This gives us the POST /products/{id}/sync/ endpoint.
     @action(detail=True, methods=["post"])
     def sync(self, request, pk=None):
         product = self.get_object()
@@ -45,8 +36,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         manager.sync_product(product)
         return Response({"status": "synced"})
 
-    # This custom action creates listings on all external platforms where the specific product is not yet listed.
-    # This gives us the POST /products/{id}/create_missing/ endpoint.
     @action(detail=True, methods=["post"])
     def create_missing(self, request, pk=None):
         product = self.get_object()
@@ -54,19 +43,30 @@ class ProductViewSet(viewsets.ModelViewSet):
         manager.create_missing_listings(product)
         return Response({"status": "created_missing"})
 
-    # This custom action pushes updates for the specific product to etsy.
-    # This gives us the POST /products/{id}/push-to-etsy/ endpoint.
-    # Note: if the product is not yet listed on Etsy, this will create a new listing.
-    # If it is already listed, it will update the existing listing.
     @action(detail=True, methods=["post"], url_path="push-to-etsy")
     def push_to_etsy(self, request, pk=None):
         product = self.get_object()
 
-        # find listing linked to THIS product
         linked_listing = ExternalProductListing.objects.filter(
             product=product,
             platform="Etsy"
         ).first()
+
+        # Extract Etsy-specific fields from request body if provided.
+        # These are saved to the ExternalProductListing record first,
+        # then read by the adapter when building the Etsy API payload.
+        # This keeps Product platform-agnostic — Etsy fields never touch the Product model.
+        etsy_fields = {
+            "tags": request.data.get("tags"),
+            "materials": request.data.get("materials"),
+            "who_made": request.data.get("who_made"),
+            "when_made": request.data.get("when_made"),
+            "should_auto_renew": request.data.get("should_auto_renew"),
+            "is_taxable": request.data.get("is_taxable"),
+            "listing_type": request.data.get("listing_type"),
+        }
+        # Remove keys where no value was sent (don't overwrite existing with None)
+        etsy_fields = {k: v for k, v in etsy_fields.items() if v is not None}
 
         try:
             etsy_token = request.user.etsy_token
@@ -76,8 +76,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
             if not linked_listing:
-                # no Etsy listing linked to this product yet — create one
-                # use any existing listing as reference for shop-specific fields
+                # No Etsy listing linked yet — create one
                 reference = ExternalProductListing.objects.filter(
                     owner=request.user.userprofile,
                     platform="Etsy",
@@ -93,10 +92,9 @@ class ProductViewSet(viewsets.ModelViewSet):
                         status=400
                     )
 
-                result = adapter.create_listing(product, shop_id, reference_raw)
+                result = adapter.create_listing(product, shop_id, reference_raw, etsy_fields)
                 new_listing_id = str(result.get("listing_id"))
 
-                # fetch the new listing directly to get full raw data
                 import requests as req
                 listing_res = req.get(
                     f"https://api.etsy.com/v3/application/listings/{new_listing_id}",
@@ -105,8 +103,8 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
                 raw_data = listing_res.json() if listing_res.ok else result
 
-                # save the new ExternalProductListing
-                ExternalProductListing.objects.create(
+                # Save the new listing with Etsy-specific fields populated
+                linked_listing = ExternalProductListing.objects.create(
                     owner=request.user.userprofile,
                     product=product,
                     platform="Etsy",
@@ -117,9 +115,15 @@ class ProductViewSet(viewsets.ModelViewSet):
                     listing_price=product.internal_price,
                     listing_quantity=product.internal_quantity,
                     raw=raw_data,
+                    etsy_tags=etsy_fields.get("tags", []),
+                    etsy_materials=etsy_fields.get("materials", []),
+                    etsy_who_made=etsy_fields.get("who_made", "i_did"),
+                    etsy_when_made=etsy_fields.get("when_made", "made_to_order"),
+                    etsy_should_auto_renew=etsy_fields.get("should_auto_renew", True),
+                    etsy_is_taxable=etsy_fields.get("is_taxable", True),
+                    etsy_listing_type=etsy_fields.get("listing_type", "physical"),
                 )
 
-                # add Etsy to platforms
                 if "Etsy" not in product.platforms:
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
@@ -127,21 +131,39 @@ class ProductViewSet(viewsets.ModelViewSet):
                 return Response({"status": "created", "listing_id": new_listing_id})
 
             else:
-                # listing exists — update it
+                # Listing exists — save Etsy fields to the listing record first, then push
+                update_fields = []
+                field_map = {
+                    "tags": "etsy_tags",
+                    "materials": "etsy_materials",
+                    "who_made": "etsy_who_made",
+                    "when_made": "etsy_when_made",
+                    "should_auto_renew": "etsy_should_auto_renew",
+                    "is_taxable": "etsy_is_taxable",
+                    "listing_type": "etsy_listing_type",
+                }
+                for frontend_key, model_field in field_map.items():
+                    if frontend_key in etsy_fields:
+                        setattr(linked_listing, model_field, etsy_fields[frontend_key])
+                        update_fields.append(model_field)
+
+                if update_fields:
+                    linked_listing.save(update_fields=update_fields)
+
+                # Now push to Etsy — adapter reads etsy_* fields from linked_listing
                 result = adapter.update_listing(linked_listing, product)
 
-                # re-fetch from Etsy and update raw
+                # Re-fetch from Etsy and update raw
                 listings_json = adapter.fetch_listings(linked_listing.shop_id)
                 updated = next(
                     (l for l in listings_json.get("results", [])
-                    if str(l.get("listing_id")) == linked_listing.platform_listing_id),
+                     if str(l.get("listing_id")) == linked_listing.platform_listing_id),
                     None
                 )
                 if updated:
-                    linked_listing.raw = updated  # assign new dict, not mutate
+                    linked_listing.raw = updated
                     linked_listing.save(update_fields=["raw"])
 
-                # add Etsy to platforms
                 if "Etsy" not in product.platforms:
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
@@ -149,16 +171,15 @@ class ProductViewSet(viewsets.ModelViewSet):
                 return Response({"status": "pushed", "result": result})
 
         except Exception as e:
+            import requests as req_lib
+            if isinstance(e, req_lib.exceptions.HTTPError) and e.response is not None and e.response.status_code == 401:
+                return Response({"error": "etsy_token_expired"}, status=401)
             return Response({"error": str(e)}, status=500)
+
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing external marketplace listings.
-    Supports:
-    - Viewing all listings for the authenticated user
-    - Linking listings to internal products
-    - Editing platform-specific listing details
-    - Preparing for sync operations
     """
     serializer_class = ExternalProductListingSerializer
     permission_classes = [permissions.IsAuthenticated]

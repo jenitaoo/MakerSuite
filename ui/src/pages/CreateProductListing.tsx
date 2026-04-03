@@ -97,8 +97,15 @@ export default function CreateProductListing() {
           ← Back
         </button>
         <h1 className="text-3xl font-bold text-white">
-          {title.trim() || "New Product"}
+          {title.trim() || "Create New MakerSuite Product"}
         </h1>
+      </div>
+      <div className="flex items-start gap-2 rounded-md bg-[#b5af8d] px-4 py-3 text-sm text-white">
+        <span>𝐢</span>
+        <p>
+          Create and save your product here first<br></br>
+          Then use the editor to save your product to other platforms (e.g. Etsy or Shopify)
+        </p>
       </div>
 
       <Form {...form}>
@@ -196,7 +203,7 @@ export default function CreateProductListing() {
               <CardTitle>
                 Etsy Fields{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  optional — fill in if publishing to Etsy
+                  optional — fill in if publishing to Etsy later
                 </span>
               </CardTitle>
             </CardHeader>

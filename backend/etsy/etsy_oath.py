@@ -27,6 +27,10 @@ class EtsyLoginView(View):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
 
+        # Store where to return after auth
+        return_to = request.GET.get("return_to", "/crosslist")
+        request.session["etsy_auth_return"] = return_to
+
         code_verifier = secrets.token_urlsafe(64)
         request.session["etsy_code_verifier"] = code_verifier
 
@@ -100,9 +104,9 @@ class EtsyCallbackView(View):
                 "expires_at": timezone.now() + timezone.timedelta(seconds=payload["expires_in"]),
             },
         )
-        print(payload)
 
-        return HttpResponse("Etsy connected.")
+        return_to = request.session.pop("etsy_auth_return", "/crosslist")
+        return redirect(f"{settings.FRONTEND_URL}{return_to}")
 
 
 class EtsyPingView(View):

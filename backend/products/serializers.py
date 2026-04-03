@@ -34,8 +34,10 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
+
 class ExternalProductListingSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = ExternalProductListing
         fields = [
@@ -52,5 +54,13 @@ class ExternalProductListingSerializer(serializers.ModelSerializer):
             'listing_image_url',
             'raw',
             'last_synced',
+            # Etsy-specific fields
+            'etsy_tags',
+            'etsy_materials',
+            'etsy_who_made',
+            'etsy_when_made',
+            'etsy_should_auto_renew',
+            'etsy_is_taxable',
+            'etsy_listing_type',
         ]
         read_only_fields = ['id', 'last_synced']

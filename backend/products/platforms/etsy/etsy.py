@@ -19,31 +19,39 @@ class EtsyAdapter(BasePlatformAdapter):
         return {
             "Authorization": f"Bearer {self.access_token}",
             "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
-            "Content-Type":"application/json",
+            "Content-Type": "application/json",
         }
 
     def _build_update_payload(self, listing, product):
         """
-        Build the Etsy update payload from the internal Product model.
+        Build the Etsy update payload by combining:
+        - Core fields from the internal Product (title, description, price, quantity)
+        - Etsy-specific fields from ExternalProductListing (tags, materials, who_made, etc.)
+        This keeps Product platform-agnostic while allowing per-platform overrides.
         """
         return {
+            # Core fields — always come from the internal product
             "title": product.title,
             "description": product.description,
-            "price": float(product.internal_price),  # Etsy requires string
+            "price": float(product.internal_price),
             "quantity": product.internal_quantity,
-            # other fields to be added later
+            # Etsy-specific fields — come from the listing record
+            "tags": listing.etsy_tags or [],
+            "materials": listing.etsy_materials or [],
+            "who_made": listing.etsy_who_made or "i_did",
+            "when_made": listing.etsy_when_made or "made_to_order",
+            "should_auto_renew": listing.etsy_should_auto_renew,
+            "is_taxable": listing.etsy_is_taxable,
+            "type": listing.etsy_listing_type or "physical",
         }
-
 
     def _build_inventory_payload(self, product, listing):
         """
         Build Etsy inventory payload including variations.
         """
-        # clean the SKU — strip the list formatting if stored as "['WHI']"
         raw_sku = product.sku or ""
         sku = raw_sku.strip("[]'\" ").replace("'", "").replace('"', "") if raw_sku.startswith("[") else raw_sku
 
-        # Etsy requires readiness_state_id for inventory updates; use existing value or default to "Ready for Processing"
         readiness_state_id = listing.raw.get("readiness_state_id")
         if not readiness_state_id:
             raise ValueError(f"No readiness_state_id found in raw data for listing {listing.platform_listing_id}")
@@ -68,21 +76,13 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
     def get_shop(self):
-        """
-        Fetch the authenticated user's shop using the Etsy endpoint:
-        GET /v3/application/users/{user_id}/shops
-        """
         url = f"{self.BASE_URL}/users/{self.etsy_user_id}/shops"
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
         return response.json()
 
     def fetch_listings(self, shop_id):
-        """
-        Fetch the authenticated user's listings using the Etsy endpoint:
-        GET v3/application/shops/{shop_id}/listings/draft
-        """
-        url = f"{self.BASE_URL}/shops/{shop_id}/listings" # listings vs listings/active works because my shop is temporarily in Developer Mode
+        url = f"{self.BASE_URL}/shops/{shop_id}/listings"
         params = {"includes": "Images"}
         response = requests.get(url, headers=self._headers(), params=params)
         print("Etsy fetch_listings status:", response.status_code)
@@ -90,21 +90,17 @@ class EtsyAdapter(BasePlatformAdapter):
         response.raise_for_status()
         return response.json()
 
-
-    def create_listing(self, product, shop_id, reference_listing_raw=None):
+    def create_listing(self, product, shop_id, reference_listing_raw=None, etsy_fields=None):
         """
         Create a new draft listing on Etsy.
-        Requires shop_id and uses reference_listing_raw to pull required
-        shop-specific fields (shipping_profile_id, return_policy_id, taxonomy_id).
-        Needs readiness state too, like the inventory endpoint.
+        etsy_fields: optional dict of Etsy-specific fields (tags, materials, who_made, etc.)
+        Falls back to safe defaults if not provided.
         """
         url = f"{self.BASE_URL}/shops/{shop_id}/listings"
 
-        # these fields are required by Etsy and must come from the seller's shop
-        # we read them from an existing listing if available, otherwise use safe defaults
         shipping_profile_id = None
         return_policy_id = None
-        taxonomy_id = 1239  # default taxid for now is for jewellery > rings
+        taxonomy_id = 1239
 
         if reference_listing_raw:
             shipping_profile_id = reference_listing_raw.get("shipping_profile_id")
@@ -117,25 +113,32 @@ class EtsyAdapter(BasePlatformAdapter):
                 "Ensure at least one Etsy listing exists in the database to use as a reference."
             )
 
+        if not product.internal_price:
+            raise ValueError("Product has no price set. Add a price before pushing to Etsy.")
+        
         if not return_policy_id:
             raise ValueError(
                 "No return_policy_id available. "
                 "Ensure at least one Etsy listing exists in the database to use as a reference."
             )
 
+        fields = etsy_fields or {}
+
         payload = {
             "title": product.title,
             "description": product.description or "",
             "price": float(product.internal_price),
             "quantity": product.internal_quantity or 1,
-            "who_made": "i_did",
-            "when_made": "made_to_order",
+            "who_made": fields.get("who_made", "i_did"),
+            "when_made": fields.get("when_made", "made_to_order"),
+            "tags": fields.get("tags", []),
+            "materials": fields.get("materials", []),
+            "should_auto_renew": fields.get("should_auto_renew", True),
+            "is_taxable": fields.get("is_taxable", True),
+            "type": fields.get("listing_type", "physical"),
             "taxonomy_id": taxonomy_id,
             "shipping_profile_id": shipping_profile_id,
             "return_policy_id": return_policy_id,
-            "should_auto_renew": True,
-            "is_taxable": True,
-            "type": "physical",
             "readiness_state_id": reference_listing_raw.get("readiness_state_id", 1404120877583),
         }
 
@@ -146,16 +149,12 @@ class EtsyAdapter(BasePlatformAdapter):
     def update_listing(self, listing, product):
         """
         Full Etsy update pipeline:
-        - update core listing fields
-        - update inventory (variations)
-        Images are uploaded separately via the edit page UI, so not handled here.
+        - update core listing fields (including Etsy-specific fields from listing record)
+        - update inventory (price + quantity via variations)
+        Images are uploaded separately via the edit page UI.
         """
-        # 1. Update core listing fields
         core = self._update_core_listing(listing, product)
-
-        # 2. Update inventory
         inventory = self.update_inventory(listing, product)
-
         return {
             "core": core,
             "inventory": inventory,
@@ -170,7 +169,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
     def update_inventory(self, listing, product):
         url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/inventory"
-        payload = self._build_inventory_payload(product, listing)  # pass listing
+        payload = self._build_inventory_payload(product, listing)
         response = requests.put(url, headers=self._headers(), json=payload)
         response.raise_for_status()
         return response.json()
@@ -196,7 +195,5 @@ class EtsyAdapter(BasePlatformAdapter):
         response.raise_for_status()
         return response.json()
 
-
     def delete_listing(self, listing):
-        # Step 1: delete listing on Etsy
-        pass
+        pass  # Etsy does not support hard deletes via API; instead, we can set quantity to 0 and state to "inactive" if needed.

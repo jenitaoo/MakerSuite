@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCookie } from "../services/api";
 
-// matches the Product shape from /api/products/{id}/with_listings/
 export type ProductDetail = {
   id: number;
   owner: number;
@@ -53,6 +52,7 @@ export type EtsyRaw = {
   taxonomy_id: number;
   featured_rank: number;
   language: string;
+  readiness_state_id?: number;
 };
 
 export type ExternalListing = {
@@ -69,6 +69,15 @@ export type ExternalListing = {
   listing_image_url: string | null;
   raw: EtsyRaw;
   last_synced: string;
+  // Etsy-specific fields stored on the listing record
+  // When Shopify is added, add shopify_* fields here in the same pattern
+  etsy_tags: string[];
+  etsy_materials: string[];
+  etsy_who_made: string;
+  etsy_when_made: string;
+  etsy_should_auto_renew: boolean;
+  etsy_is_taxable: boolean;
+  etsy_listing_type: string;
 };
 
 type UseProductWithListingsResult = {

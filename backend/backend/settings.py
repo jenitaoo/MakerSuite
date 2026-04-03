@@ -182,3 +182,4 @@ ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+FRONTEND_URL = "http://localhost:5173"

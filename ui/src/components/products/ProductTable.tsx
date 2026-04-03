@@ -152,7 +152,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
             Sync from Etsy
           </Button>
           <Button onClick={onCreateNew} className="w-full sm:w-auto">
-            Create New Product
+            Create New MakerSuite Product
           </Button>
         </div>
       </div>

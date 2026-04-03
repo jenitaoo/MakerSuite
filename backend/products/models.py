@@ -3,7 +3,6 @@ Models for the Product Listings Feature.
 This module defines the data structures for managing products and their external listings.
 """
 from django.db import models
-from django.forms import IntegerField
 from authentication.models import UserProfile
 
 """
@@ -25,23 +24,20 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-    # This method ensures that the platforms field is always a list and that "MakerSuite" is included as a default platform.
     def save(self, *args, **kwargs):
-        # Ensure platforms is always a list
         if not isinstance(self.platforms, list):
             self.platforms = []
-
-        # Always include MakerSuite
         if "MakerSuite" not in self.platforms:
             self.platforms.append("MakerSuite")
-
         super().save(*args, **kwargs)
 
 
 """
 ExternalProductListing model representing a product listing on an external platform (e.g. Etsy or Shopify).
-This stores normalised fields and the raw API response as JSON.
-A listing may be linked to an internal Product once normalised.
+Normalised fields shared across platforms are stored as columns.
+Platform-specific fields (e.g. Etsy tags, Shopify metafields) are stored in their own columns
+so that adding a new platform never requires changes to the Product model.
+The full raw API response is also stored in `raw` for reference and preview.
 """
 class ExternalProductListing(models.Model):
     shop_id = models.IntegerField(null=True, blank=True)
@@ -58,6 +54,19 @@ class ExternalProductListing(models.Model):
     raw = models.JSONField()
     last_synced = models.DateTimeField(auto_now=True)
     linked_at = models.DateTimeField(null=True, blank=True)
+
+    # --------------------------------------------------
+    # Etsy-specific fields
+    # When Shopify is added, add a new block of Shopify-specific fields below.
+    # The Product model stays platform-agnostic.
+    # --------------------------------------------------
+    etsy_tags = models.JSONField(default=list, blank=True)
+    etsy_materials = models.JSONField(default=list, blank=True)
+    etsy_who_made = models.CharField(max_length=50, default="i_did", blank=True)
+    etsy_when_made = models.CharField(max_length=50, default="made_to_order", blank=True)
+    etsy_should_auto_renew = models.BooleanField(default=True)
+    etsy_is_taxable = models.BooleanField(default=True)
+    etsy_listing_type = models.CharField(max_length=50, default="physical", blank=True)
 
     class Meta:
         unique_together = ('owner', 'platform', 'platform_listing_id')
