@@ -317,7 +317,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
         pm.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=["post"], url_path="link-product")
+    def link_product(self, request, pk=None):
+        project = self.get_object()
+        product_id = request.data.get("product_id")
 
+        if not product_id:
+            return Response({"error": "product_id is required"}, status=400)
+
+        try:
+            from products.models import Product
+            product = Product.objects.get(id=product_id, owner=request.user.userprofile)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=404)
+
+        project.product = product
+        project.save(update_fields=["product"])
+
+        qty = product.internal_quantity or 0
+        MakeLog.objects.create(
+            project=project,
+            units_made=qty,
+            notes=f"Auto-initialized from linked product: {product.title} ({qty} units)",
+            deducted_materials=False,
+        )
+
+        return Response(ProjectSerializer(project).data)
 class SaleTagViewSet(viewsets.ModelViewSet):
     serializer_class = SaleTagSerializer
     permission_classes = [permissions.IsAuthenticated]

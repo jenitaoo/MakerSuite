@@ -110,13 +110,37 @@
     font-size: 16px;
     line-height: 1.5;
     color: hsl(var(--foreground));
+    position: relative;
 
-    /* Gingham — cream/rosy toned to match poster */
-    background-image: repeating-linear-gradient(0deg, hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
-    repeating-linear-gradient(90deg, hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
-    linear-gradient(90deg, rgb(201, 147, 138), rgb(201, 147, 138));
+    /* Gingham only — doodle is handled by ::before */
+    background-image:
+      repeating-linear-gradient(0deg,  hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
+      repeating-linear-gradient(90deg, hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
+      linear-gradient(90deg, rgb(201, 147, 138), rgb(201, 147, 138));
     background-attachment: fixed;
     min-height: 100vh;
+  }
+
+  /* Doodle overlay — multiply blends black away, lines show through */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('assets/misc/Seamless_Pattern_Crafts_Black.png');
+    background-repeat: repeat;
+    background-size: clamp(300px, 10vw, 550px);
+    background-attachment: fixed;
+    filter: sepia(1) saturate(10) hue-rotate(360deg) brightness(1);
+    mix-blend-mode: multiply;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Content sits above the doodle pseudo-element */
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -129,7 +153,7 @@
    NAVBAR — frosted rosy brown, white text
 -------------------------------------------------- */
 .navbar-frosted {
-  background-color: hsla(8, 41%, 70%, 0.75);
+  background-color: hsla(8, 41%, 70%, 0.4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid hsla(8, 36%, 40%, 0.3);
