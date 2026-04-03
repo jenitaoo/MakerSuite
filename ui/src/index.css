@@ -4,50 +4,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Shadcn CSS variables ─────────────────────────── */
+/* --------------------------------------------------
+   SHADCN TOKENS — MakerSuite Brand
+   Pulled from poster:
+   #C17B6F → rosy brown (primary)       hsl(8, 36%, 59%)
+   #D4A49A → light rosy (secondary)     hsl(8, 40%, 72%)
+   #F0E6DF → cream background           hsl(20, 43%, 91%)
+   #3D2B28 → dark brown text            hsl(8, 20%, 20%)
+   #BDB89A → sage/olive accent          hsl(48, 22%, 67%)
+-------------------------------------------------- */
+@layer base {
+  :root {
+    --background: 20 43% 91%;           /* cream */
+    --foreground: 8 20% 20%;            /* dark brown */
+
+    --card: 20 40% 95%;                 /* lighter cream */
+    --card-foreground: 8 20% 20%;
+
+    --popover: 20 40% 95%;
+    --popover-foreground: 8 20% 20%;
+
+    --primary: 8 36% 59%;               /* rosy brown */
+    --primary-foreground: 0 0% 100%;    /* white */
+    --primary-hover: 8 36% 48%;         /* darker rosy brown */
+
+    --secondary: 48 22% 67%;            /* sage/olive */
+    --secondary-foreground: 8 20% 20%;
+
+    --muted: 20 30% 88%;                /* muted cream */
+    --muted-foreground: 8 15% 45%;      /* mid brown */
+
+    --accent: 48 22% 67%;               /* sage */
+    --accent-foreground: 8 20% 20%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 25% 80%;
+    --input: 20 25% 80%;
+    --ring: 8 36% 59%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 8 20% 12%;
+    --foreground: 20 40% 92%;
+
+    --card: 8 18% 16%;
+    --card-foreground: 20 40% 92%;
+
+    --popover: 8 18% 16%;
+    --popover-foreground: 20 40% 92%;
+
+    --primary: 8 36% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 8 36% 54%;
+
+    --secondary: 48 18% 40%;
+    --secondary-foreground: 20 40% 92%;
+
+    --muted: 8 15% 20%;
+    --muted-foreground: 20 25% 65%;
+
+    --accent: 48 18% 40%;
+    --accent-foreground: 20 40% 92%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 8 15% 25%;
+    --input: 8 15% 25%;
+    --ring: 8 36% 65%;
+  }
+}
+
+/* --------------------------------------------------
+   FONTS
+-------------------------------------------------- */
 :root {
-  /* shadcn component tokens */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --card: #ffffff;
-  --card-foreground: #1a1a1a;
-  --popover: #ffffff;
-  --popover-foreground: #1a1a1a;
-  --primary: #818263;
-  --primary-foreground: #ffffff;
-  --secondary: #c2c395;
-  --secondary-foreground: #333333;
-  --muted: #f1f2f4;
-  --muted-foreground: #596780;
-  --accent: #c2c395;
-  --accent-foreground: #333333;
-  --destructive: #C46A55;
-  --destructive-foreground: #ffffff;
-  --border: #e0e0e0;
-  --input: #e0e0e0;
-  --ring: #818263;
-  --radius: 8px;
-
-  /* MakerSuite brand variables */
-  --color-primary: #BE816E;
-  --color-primary-hover: #A86F5E;
-  --color-bg: #d0aa86;
-  --color-bg-alt: #dfb698;
-  --color-surface: #ceab8a;
-  --color-accent-green: #c2c395;
-  --color-accent-green-dark: #818263;
-  --color-accent-green-darker: #707056;
-  --color-accent-white: #f5f5f5;
-  --color-accent-white-muted: rgba(239, 236, 233, 0.7);
-  --color-text: #ffffff;
-  --color-text-muted: rgba(255, 255, 255, 0.75);
-  --color-text-content: #333333;
-  --color-border: rgba(0, 0, 0, 0.15);
-  --color-success: #7A8F6A;
-  --color-warning: #D9A05B;
-  --color-error: #C46A55;
-
-  /* MakerSuite fonts */
   --font-heading: 'Chonburi', serif;
   --font-body: 'Domine', serif;
 
@@ -55,58 +89,15 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: light dark;
 }
 
-.dark {
-  --background: #1a1a18;
-  --foreground: #f5f5f5;
-  --card: #2E2C29;
-  --card-foreground: #f5f5f5;
-  --popover: #2E2C29;
-  --popover-foreground: #f5f5f5;
-  --primary: #c2c395;
-  --primary-foreground: #333333;
-  --secondary: #3a3a35;
-  --secondary-foreground: #f5f5f5;
-  --muted: #3a3a35;
-  --muted-foreground: rgba(245, 245, 245, 0.7);
-  --accent: #3a3a35;
-  --accent-foreground: #f5f5f5;
-  --destructive: #D47C68;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #c2c395;
-
-  --color-primary: #D89A87;
-  --color-primary-hover: #E3A896;
-  --color-bg: #1a1a18;
-  --color-bg-alt: #22221F;
-  --color-surface: #2E2C29;
-  --color-accent-green: #9FA89A;
-  --color-accent-green-dark: #6F776A;
-  --color-text: #F5F5F5;
-  --color-text-muted: rgba(245, 245, 245, 0.7);
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-success: #8FAF7A;
-  --color-warning: #E3B06A;
-  --color-error: #D47C68;
-}
-
-/* ── Base layer ───────────────────────────────────── */
+/* --------------------------------------------------
+   GLOBAL RESET
+-------------------------------------------------- */
 @layer base {
   * {
-    border-color: var(--border);
+    border-color: hsl(var(--border));
     box-sizing: border-box;
-  }
-
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 1.5;
   }
 
   html, body, #root {
@@ -114,16 +105,54 @@
     width: 100%;
   }
 
+  body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    color: hsl(var(--foreground));
+
+    /* Gingham — cream/rosy toned to match poster */
+    background-image: repeating-linear-gradient(0deg, hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
+    repeating-linear-gradient(90deg, hsla(51, 82%, 96%, 0.1) 0px, hsla(51, 82%, 96%, 0.1) 50px, transparent 50px, transparent 100px),
+    linear-gradient(90deg, rgb(201, 147, 138), rgb(201, 147, 138));
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     font-weight: 400;
     letter-spacing: 0.5px;
-    color: var(--color-primary);
+    color: hsl(var(--primary));
   }
 }
 
-/* ── Layout ───────────────────────────────────────── */
+/* --------------------------------------------------
+   NAVBAR — frosted rosy brown, white text
+-------------------------------------------------- */
+.navbar-frosted {
+  background-color: hsla(8, 41%, 70%, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsla(8, 36%, 40%, 0.3);
+  color: #ffffff;
+}
+
+.navbar-frosted a,
+.navbar-frosted button {
+  color: #ffffff;
+}
+
+.navbar-frosted a:hover,
+.navbar-frosted button:hover {
+  color: hsl(20, 43%, 91%); /* warm cream on hover */
+}
+
+/* --------------------------------------------------
+   LAYOUT
+-------------------------------------------------- */
 .app {
+  display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
@@ -135,83 +164,9 @@
   overflow-y: auto;
 }
 
-/* ── Auth pages ───────────────────────────────────── */
-.auth-container {
-  max-width: 400px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.auth-container h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: bold;
-}
-
-.form-group input {
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.error {
-  color: #ff3333;
-  font-size: 0.8rem;
-}
-
-.error-message {
-  background-color: #ffeeee;
-  color: #ff3333;
-  padding: 0.8rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.auth-link {
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.auth-link a {
-  color: #4c7bf3;
-  text-decoration: none;
-}
-
-/* ── Dashboard ────────────────────────────────────── */
-.dashboard-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.welcome-message {
-  text-align: center;
-  margin-top: 2rem;
-}
-
-/* ── Product table ────────────────────────────────── */
+/* --------------------------------------------------
+   PRODUCT TABLE
+-------------------------------------------------- */
 .product-row__photo-placeholder {
   width: 6rem;
   height: 6rem;
@@ -234,19 +189,21 @@
   height: 2rem;
   padding: 0 0.75rem;
   border-radius: 4px;
-  border: 1px solid #d1d5db;
-  background-color: #f1f2f4;
-  color: #596780;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   font-size: 0.875rem;
   cursor: pointer;
 }
 
 .product-toolbar__filter-select:focus {
   outline: none;
-  border-color: #818263;
+  border-color: hsl(var(--primary));
 }
 
-/* ── Link hover ───────────────────────────────────── */
+/* --------------------------------------------------
+   LINK HOVER
+-------------------------------------------------- */
 a:hover {
   transition: 0.2s ease;
 }

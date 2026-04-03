@@ -1,9 +1,13 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { authService } from "../services/auth";
 
-interface User {
+export interface User {
+  id: number;
   username: string;
-  email?: string;
+  email: string;
+  full_name: string;
+  photo: string | null;
+  etsy_connected: boolean;
 }
 
 interface AuthContextType {
@@ -22,21 +26,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchUser = async () => {
       try {
         const userData = await authService.getCurrentUser();
-        setUser(userData);
-        if (userData) {
-          localStorage.setItem("user", JSON.stringify(userData));
-        } else {
-          localStorage.removeItem("user");
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
+        setUser(userData ?? null);
+      } catch {
         setUser(null);
-        localStorage.removeItem("user");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchUser();
   }, []);
 

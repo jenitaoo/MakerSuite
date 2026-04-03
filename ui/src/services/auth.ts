@@ -1,65 +1,56 @@
 import apiClient from "./api";
 
 let cachedUser: any = null;
-interface UserData {
-  username: string;
-  email: string;
-  password: string;
-}
-
-interface Credentials {
-  username: string;
-  password: string;
-}
 
 export const authService = {
-  signup: async (userData: UserData): Promise<any> => {
-    try {
-      const response = await apiClient.post("/api/auth/register/", userData);
-      return response.data;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw error.message;
-      }
-      throw "An unknown error occurred during signup.";
-    }
+  signup: async (userData: {
+    username: string;
+    email: string;
+    full_name: string;
+    password: string;
+    password2: string;
+  }) => {
+    const response = await apiClient.post("/api/auth/register/", userData);
+    return response.data;
   },
 
-  login: async (credentials: Credentials): Promise<any> => {
-    try {
-      const response = await apiClient.post("/api/auth/login/", credentials);
-      cachedUser = response.data.user;
-      return response.data;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw error.message;
-      }
-      throw "An unknown error occurred during login.";
-    }
+  login: async (credentials: { username: string; password: string }) => {
+    const response = await apiClient.post("/api/auth/login/", credentials);
+    cachedUser = response.data.user;
+    return response.data;
   },
 
-  logout: async (): Promise<any> => {
-    try {
-      const response = await apiClient.post("/api/auth/logout/");
-      cachedUser = null;
-      return response.data;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw error.message;
-      }
-      throw "An unknown error occurred during logout.";
-    }
+  logout: async () => {
+    const response = await apiClient.post("/api/auth/logout/");
+    cachedUser = null;
+    return response.data;
   },
 
-  getCurrentUser: async (): Promise<any | null> => {
+  getCurrentUser: async () => {
     if (cachedUser) return cachedUser;
-
     try {
       const response = await apiClient.get("/api/auth/user/");
       cachedUser = response.data;
       return cachedUser;
-    } catch (error: unknown) {
+    } catch {
       return null;
     }
+  },
+
+  updateProfile: async (data: FormData) => {
+    const response = await apiClient.patch("/api/auth/profile/", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    cachedUser = response.data;
+    return response.data;
+  },
+
+  changePassword: async (data: {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+  }) => {
+    const response = await apiClient.post("/api/auth/change-password/", data);
+    return response.data;
   },
 };

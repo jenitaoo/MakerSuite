@@ -11,6 +11,8 @@ import EditProductListing from "./pages/EditProductListing";
 import "./App.css";
 import InventoryPage from "./pages/InventoryPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
+import Profile from "./pages/Profile";
+
 
 // layout wrapper that includes Navbar and Toaster
 function AppLayout() {
@@ -54,6 +56,7 @@ const router = createBrowserRouter([
           { path: "/products/:id/edit", element: <EditProductListing /> },
           { path: "/inventory", element: <InventoryPage /> },
           { path: "/inventory/projects/:id", element: <ProjectDetailPage /> },
+          { path: "/profile", element: <Profile /> },
         ],
       },
     ],

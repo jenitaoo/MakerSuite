@@ -179,3 +179,6 @@ ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
 # Space-separated scopes (Etsy requires URL-encoded later)
 ETSY_SCOPES = os.getenv("ETSY_SCOPES", "address_r email_r shops_r shops_w listings_r listings_w")
 ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

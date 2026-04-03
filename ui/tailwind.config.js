@@ -8,19 +8,15 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#FF592C;',
-          purple:'#9757D7',
-          pink: '#EF466F',
-          green:'#45B36B',
-
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
         },
-        secondary:{
-          DEFAULT:'#3772FF',
-          pink: '#E4D7CF',
-          yellow: '#FFD166',
-          purple:'#CDB4DB',
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
-        gray: { 
+        gray: {
           DEFAULT:'#ffffff',
           100:'#FCFCFD',
         200: '#F4F5F6',

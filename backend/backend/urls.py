@@ -15,23 +15,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from authentication.views import CSRFTokenView, RegisterView, LoginView, LogoutView, UserView
+from django.conf import settings
+from django.conf.urls.static import static
+from authentication.views import (
+    CSRFTokenView, RegisterView, LoginView,
+    LogoutView, UserView, ProfileView, ChangePasswordView
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Auth
     path('api/auth/csrf/', CSRFTokenView.as_view(), name='csrf-token'),
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/user/', UserView.as_view(), name='user'),
+    path('api/auth/profile/', ProfileView.as_view(), name='profile'),
+    path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/inventory/', include('inventory.urls')),
-
-    # Etsy OAuth
     path("api/etsy/", include("etsy.urls")),
-
-    # Products
     path("api/", include("products.urls")),
-]
-
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

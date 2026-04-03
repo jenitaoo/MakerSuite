@@ -1,14 +1,13 @@
-// src/pages/Login.tsx
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
-import * as Yup from "yup";
+import { useForm } from "react-hook-form";
 import { authService } from "../services/auth";
-
-const LoginSchema = Yup.object().shape({
-  username: Yup.string().required("Required"),
-  password: Yup.string().required("Required"),
-});
+import { AuthContext } from "../context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginValues {
   username: string;
@@ -16,104 +15,71 @@ interface LoginValues {
 }
 
 const Login = () => {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginValues>();
 
-  const handleSubmit = async (
-    values: LoginValues,
-    { setSubmitting }: FormikHelpers<LoginValues>
-  ) => {
+  const onSubmit = async (values: LoginValues) => {
     try {
-      await authService.login(values);
-      navigate("/dashboard");
-      window.location.reload();
-    } catch (err) {
-      setError(typeof err === "string" ? err : "Invalid credentials");
-    } finally {
-      setSubmitting(false);
+      const data = await authService.login(values);
+      auth?.setUser(data.user);
+      navigate("/crosslist");
+    } catch {
+      setError("Invalid username or password.");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">
-          Login
-        </h2>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-
-        <Formik
-          initialValues={{ username: "", password: "" }}
-          validationSchema={LoginSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ isSubmitting }) => (
-            <Form className="space-y-4">
-              <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Username
-                </label>
-                <Field
-                  type="text"
-                  name="username"
-                  id="username"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage
-                  name="username"
-                  component="div"
-                  className="text-sm text-red-600 mt-1"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
-                <Field
-                  type="password"
-                  name="password"
-                  id="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="text-sm text-red-600 mt-1"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? "Logging in..." : "Login"}
-              </button>
-
-              <p className="text-center text-sm text-gray-600">
-                Don't have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Sign up
-                </Link>
-              </p>
-            </Form>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md bg-[#fdf8f6]">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Welcome Back (●'◡'●)</CardTitle>
+          <CardDescription>Enter your username and password to sign in!</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        </Formik>
-      </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="your_username"
+                {...register("username", { required: "Username is required" })}
+              />
+              {errors.username && (
+                <p className="text-sm text-destructive">{errors.username.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                {...register("password", { required: "Password is required" })}
+              />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-primary hover:underline font-medium">
+              Sign up
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };

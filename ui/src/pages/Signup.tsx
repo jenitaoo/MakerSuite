@@ -1,136 +1,140 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
-import * as Yup from "yup";
+import { useForm } from "react-hook-form";
 import { authService } from "../services/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import toast from "react-hot-toast";
 
-// Define interface for form values
 interface SignupValues {
+  full_name: string;
   username: string;
   email: string;
   password: string;
   password2: string;
 }
 
-const SignupSchema = Yup.object().shape({
-  username: Yup.string()
-    .min(3, "Too Short!")
-    .max(50, "Too Long!")
-    .required("Required"),
-  email: Yup.string().email("Invalid email").required("Required"),
-  password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .required("Required"),
-  password2: Yup.string()
-    .oneOf([Yup.ref("password"), undefined], "Passwords must match") // ✅ Fixed
-    .required("Required"),
-});
-
 const Signup = () => {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<SignupValues>({mode: "onChange"});
+  const password = watch("password");
 
-  const handleSubmit = async (
-    values: SignupValues,
-    { setSubmitting }: FormikHelpers<SignupValues>
-  ) => {
+  const onSubmit = async (values: SignupValues) => {
     try {
       await authService.signup(values);
+      toast.success("Account created! You can now log in.");
       navigate("/login");
-    } catch (err) {
-      setError(typeof err === "string" ? err : "Signup failed. Please try again.");
-    } finally {
-      setSubmitting(false);
+    } catch {
+      setError("Signup failed. Please try again.");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">Sign Up</h2>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-
-        <Formik<SignupValues>
-          initialValues={{ username: "", email: "", password: "", password2: "" }}
-          validationSchema={SignupSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ isSubmitting }) => (
-            <Form className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <Field
-                  type="text"
-                  name="username"
-                  id="username"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage name="username" component="div" className="text-sm text-red-600 mt-1" />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <Field
-                  type="email"
-                  name="email"
-                  id="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage name="email" component="div" className="text-sm text-red-600 mt-1" />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <Field
-                  type="password"
-                  name="password"
-                  id="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage name="password" component="div" className="text-sm text-red-600 mt-1" />
-              </div>
-
-              <div>
-                <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <Field
-                  type="password"
-                  name="password2"
-                  id="password2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <ErrorMessage name="password2" component="div" className="text-sm text-red-600 mt-1" />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? "Signing up..." : "Sign Up"}
-              </button>
-
-              <p className="text-center text-sm text-gray-600">
-                Already have an account?{" "}
-                <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Login
-                </Link>
-              </p>
-            </Form>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md bg-[#fdf8f6]">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+          <CardDescription>Fill in your details to get started</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        </Formik>
-      </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                type="text"
+                placeholder="Jane Smith"
+                {...register("full_name")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="jane_smith"
+                {...register("username", {
+                  required: "Username is required",
+                  minLength: { value: 3, message: "" }
+                })}
+              />
+              <p className="text-xs text-muted-foreground">Must contain at least 3 characters and contain no spaces</p>
+              {errors.username && (
+                <p className="text-sm text-destructive">{errors.username.message}</p>
+              )}
+              {errors.username && (
+                <p className="text-sm text-destructive">{errors.username.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="jane@example.com"
+                {...register("email", { required: "Email is required" })}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: { value: 8, message: "" }
+                })}
+              />
+              <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
+                <li>At least 8 characters</li>
+                <li>Can't be entirely numbers</li>
+                <li>Can't be a commonly used password</li>
+                <li>Can't be too similar to your name or email</li>
+              </ul>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password2">Confirm Password</Label>
+              <Input
+                id="password2"
+                type="password"
+                placeholder="••••••••"
+                {...register("password2", {
+                  required: "Please confirm your password",
+                  validate: v => v === password || "Passwords don't match"
+                })}
+              />
+              {errors.password2 && (
+                <p className="text-sm text-destructive">{errors.password2.message}</p>
+              )}
+            </div>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Creating account..." : "Create Account"}
+            </Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
