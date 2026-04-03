@@ -102,6 +102,14 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
         <Button variant="ghost" size="sm" onClick={() => onEdit(row.original)}>✏️</Button>
       ),
     },
+    {
+      /**not implemented yet, placeholder */
+      id: "Delete",
+      header: () => <span className="font-medium text-xs uppercase tracking-wide">Delete</span>,
+        cell: ({ row }) => (
+          <Button variant="ghost" size="sm" onClick={() => onEdit(row.original)}>✖</Button>
+        ),
+    },
   ], [onEdit]);
 
   const table = useReactTable({

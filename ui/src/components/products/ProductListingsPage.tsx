@@ -92,6 +92,14 @@ export default function ProductListingsPage() {
         credentials: "include",
         headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
       });
+
+      if (shopRes.status === 401 || shopRes.status === 403) {
+        toast.error("Your Etsy session has expired — reconnecting...");
+        const returnPath = encodeURIComponent(window.location.pathname);
+        window.location.href = `/api/etsy/login?return_to=${returnPath}`;
+        return;
+      }
+
       if (!shopRes.ok) throw new Error("Failed to fetch shop info");
       const shopData = await shopRes.json();
       const shopId = shopData.shop_id;
@@ -103,6 +111,12 @@ export default function ProductListingsPage() {
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         })
           .then(async (res) => {
+            if (res.status === 401) {
+              toast.error("Your Etsy session has expired — reconnecting...");
+              const returnPath = encodeURIComponent(window.location.pathname);
+              window.location.href = `/api/etsy/login?return_to=${returnPath}`;
+              throw new Error("etsy_token_expired");
+            }
             if (!res.ok) throw new Error("Import failed");
             return res.json();
           })
@@ -118,7 +132,7 @@ export default function ProductListingsPage() {
         {
           loading: "Refreshing database…",
           success: (count: number) => `Database refreshed: ${count} listings synced`,
-          error: "Failed to refresh database",
+          error: (err: Error) => err.message === "etsy_token_expired" ? "" : "Failed to refresh database",
         }
       );
     } catch (err) {
@@ -128,7 +142,7 @@ export default function ProductListingsPage() {
       setLoading(false);
     }
   };
-
+  
   const handleAdd = () => navigate("/products/new");
 
 return (
@@ -136,7 +150,7 @@ return (
       {/* Title sits on gingham background, outside card */}
       <div>
         <h1 className="text-3xl font-bold text-white">Product Listings</h1>
-        <p className="text-white mt-1">Manage and sync your marketplace listings</p>
+        <p className="text-white mt-1">Manage and sync your product listings internally and on connected platforms</p>
       </div>
 
       {/* Card starts at toolbar, matches inventory card */}

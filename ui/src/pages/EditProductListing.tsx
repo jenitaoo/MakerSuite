@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useProductWithListings, ExternalListing, EtsyRaw } from "../hooks/useProductWithListings";
@@ -13,11 +13,16 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
+const MAX_IMAGES = 10;
+
 type Tab = "editor" | "etsy-preview" | "shopify";
 
-type EtsyEditableFields = {
+type FormState = {
   title: string;
   description: string;
+  price: string;
+  quantity: number;
+  sku: string;
   tags: string[];
   materials: string[];
   who_made: string;
@@ -27,12 +32,9 @@ type EtsyEditableFields = {
   listing_type: string;
 };
 
-type InternalEditableFields = {
-  title: string;
-  description: string;
-  internal_price: string;
-  internal_quantity: number;
-  sku: string;
+type NewImagePreview = {
+  file: File;
+  preview: string;
 };
 
 export default function EditProductListing() {
@@ -44,11 +46,12 @@ export default function EditProductListing() {
   const raw: EtsyRaw | undefined = etsyListing?.raw;
 
   const [activeTab, setActiveTab] = useState<Tab>("editor");
-  const [internal, setInternal] = useState<InternalEditableFields | null>(null);
-  const [etsy, setEtsy] = useState<EtsyEditableFields | null>(null);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [form, setForm] = useState<FormState | null>(null);
+  const [selectedEtsyImage, setSelectedEtsyImage] = useState(0);
+  const [uploadingEtsy, setUploadingEtsy] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [newImages, setNewImages] = useState<NewImagePreview[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const blocker = useBlocker(isDirty);
   if (blocker.state === "blocked") {
@@ -57,77 +60,155 @@ export default function EditProductListing() {
     else blocker.reset();
   }
 
-  if (product && !internal) {
-    setInternal({
+  if (product && !form) {
+    setForm({
       title: product.title,
       description: product.description ?? "",
-      internal_price: product.internal_price,
-      internal_quantity: product.internal_quantity,
+      price: product.internal_price,
+      quantity: product.internal_quantity,
       sku: product.sku ?? "",
+      tags: etsyListing?.etsy_tags?.length ? etsyListing.etsy_tags : (raw?.tags ?? []),
+      materials: etsyListing?.etsy_materials?.length ? etsyListing.etsy_materials : (raw?.materials ?? []),
+      who_made: etsyListing?.etsy_who_made || raw?.who_made || "i_did",
+      when_made: etsyListing?.etsy_when_made || raw?.when_made || "made_to_order",
+      should_auto_renew: etsyListing?.etsy_should_auto_renew ?? raw?.should_auto_renew ?? true,
+      is_taxable: etsyListing?.etsy_is_taxable ?? raw?.is_taxable ?? true,
+      listing_type: etsyListing?.etsy_listing_type || raw?.listing_type || "physical",
     });
   }
 
-  if (raw && !etsy) {
-    setEtsy({
-      title: raw?.title ?? product?.title ?? "",
-      description: raw?.description ?? product?.description ?? "",
-      tags: raw?.tags ?? [],
-      materials: raw?.materials ?? [],
-      who_made: raw?.who_made ?? "i_did",
-      when_made: raw?.when_made ?? "made_to_order",
-      should_auto_renew: raw?.should_auto_renew ?? true,
-      is_taxable: raw?.is_taxable ?? true,
-      listing_type: raw?.listing_type ?? "physical",
+  const update = (patch: Partial<FormState>) => {
+    setForm((prev) => prev ? { ...prev, ...patch } : prev);
+    setIsDirty(true);
+  };
+
+  const existingCount = product?.images?.length ?? 0;
+  const slotsLeft = MAX_IMAGES - existingCount - newImages.length;
+
+  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+
+    if (files.length > slotsLeft) {
+      toast.error(`You can only add ${slotsLeft} more photo${slotsLeft !== 1 ? "s" : ""} (max ${MAX_IMAGES} total).`);
+      return;
+    }
+
+    setNewImages((prev) => [
+      ...prev,
+      ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) })),
+    ]);
+    setIsDirty(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveNewImage = (index: number) => {
+    setNewImages((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
     });
-  }
-
-  const images = raw?.images?.sort((a, b) => a.rank - b.rank) ?? [];
-
-  const updateEtsy = (patch: Partial<EtsyEditableFields>) => {
-    setEtsy((prev) => prev ? { ...prev, ...patch } : prev);
-    setIsDirty(true);
   };
 
-  const updateInternal = (patch: Partial<InternalEditableFields>) => {
-    setInternal((prev) => prev ? { ...prev, ...patch } : prev);
-    setIsDirty(true);
+  const handleDeleteExistingImage = async (imageId: number) => {
+    if (!id) return;
+    const res = await fetch(`/api/products/${id}/images/${imageId}/`, {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },
+    });
+    if (res.ok) {
+      toast.success("Photo removed");
+      refetch();
+    } else {
+      toast.error("Failed to remove photo");
+    }
   };
+
+  const etsyImages = raw?.images?.sort((a, b) => a.rank - b.rank) ?? [];
 
   const handleSaveInternally = async () => {
-    if (!internal || !id) return;
+    if (!form || !id) return;
+
+    const body = new FormData();
+    body.append("title", form.title);
+    body.append("description", form.description);
+    body.append("internal_price", form.price);
+    body.append("internal_quantity", String(form.quantity));
+    body.append("sku", form.sku);
+
     await toast.promise(
       fetch(`/api/products/${id}/`, {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
-        body: JSON.stringify({
-          title: internal.title,
-          description: internal.description,
-          internal_price: internal.internal_price,
-          internal_quantity: internal.internal_quantity,
-          sku: internal.sku,
-        }),
+        headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
+        body,
       }).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
-        setIsDirty(false);
       }),
-      { loading: "Saving internally...", success: "Saved to database", error: "Failed to save internally" }
+      { loading: "Saving...", success: "Saved internally", error: "Failed to save" }
     );
+
+    // Upload new images if any
+    if (newImages.length > 0) {
+      const imageData = new FormData();
+      newImages.forEach((img) => imageData.append("images", img.file));
+
+      const imgRes = await fetch(`/api/products/${id}/images/`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
+        body: imageData,
+      });
+
+      if (!imgRes.ok) {
+        const err = await imgRes.json().catch(() => ({}));
+        toast.error(err.error ?? "Failed to upload photos");
+      } else {
+        setNewImages([]);
+        toast.success(`${newImages.length} photo${newImages.length !== 1 ? "s" : ""} uploaded`);
+      }
+    }
+
+    setIsDirty(false);
+    refetch();
   };
 
   const handleSaveToEtsy = async () => {
-    if (!id) return;
-    await toast.promise(
-      fetch(`/api/products/${id}/push-to-etsy/`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
-      }).then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
-        setIsDirty(false);
+    if (!form || !id) return;
+
+    const res = await fetch(`/api/products/${id}/push-to-etsy/`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
+      body: JSON.stringify({
+        tags: form.tags,
+        materials: form.materials,
+        who_made: form.who_made,
+        when_made: form.when_made,
+        should_auto_renew: form.should_auto_renew,
+        is_taxable: form.is_taxable,
+        listing_type: form.listing_type,
       }),
-      { loading: "Pushing to Etsy...", success: "Saved to Etsy", error: "Failed to push to Etsy" }
-    );
+    });
+
+    if (res.status === 401) {
+      const data = await res.json();
+      if (data.error === "etsy_token_expired") {
+        toast.error("Your Etsy session has expired — reconnecting...");
+        const returnPath = encodeURIComponent(window.location.pathname);
+        window.location.href = `/api/etsy/login?return_to=${returnPath}`;
+        return;
+      }
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast.error(data.error ?? "Failed to push to Etsy");
+      return;
+    }
+
+    toast.success("Saved to Etsy");
+    setIsDirty(false);
     refetch();
   };
 
@@ -136,13 +217,13 @@ export default function EditProductListing() {
     await handleSaveToEtsy();
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEtsyImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !etsyListing) return;
     const formData = new FormData();
     formData.append("image", file);
     formData.append("rank", "1");
-    setUploadingImage(true);
+    setUploadingEtsy(true);
     await toast.promise(
       fetch(`/api/etsy/shops/${etsyListing.raw.shop_id}/listings/${etsyListing.platform_listing_id}/images/`, {
         method: "POST",
@@ -152,12 +233,12 @@ export default function EditProductListing() {
       }).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
       }),
-      { loading: "Uploading image...", success: "Image uploaded to Etsy", error: "Failed to upload image" }
-    ).finally(() => setUploadingImage(false));
+      { loading: "Uploading...", success: "Uploaded to Etsy", error: "Failed to upload" }
+    ).finally(() => setUploadingEtsy(false));
   };
 
   if (loading) return <p className="text-center text-muted-foreground py-12">Loading...</p>;
-  if (error || !product || !internal) {
+  if (error || !product || !form) {
     return <p className="text-center text-destructive py-12">{error ?? "Product not found"}</p>;
   }
 
@@ -169,20 +250,14 @@ export default function EditProductListing() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
-      {/* Header */}
       <div>
-        <button
-          type="button"
-          className="text-white text-sm mb-2 hover:underline"
-          onClick={() => navigate("/crosslist")}
-        >
+        <button type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/crosslist")}>
           ← Back
         </button>
         <h1 className="text-3xl font-bold text-white">{product.title}</h1>
       </div>
 
       <Card className="bg-[#fdf8f6]">
-        {/* Tab bar */}
         <div className="px-6 pt-6 border-b border-border">
           <div className="flex gap-1">
             {tabs.map(({ key, label, disabled }) => (
@@ -208,207 +283,262 @@ export default function EditProductListing() {
 
         <CardContent className="p-6">
 
-          {/* ── Tab 1: Product Editor ── */}
           {activeTab === "editor" && (
             <div className="space-y-6">
 
-              {/* Connections */}
               <div className="space-y-2">
                 <p className="text-sm font-medium">Connections</p>
                 <div className="flex gap-2 flex-wrap">
-                  <Button
-                    variant={etsyListing ? "default" : "outline"}
-                    size="sm"
-                    disabled={!etsyListing}
-                  >
+                  <Button variant={etsyListing ? "default" : "outline"} size="sm" disabled={!etsyListing}>
                     {etsyListing ? "Etsy ↗" : "Etsy (not linked)"}
                   </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    Shopify (coming soon)
-                  </Button>
+                  <Button variant="outline" size="sm" disabled>Shopify (coming soon)</Button>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Product Photos */}
+              {/* Internal photos */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Product Photos</p>
-                {images.length > 0 ? (
-                  <>
-                    <img
-                      src={images[selectedImage]["url_570xN"]}
-                      alt={images[selectedImage]?.alt_text ?? product.title}
-                      className="w-full max-h-80 object-contain rounded-md border border-border"
-                    />
-                    <div className="flex gap-2 flex-wrap">
-                      {images.map((img, i) => (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Product Photos</p>
+                  <span className="text-xs text-muted-foreground">
+                    {existingCount + newImages.length}/{MAX_IMAGES}
+                  </span>
+                </div>
+
+                {/* Existing saved images */}
+                {(product.images?.length > 0 || newImages.length > 0) && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {product.images?.map((img, i) => (
+                      <div key={img.id} className="relative group">
                         <img
-                          key={img.listing_image_id}
-                          src={img["url_570xN"]}
-                          alt={img.alt_text ?? `Photo ${i + 1}`}
-                          onClick={() => setSelectedImage(i)}
-                          className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-colors ${
-                            i === selectedImage ? "border-[hsl(var(--primary))]" : "border-transparent"
-                          }`}
+                          src={img.url}
+                          alt={`Photo ${i + 1}`}
+                          className="w-full aspect-square object-cover rounded-md border border-border"
                         />
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {etsyListing ? "No photos available" : "No Etsy listing linked — push to Etsy to add photos"}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExistingImage(img.id)}
+                          className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">Main</span>
+                        )}
+                        {img.pushed_to_etsy && (
+                          <span className="absolute bottom-1 right-1 bg-[hsl(var(--primary))]/80 text-white text-xs px-1 rounded">Etsy</span>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Queued new images */}
+                    {newImages.map((img, i) => (
+                      <div key={`new-${i}`} className="relative group">
+                        <img
+                          src={img.preview}
+                          alt={`New photo ${i + 1}`}
+                          className="w-full aspect-square object-cover rounded-md border-2 border-dashed border-[hsl(var(--primary))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNewImage(i)}
+                          className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                        <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">New</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {slotsLeft > 0 && (
+                  <label className="flex flex-col items-center justify-center w-full h-20 rounded-md border-2 border-dashed border-border cursor-pointer hover:bg-muted transition-colors">
+                    <span className="text-sm text-muted-foreground">
+                      {existingCount + newImages.length === 0 ? "Upload photos" : `Add more (${slotsLeft} slot${slotsLeft !== 1 ? "s" : ""} left)`}
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      onChange={handleNewImageChange}
+                    />
+                  </label>
+                )}
+
+                {newImages.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {newImages.length} new photo{newImages.length !== 1 ? "s" : ""} queued. Will be saved when you hit Save Internally or Save to All, and pushed to Etsy on the next Save to Etsy.
                   </p>
                 )}
-                <Label
-                  className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-border text-sm hover:bg-muted transition-colors ${
-                    uploadingImage || !etsyListing ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage || !etsyListing}
-                  />
-                  {uploadingImage ? "Uploading..." : "Upload New Photo"}
-                </Label>
               </div>
 
               <Separator />
 
-              {/* Internal Fields */}
+              {/* Etsy photos */}
+              {etsyListing && (
+                <>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Etsy Photos</p>
+                    {etsyImages.length > 0 ? (
+                      <>
+                        <img
+                          src={etsyImages[selectedEtsyImage]["url_570xN"]}
+                          alt={etsyImages[selectedEtsyImage]?.alt_text ?? product.title}
+                          className="w-full max-h-80 object-contain rounded-md border border-border"
+                        />
+                        <div className="flex gap-2 flex-wrap">
+                          {etsyImages.map((img, i) => (
+                            <img
+                              key={img.listing_image_id}
+                              src={img["url_570xN"]}
+                              alt={img.alt_text ?? `Photo ${i + 1}`}
+                              onClick={() => setSelectedEtsyImage(i)}
+                              className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-colors ${
+                                i === selectedEtsyImage ? "border-[hsl(var(--primary))]" : "border-transparent"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No Etsy photos yet</p>
+                    )}
+                    <Label className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-border text-sm hover:bg-muted transition-colors ${uploadingEtsy ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleEtsyImageUpload}
+                        disabled={uploadingEtsy}
+                      />
+                      {uploadingEtsy ? "Uploading..." : "Upload directly to Etsy"}
+                    </Label>
+                  </div>
+                  <Separator />
+                
+                </>
+              )}
+
+              {/* Core fields */}
               <div className="space-y-4">
-                <p className="text-sm font-medium">Internal Fields</p>
+                <p className="text-sm font-medium">Product Details</p>
                 <div className="space-y-2">
                   <Label>Title</Label>
-                  <Input value={internal.title} onChange={(e) => updateInternal({ title: e.target.value })} />
+                  <Input value={form.title} onChange={(e) => update({ title: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Textarea rows={4} value={internal.description} onChange={(e) => updateInternal({ description: e.target.value })} />
+                  <Textarea rows={6} value={form.description} onChange={(e) => update({ description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Price (€)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={internal.internal_price}
-                      onChange={(e) => updateInternal({ internal_price: e.target.value })}
-                    />
+                    <Input type="number" step="0.01" value={form.price} onChange={(e) => update({ price: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Quantity</Label>
-                    <Input
-                      type="number"
-                      value={internal.internal_quantity}
-                      onChange={(e) => updateInternal({ internal_quantity: Number(e.target.value) })}
-                    />
+                    <Input type="number" value={form.quantity} onChange={(e) => update({ quantity: Number(e.target.value) })} />
                   </div>
                   <div className="space-y-2">
                     <Label>SKU</Label>
-                    <Input value={internal.sku} onChange={(e) => updateInternal({ sku: e.target.value })} />
+                    <Input value={form.sku} onChange={(e) => update({ sku: e.target.value })} />
                   </div>
                 </div>
               </div>
 
-              {/* Etsy Fields */}
-              {etsy && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium">Etsy Fields</p>
-                      <p className="text-xs text-muted-foreground">synced from your Etsy listing</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Title</Label>
-                      <Input value={etsy.title} onChange={(e) => updateEtsy({ title: e.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea rows={8} value={etsy.description} onChange={(e) => updateEtsy({ description: e.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tags</Label>
-                      <Input
-                        value={etsy.tags.join(", ")}
-                        onChange={(e) => updateEtsy({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Materials</Label>
-                      <Input
-                        value={etsy.materials.join(", ")}
-                        onChange={(e) => updateEtsy({ materials: e.target.value.split(",").map((m) => m.trim()).filter(Boolean) })}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label>Who Made</Label>
-                        <Select value={etsy.who_made} onValueChange={(v) => updateEtsy({ who_made: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="i_did">I did</SelectItem>
-                            <SelectItem value="someone_else">Someone else</SelectItem>
-                            <SelectItem value="collective">A collective</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>When Made</Label>
-                        <Select value={etsy.when_made} onValueChange={(v) => updateEtsy({ when_made: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="made_to_order">Made to order</SelectItem>
-                            <SelectItem value="2020_2025">2020–2025</SelectItem>
-                            <SelectItem value="2010_2019">2010–2019</SelectItem>
-                            <SelectItem value="2000_2009">2000–2009</SelectItem>
-                            <SelectItem value="before_2000">Before 2000</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Listing Type</Label>
-                        <Select value={etsy.listing_type} onValueChange={(v) => updateEtsy({ listing_type: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="physical">Physical</SelectItem>
-                            <SelectItem value="digital">Digital</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="flex gap-6">
-                      <div className="flex items-center gap-2">
-                        <Checkbox checked={etsy.should_auto_renew} onCheckedChange={(v) => updateEtsy({ should_auto_renew: !!v })} />
-                        <Label>Auto Renew</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox checked={etsy.is_taxable} onCheckedChange={(v) => updateEtsy({ is_taxable: !!v })} />
-                        <Label>Taxable</Label>
-                      </div>
-                    </div>
+              <Separator />
+
+              {/* Etsy fields */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium">Etsy Fields</p>
+                  <p className="text-xs text-muted-foreground">only pushed when saving to Etsy</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tags</Label>
+                  <Input
+                    value={form.tags.join(", ")}
+                    onChange={(e) => update({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
+                    placeholder="e.g. Handmade, Jewellery, Gift"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Materials</Label>
+                  <Input
+                    value={form.materials.join(", ")}
+                    onChange={(e) => update({ materials: e.target.value.split(",").map((m) => m.trim()).filter(Boolean) })}
+                    placeholder="e.g. Seed Beads, Glass"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Who Made</Label>
+                    <Select value={form.who_made} onValueChange={(v) => update({ who_made: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="i_did">I did</SelectItem>
+                        <SelectItem value="someone_else">Someone else</SelectItem>
+                        <SelectItem value="collective">A collective</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </>
-              )}
+                  <div className="space-y-2">
+                    <Label>When Made</Label>
+                    <Select value={form.when_made} onValueChange={(v) => update({ when_made: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="made_to_order">Made to order</SelectItem>
+                        <SelectItem value="2020_2025">2020–2025</SelectItem>
+                        <SelectItem value="2010_2019">2010–2019</SelectItem>
+                        <SelectItem value="2000_2009">2000–2009</SelectItem>
+                        <SelectItem value="before_2000">Before 2000</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Listing Type</Label>
+                    <Select value={form.listing_type} onValueChange={(v) => update({ listing_type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="physical">Physical</SelectItem>
+                        <SelectItem value="digital">Digital</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-6">
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={form.should_auto_renew} onCheckedChange={(v) => update({ should_auto_renew: !!v })} />
+                    <Label>Auto Renew</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={form.is_taxable} onCheckedChange={(v) => update({ is_taxable: !!v })} />
+                    <Label>Taxable</Label>
+                  </div>
+                </div>
+              </div>
 
               <Separator />
 
-              {/* Save Actions */}
               <div className="flex flex-wrap gap-3 justify-center">
                 <Button onClick={handleSaveToAll}>Save to All</Button>
                 <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveInternally}>Save Internally</Button>
                 <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveToEtsy}>Save to Etsy</Button>
                 <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} disabled>Save to Shopify (Disabled)</Button>
               </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Changes save independently — internal and Etsy prices can differ.
+              </p>
 
             </div>
           )}
 
-          {/* ── Tab 2: Etsy Preview ── */}
+          {/* Etsy Preview */}
           {activeTab === "etsy-preview" && (
             <div className="space-y-4">
               {!etsyListing ? (
@@ -416,15 +546,15 @@ export default function EditProductListing() {
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Etsy Preview</p>
+                    <p className="text-sm font-medium">Last synced Etsy listing</p>
                     {raw?.url && (
                       <a href={raw.url} target="_blank" rel="noreferrer" className="text-sm text-[hsl(var(--primary))] hover:underline">
                         View on Etsy ↗
                       </a>
                     )}
                   </div>
-                  {images.length > 0 && (
-                    <img src={images[0]["url_570xN"]} alt={product.title} className="w-full max-h-96 object-contain rounded-md" />
+                  {etsyImages.length > 0 && (
+                    <img src={etsyImages[0]["url_570xN"]} alt={product.title} className="w-full max-h-96 object-contain rounded-md" />
                   )}
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold">{raw?.title}</h2>

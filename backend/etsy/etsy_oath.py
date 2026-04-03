@@ -120,7 +120,7 @@ class EtsyPingView(View):
             return HttpResponseForbidden("No Etsy token. Authenticate first.")
 
         if token.is_expired():
-            return HttpResponseForbidden("Token expired.")
+            return HttpResponse("Token expired.", status=401)
 
         headers = {
             "Authorization": f"Bearer {token.access_token}",
@@ -150,6 +150,9 @@ class EtsyShopView(View):
 
         if not etsy_token.etsy_user_id:
             return HttpResponse("Missing Etsy user id on token.", status=400)
+
+        if etsy_token.is_expired():
+            return HttpResponse("Token expired.", status=401)
 
         adapter = EtsyAdapter(
             access_token=etsy_token.access_token,

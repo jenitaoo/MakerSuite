@@ -1,21 +1,24 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .platforms.etsy.etsy import EtsyAdapter
-from .models import Product, ExternalProductListing
-from .serializers import ProductSerializer, ExternalProductListingSerializer
+from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES
+from .serializers import ProductSerializer, ProductImageSerializer, ExternalProductListingSerializer
 from .sync import SyncManager
 
+
 class ProductViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing internal products.
-    """
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         return Product.objects.filter(owner=self.request.user.userprofile)
+
+    def get_serializer_context(self):
+        return {"request": self.request}
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
@@ -25,9 +28,54 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = self.get_object()
         listings = ExternalProductListing.objects.filter(product=product)
         return Response({
-            "product": ProductSerializer(product).data,
+            "product": ProductSerializer(product, context={"request": request}).data,
             "external_listings": ExternalProductListingSerializer(listings, many=True).data
         })
+
+    @action(detail=True, methods=["post"], url_path="images", parser_classes=[MultiPartParser, FormParser])
+    def upload_images(self, request, pk=None):
+        """
+        POST /api/products/{id}/images/
+        Upload one or more images. Rejects if total would exceed MAX_PRODUCT_IMAGES.
+        """
+        product = self.get_object()
+        files = request.FILES.getlist("images")
+
+        if not files:
+            return Response({"error": "No images provided."}, status=400)
+
+        existing_count = product.images.count()
+        if existing_count + len(files) > MAX_PRODUCT_IMAGES:
+            slots = MAX_PRODUCT_IMAGES - existing_count
+            return Response(
+                {"error": f"Too many images. You can upload {slots} more (max {MAX_PRODUCT_IMAGES} total)."},
+                status=400
+            )
+
+        created = []
+        for i, file in enumerate(files):
+            img = ProductImage.objects.create(
+                product=product,
+                image=file,
+                rank=existing_count + i,
+            )
+            created.append(ProductImageSerializer(img).data)
+
+        return Response({"uploaded": created}, status=201)
+
+    @action(detail=True, methods=["delete"], url_path="images/(?P<image_id>[^/.]+)")
+    def delete_image(self, request, pk=None, image_id=None):
+        """
+        DELETE /api/products/{id}/images/{image_id}/
+        """
+        product = self.get_object()
+        try:
+            img = product.images.get(id=image_id)
+        except ProductImage.DoesNotExist:
+            return Response({"error": "Image not found."}, status=404)
+        img.image.delete(save=False)
+        img.delete()
+        return Response(status=204)
 
     @action(detail=True, methods=["post"])
     def sync(self, request, pk=None):
@@ -43,7 +91,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         manager.create_missing_listings(product)
         return Response({"status": "created_missing"})
 
-    @action(detail=True, methods=["post"], url_path="push-to-etsy")
+    @action(detail=True, methods=["post"], url_path="push-to-etsy", parser_classes=[JSONParser])
     def push_to_etsy(self, request, pk=None):
         product = self.get_object()
 
@@ -52,11 +100,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             platform="Etsy"
         ).first()
 
-        # Extract Etsy-specific fields from request body if provided.
-        # These are saved to the ExternalProductListing record first,
-        # then read by the adapter when building the Etsy API payload.
-        # This keeps Product platform-agnostic — Etsy fields never touch the Product model.
-        etsy_fields = {
+        etsy_fields = {k: v for k, v in {
             "tags": request.data.get("tags"),
             "materials": request.data.get("materials"),
             "who_made": request.data.get("who_made"),
@@ -64,11 +108,16 @@ class ProductViewSet(viewsets.ModelViewSet):
             "should_auto_renew": request.data.get("should_auto_renew"),
             "is_taxable": request.data.get("is_taxable"),
             "listing_type": request.data.get("listing_type"),
-        }
-        # Remove keys where no value was sent (don't overwrite existing with None)
-        etsy_fields = {k: v for k, v in etsy_fields.items() if v is not None}
+        }.items() if v is not None}
+
+        if not product.internal_price:
+            return Response(
+                {"error": "Product has no price set. Add a price before pushing to Etsy."},
+                status=400
+            )
 
         try:
+            import requests as req_lib
             etsy_token = request.user.etsy_token
             adapter = EtsyAdapter(
                 access_token=etsy_token.access_token,
@@ -76,7 +125,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
             if not linked_listing:
-                # No Etsy listing linked yet — create one
+                # Create new listing
                 reference = ExternalProductListing.objects.filter(
                     owner=request.user.userprofile,
                     platform="Etsy",
@@ -87,23 +136,18 @@ class ProductViewSet(viewsets.ModelViewSet):
                 shop_id = reference.shop_id if reference else None
 
                 if not shop_id:
-                    return Response(
-                        {"error": "No shop_id available. Refresh Database first."},
-                        status=400
-                    )
+                    return Response({"error": "No shop_id available. Refresh Database first."}, status=400)
 
                 result = adapter.create_listing(product, shop_id, reference_raw, etsy_fields)
                 new_listing_id = str(result.get("listing_id"))
 
-                import requests as req
-                listing_res = req.get(
+                listing_res = req_lib.get(
                     f"https://api.etsy.com/v3/application/listings/{new_listing_id}",
                     headers=adapter._headers(),
                     params={"includes": "Images"}
                 )
                 raw_data = listing_res.json() if listing_res.ok else result
 
-                # Save the new listing with Etsy-specific fields populated
                 linked_listing = ExternalProductListing.objects.create(
                     owner=request.user.userprofile,
                     product=product,
@@ -128,10 +172,13 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
 
+                # Push all internal images to the new listing
+                _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
+
                 return Response({"status": "created", "listing_id": new_listing_id})
 
             else:
-                # Listing exists — save Etsy fields to the listing record first, then push
+                # Update existing listing
                 update_fields = []
                 field_map = {
                     "tags": "etsy_tags",
@@ -146,14 +193,12 @@ class ProductViewSet(viewsets.ModelViewSet):
                     if frontend_key in etsy_fields:
                         setattr(linked_listing, model_field, etsy_fields[frontend_key])
                         update_fields.append(model_field)
-
                 if update_fields:
                     linked_listing.save(update_fields=update_fields)
 
-                # Now push to Etsy — adapter reads etsy_* fields from linked_listing
                 result = adapter.update_listing(linked_listing, product)
 
-                # Re-fetch from Etsy and update raw
+                # Re-fetch raw
                 listings_json = adapter.fetch_listings(linked_listing.shop_id)
                 updated = next(
                     (l for l in listings_json.get("results", [])
@@ -168,6 +213,10 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
 
+                # Push only unpushed internal images, up to available Etsy slots
+                etsy_image_count = len(linked_listing.raw.get("images", []))
+                _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
+
                 return Response({"status": "pushed", "result": result})
 
         except Exception as e:
@@ -177,10 +226,30 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=500)
 
 
+def _push_images_to_etsy(adapter, product, listing, etsy_image_count: int):
+    """
+    Push unpushed internal images to Etsy.
+    For new listings (etsy_image_count=0): push all.
+    For existing listings: push unpushed images up to (MAX - etsy_image_count) slots.
+    Marks each image as pushed_to_etsy=True after successful upload.
+    """
+    slots_available = MAX_PRODUCT_IMAGES - etsy_image_count
+    if slots_available <= 0:
+        return
+
+    unpushed = product.images.filter(pushed_to_etsy=False).order_by("rank")[:slots_available]
+
+    for img in unpushed:
+        img.image.open("rb")
+        try:
+            adapter.upload_image(listing, img.image)
+            img.pushed_to_etsy = True
+            img.save(update_fields=["pushed_to_etsy"])
+        finally:
+            img.image.close()
+
+
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing external marketplace listings.
-    """
     serializer_class = ExternalProductListingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -188,7 +257,4 @@ class ExternalProductListingViewSet(viewsets.ModelViewSet):
         return ExternalProductListing.objects.filter(owner=self.request.user.userprofile)
 
     def perform_create(self, serializer):
-        serializer.save(
-            owner=self.request.user.userprofile,
-            platforms=["MakerSuite"]
-        )
+        serializer.save(owner=self.request.user.userprofile)

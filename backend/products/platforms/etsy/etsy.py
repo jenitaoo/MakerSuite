@@ -40,6 +40,7 @@ class EtsyAdapter(BasePlatformAdapter):
             "materials": listing.etsy_materials or [],
             "who_made": listing.etsy_who_made or "i_did",
             "when_made": listing.etsy_when_made or "made_to_order",
+            "is_supply": False,  # ← add this
             "should_auto_renew": listing.etsy_should_auto_renew,
             "is_taxable": listing.etsy_is_taxable,
             "type": listing.etsy_listing_type or "physical",
@@ -163,7 +164,9 @@ class EtsyAdapter(BasePlatformAdapter):
     def _update_core_listing(self, listing, product):
         url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}"
         payload = self._build_update_payload(listing, product)
+        print("Etsy update payload:", payload)
         response = requests.patch(url, headers=self._headers(), json=payload)
+        print("Etsy update response:", response.status_code, response.text)
         response.raise_for_status()
         return response.json()
 
@@ -177,9 +180,14 @@ class EtsyAdapter(BasePlatformAdapter):
     def upload_image(self, listing, image_file, rank=1):
         url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images"
 
+        # Determine content type from filename since ImageField files don't have content_type
+        import mimetypes
+        content_type, _ = mimetypes.guess_type(image_file.name)
+        content_type = content_type or "image/jpeg"
+
         m = MultipartEncoder(
             fields={
-                "image": (image_file.name, image_file.read(), image_file.content_type),
+                "image": (image_file.name, image_file, content_type),
                 "rank": str(rank),
                 "overwrite": "true",
             }

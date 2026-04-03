@@ -1,21 +1,34 @@
 """
-This module contains serializers for the Product and ExternalProductListing models.
-They allow communication between the backend and frontend by converting model instances to and from JSON format.
+Serializers for the Product and ExternalProductListing models.
 """
 from rest_framework import serializers
-from .models import Product, ExternalProductListing
+from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    def get_url(self, obj):
+        return obj.image.url if obj.image else None
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'url', 'rank', 'pushed_to_etsy', 'created_at']
+        read_only_fields = ['id', 'pushed_to_etsy', 'created_at']
 
 class ProductSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
+    # primary image URL for table/list views
     image_url = serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
+        first = obj.images.first()
+        if first:
+            return first.image.url
+        # Fall back to Etsy listing image for synced products with no internal images
         listing = obj.externalproductlisting_set.first()
         return listing.listing_image_url if listing else None
-
-    def get_platform(self, obj):
-        listing = obj.externalproductlisting_set.first()
-        return listing.platform.capitalize() if listing else None
 
     class Meta:
         model = Product
@@ -23,6 +36,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'owner',
             'image_url',
+            'images',
             'platforms',
             'title',
             'description',
@@ -32,7 +46,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'image_url', 'images', 'created_at', 'updated_at']
 
 
 class ExternalProductListingSerializer(serializers.ModelSerializer):
@@ -54,7 +68,6 @@ class ExternalProductListingSerializer(serializers.ModelSerializer):
             'listing_image_url',
             'raw',
             'last_synced',
-            # Etsy-specific fields
             'etsy_tags',
             'etsy_materials',
             'etsy_who_made',

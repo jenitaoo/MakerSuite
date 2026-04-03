@@ -41,7 +41,7 @@ const Navbar = () => {
         {isLoggedIn && (
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium">
             <Link to="/crosslist" className="hover:text-primary transition-colors">
-              Listings
+              Product Listings
             </Link>
             <Link to="/inventory" className="hover:text-primary transition-colors">
               Inventory

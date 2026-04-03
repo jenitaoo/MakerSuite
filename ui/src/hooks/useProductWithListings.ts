@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { getCookie } from "../services/api";
 
+export type ProductImage = {
+  id: number;
+  url: string;
+  rank: number;
+  pushed_to_etsy: boolean;
+  created_at: string;
+};
+
 export type ProductDetail = {
   id: number;
   owner: number;
@@ -9,8 +17,9 @@ export type ProductDetail = {
   sku: string | null;
   internal_price: string;
   internal_quantity: number;
-  image_url: string | null;
-  platform: string | null;
+  image_url: string | null;   // primary image, for list views
+  images: ProductImage[];     // all internal images
+  platforms: string[];
   created_at: string;
   updated_at: string;
 };
@@ -69,8 +78,6 @@ export type ExternalListing = {
   listing_image_url: string | null;
   raw: EtsyRaw;
   last_synced: string;
-  // Etsy-specific fields stored on the listing record
-  // When Shopify is added, add shopify_* fields here in the same pattern
   etsy_tags: string[];
   etsy_materials: string[];
   etsy_who_made: string;

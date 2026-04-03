@@ -1,17 +1,14 @@
 """
 Models for the Product Listings Feature.
-This module defines the data structures for managing products and their external listings.
 """
 from django.db import models
 from authentication.models import UserProfile
 
-"""
-Product model representing an internal product in the system.
-This model stores the original version of the product within our system. External platform listings can be mapped to this product
-"""
+MAX_PRODUCT_IMAGES = 10
+
+
 class Product(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    image_url = models.URLField(max_length=500, blank=True, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
@@ -32,13 +29,26 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
 
-"""
-ExternalProductListing model representing a product listing on an external platform (e.g. Etsy or Shopify).
-Normalised fields shared across platforms are stored as columns.
-Platform-specific fields (e.g. Etsy tags, Shopify metafields) are stored in their own columns
-so that adding a new platform never requires changes to the Product model.
-The full raw API response is also stored in `raw` for reference and preview.
-"""
+class ProductImage(models.Model):
+    """
+    One internal image belonging to a Product.
+    rank controls display order (0 = primary).
+    pushed_to_etsy tracks whether this image has been sent to Etsy,
+    so we never push the same image twice.
+    """
+    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="products/")
+    rank = models.PositiveIntegerField(default=0)
+    pushed_to_etsy = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["rank", "created_at"]
+
+    def __str__(self):
+        return f"{self.product.title} — image {self.rank}"
+
+
 class ExternalProductListing(models.Model):
     shop_id = models.IntegerField(null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
@@ -57,8 +67,8 @@ class ExternalProductListing(models.Model):
 
     # --------------------------------------------------
     # Etsy-specific fields
-    # When Shopify is added, add a new block of Shopify-specific fields below.
-    # The Product model stays platform-agnostic.
+    # When Shopify is added, add shopify_* fields in a new block below.
+    # Product stays platform-agnostic.
     # --------------------------------------------------
     etsy_tags = models.JSONField(default=list, blank=True)
     etsy_materials = models.JSONField(default=list, blank=True)

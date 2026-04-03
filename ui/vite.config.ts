@@ -16,7 +16,12 @@ export default defineConfig({
         target: 'http://backend:8000',  // Docker service name, not localhost
         changeOrigin: true,
         secure: false,
-      }
+      },
+      '/media': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     }
   },
   resolve: {

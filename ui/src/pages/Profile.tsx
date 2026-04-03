@@ -278,9 +278,9 @@ const Profile = () => {
           <div className="flex items-center justify-between opacity-50">
             <div>
               <p className="font-medium">Shopify</p>
-              <p className="text-sm text-muted-foreground">Coming soon</p>
+              <p className="text-sm text-muted-foreground">Disabled</p>
             </div>
-            <Badge variant="outline">Coming Soon</Badge>
+            <Badge variant="outline">Disabled</Badge>
           </div>
         </CardContent>
       </Card>
