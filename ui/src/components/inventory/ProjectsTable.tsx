@@ -29,7 +29,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
     {
       accessorKey: "name",
       header: ({ column }) => (
-        <button className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        <button className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black min-w-[50ch] max-w-[50ch]" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
           Name
           {column.getIsSorted() === "asc" ? <ArrowUp className="h-3 w-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
         </button>
@@ -80,7 +80,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
         const project = row.original;
         return project.product ? (
           <button
-            className="text-sm hover:underline text-left max-w-[70ch] truncate block"
+            className="text-sm hover:underline text-left min-w-[3ch] max-w-[30ch] truncate block"
             onClick={() => navigate(`/products/${project.product}/edit`)}
           >
             {project.product_title}

@@ -260,3 +260,14 @@ export async function deleteTag(id: number) {
   });
   if (!res.ok) throw new Error(await res.text());
 }
+
+export async function linkProductToProject(projectId: number, productId: number) {
+  const res = await fetch(`${BASE}/projects/${projectId}/link-product/`, {
+    method: "POST",
+    credentials: "include",
+    headers: headers(),
+    body: JSON.stringify({ product_id: productId }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}

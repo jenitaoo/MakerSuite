@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createProject } from "../../services/inventoryApi";
 import { getCookie } from "../../services/api";
+import { createProject, linkProductToProject } from "../../services/inventoryApi";
 
 type Product = { id: number; title: string };
 type Props = { onClose: () => void; onCreated: () => void };
@@ -32,7 +32,16 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     if (!name.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
     try {
-      await createProject({ name, product: productId || null, notes: notes || null });
+      const newProject = await createProject({
+        name,
+        product: productId || null,
+        notes: notes || null,
+      });
+
+      if (productId) {
+        await linkProductToProject(newProject.id, Number(productId));
+      }
+
       toast.success("Project created");
       onCreated();
     } catch {
