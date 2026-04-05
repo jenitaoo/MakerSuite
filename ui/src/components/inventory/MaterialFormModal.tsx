@@ -5,28 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { TagsInput } from "@/components/ui/tags-input";
 import { createMaterial, updateMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
 
 type Props = {
   material?: RawMaterial;
+  existingTags?: string[];   // all tags used across materials — for autocomplete
   onClose: () => void;
   onSaved: () => void;
 };
 
-export default function MaterialFormModal({ material, onClose, onSaved }: Props) {
+export default function MaterialFormModal({ material, existingTags = [], onClose, onSaved }: Props) {
   const isEdit = !!material;
   const [form, setForm] = useState({
     name: material?.name ?? "",
     unit_type: material?.unit_type ?? "",
-    quantity: material?.quantity ?? 0,
-    low_stock_threshold: material?.low_stock_threshold ?? 10,
+    quantity: material?.quantity ? String(material.quantity) : "",
+    low_stock_threshold: material?.low_stock_threshold ? String(material.low_stock_threshold) : "",
     cost_per_unit: material?.cost_per_unit ?? "",
     brand: material?.brand ?? "",
     source: material?.source ?? "",
     supplier: material?.supplier ?? "",
     sku: material?.sku ?? "",
     notes: material?.notes ?? "",
+    tags: material?.tags ?? [] as string[],
   });
   const [saving, setSaving] = useState(false);
 
@@ -37,11 +40,16 @@ export default function MaterialFormModal({ material, onClose, onSaved }: Props)
     if (!form.unit_type.trim()) { toast.error("Unit type is required"); return; }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        quantity: form.quantity !== "" ? Number(form.quantity) : 0,
+        low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
+      };
       if (isEdit) {
-        await updateMaterial(material.id, form);
+        await updateMaterial(material.id, payload);
         toast.success("Material updated");
       } else {
-        await createMaterial(form);
+        await createMaterial(payload);
         toast.success("Material created");
       }
       onSaved();
@@ -74,15 +82,30 @@ export default function MaterialFormModal({ material, onClose, onSaved }: Props)
           {!isEdit && (
             <div className="space-y-2">
               <Label>Initial Quantity</Label>
-              <Input type="number" min="0" step="0.01" value={form.quantity} onChange={(e) => update({ quantity: Number(e.target.value) })} />
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.quantity}
+                placeholder="0"
+                onChange={(e) => update({ quantity: e.target.value })}
+                onFocus={(e) => e.target.select()}
+              />
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Low Stock Threshold</Label>
-              <Input type="number" min="0" step="0.01" value={form.low_stock_threshold} onChange={(e) => update({ low_stock_threshold: Number(e.target.value) })} />
-            </div>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.low_stock_threshold}
+                placeholder="0"
+                onChange={(e) => update({ low_stock_threshold: e.target.value })}
+                onFocus={(e) => e.target.select()}
+              />            </div>
             <div className="space-y-2">
               <Label>Cost per Unit (€)</Label>
               <Input type="number" min="0" step="0.01" value={form.cost_per_unit} onChange={(e) => update({ cost_per_unit: e.target.value })} placeholder="0.00" />
@@ -109,6 +132,20 @@ export default function MaterialFormModal({ material, onClose, onSaved }: Props)
               <Label>SKU</Label>
               <Input value={form.sku} onChange={(e) => update({ sku: e.target.value })} placeholder="Optional" />
             </div>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <TagsInput
+              value={form.tags}
+              onChange={(tags) => update({ tags })}
+              suggestions={existingTags}
+              placeholder="e.g. yarn, bead, paint"
+            />
+            <p className="text-xs text-muted-foreground">
+              Type and press Enter or comma to add. Used for filtering and search.
+            </p>
           </div>
 
           <div className="space-y-2">

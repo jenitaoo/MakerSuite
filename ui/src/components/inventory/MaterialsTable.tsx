@@ -1,6 +1,5 @@
 import {
   useState,
-  useEffect,
   useMemo,
 } from "react";
 import {
@@ -26,8 +25,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, X } from "lucide-react";
 import { RawMaterial } from "../../types/inventory";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   materials: RawMaterial[];
@@ -49,6 +59,28 @@ export default function MaterialsTable({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+
+  // All unique tags across all materials
+  const allTags = useMemo(
+    () => [...new Set(materials.flatMap((m) => m.tags ?? []))].sort(),
+    [materials]
+  );
+
+  // Filter materials by selected tags (OR — any match)
+  const filteredByTags = useMemo(() => {
+    if (selectedTags.length === 0) return materials;
+    return materials.filter((m) =>
+      selectedTags.some((tag) => (m.tags ?? []).includes(tag))
+    );
+  }, [materials, selectedTags]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
   const columns: ColumnDef<RawMaterial>[] = useMemo(() => [
     {
@@ -151,6 +183,25 @@ export default function MaterialsTable({
       cell: ({ row }: { row: any }) => row.getValue("source") ?? "—",
     },
     {
+      accessorKey: "tags",
+      header: () => (
+        <span className="font-medium text-xs uppercase tracking-wide">Tags</span>
+      ),
+      cell: ({ row }: { row: any }) => {
+        const tags: string[] = row.getValue("tags") ?? [];
+        if (tags.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       id: "actions",
       header: () => (
         <span className="font-medium text-xs uppercase tracking-wide">Actions</span>
@@ -159,32 +210,16 @@ export default function MaterialsTable({
         const material = row.original;
         return (
           <div className="flex gap-1 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRestockDeduct(material)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onRestockDeduct(material)}>
               Restock / Use
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onHistory(material)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onHistory(material)}>
               History
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onMoreDetails(material)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onMoreDetails(material)}>
               Details
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(material)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onEdit(material)}>
               Edit
             </Button>
             <Button
@@ -202,7 +237,7 @@ export default function MaterialsTable({
   ], [onEdit, onRestockDeduct, onHistory, onMoreDetails, onDelete]);
 
   const table = useReactTable({
-    data: materials,
+    data: filteredByTags,
     columns,
     state: { sorting, columnFilters, globalFilter },
     onSortingChange: setSorting,
@@ -219,7 +254,7 @@ export default function MaterialsTable({
 
   return (
     <div className="space-y-4">
-      {/* toolbar */}
+      {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <Input
@@ -228,6 +263,8 @@ export default function MaterialsTable({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
             className="w-56 h-8 text-sm"
           />
+
+          {/* Low stock filter */}
           <Button
             variant={
               (table.getColumn("is_low_stock")?.getFilterValue() as string) === "low"
@@ -242,18 +279,92 @@ export default function MaterialsTable({
             }}
             className="h-8 text-xs"
           >
-            {lowStockCount > 0 && (
-              <span className="mr-1 text-amber-500">⚠</span>
-            )}
+            {lowStockCount > 0 && <span className="mr-1 text-amber-500">⚠</span>}
             Low Stock {lowStockCount > 0 && `(${lowStockCount})`}
           </Button>
+
+          {/* Tag filter */}
+          {allTags.length > 0 && (
+            <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedTags.length > 0 ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                >
+                  Tags
+                  {selectedTags.length > 0 && (
+                    <span className="bg-primary-foreground/20 text-primary-foreground rounded-none px-1">
+                      {selectedTags.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-0 bg-white" align="start">
+                <Command>
+                  <CommandInput placeholder="Search tags..." />
+                  <CommandList>
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup>
+                      {allTags.map((tag) => (
+                        <CommandItem
+                          key={tag}
+                          value={tag}
+                          onSelect={() => toggleTag(tag)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 size-3",
+                              selectedTags.includes(tag) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {tag}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+                {selectedTags.length > 0 && (
+                  <div className="border-t border-border p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full h-7 text-xs text-muted-foreground"
+                      onClick={() => setSelectedTags([])}
+                    >
+                      <X className="size-3 mr-1" />
+                      Clear filters
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {/* Active tag chips */}
+          {selectedTags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="text-xs gap-1 pr-1 cursor-pointer"
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                  <X className="size-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
+
         <span className="text-sm text-gray-500">
           {table.getFilteredRowModel().rows.length} of {materials.length} materials
         </span>
       </div>
 
-      {/* table */}
+      {/* Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -291,10 +402,10 @@ export default function MaterialsTable({
         </Table>
       </div>
 
-      {/* pagination */}
+      {/* Pagination */}
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}
         </span>
         <div className="flex gap-2">
           <Button

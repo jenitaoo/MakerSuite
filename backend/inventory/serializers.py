@@ -13,7 +13,7 @@ class RawMaterialSerializer(serializers.ModelSerializer):
             'low_stock_threshold', 'cost_per_unit',
             'source', 'brand', 'supplier', 'sku',
             'notes', 'custom_fields', 'is_low_stock',
-            'created_at', 'updated_at',
+            'created_at', 'updated_at', 'tags',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

@@ -9,6 +9,7 @@ export type RawMaterial = {
   source: string | null;
   brand: string | null;
   supplier: string | null;
+  tags?: string[];
   sku: string | null;
   notes: string | null;
   custom_fields: Record<string, string>;

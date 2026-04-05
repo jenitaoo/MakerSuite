@@ -76,6 +76,7 @@ export default function MaterialsTab() {
 
       {showCreateModal && (
         <MaterialFormModal
+          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setShowCreateModal(false)}
           onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
         />
@@ -83,6 +84,7 @@ export default function MaterialsTab() {
       {editTarget && (
         <MaterialFormModal
           material={editTarget}
+          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); fetchMaterials(); }}
         />

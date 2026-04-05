@@ -87,6 +87,7 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
               max={project.in_stock}
               value={unitsSold}
               onChange={(e) => setUnitsSold(Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
             />
             <p className="text-xs text-muted-foreground">{project.in_stock} in stock</p>
           </div>

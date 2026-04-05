@@ -28,7 +28,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         if not quantity:
             return Response({"error": "quantity is required"}, status=400)
         try:
-            quantity = float(quantity)
+            quantity = Decimal(str(quantity))
             if quantity <= 0:
                 raise ValueError
         except (ValueError, TypeError):
@@ -56,7 +56,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         if not quantity:
             return Response({"error": "quantity is required"}, status=400)
         try:
-            quantity = float(quantity)
+            quantity = Decimal(str(quantity))
             if quantity <= 0:
                 raise ValueError
         except (ValueError, TypeError):

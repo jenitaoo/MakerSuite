@@ -22,8 +22,8 @@ export default function MaterialDetailModal({ material, onClose, onSaved }: Prop
     notes: material.notes ?? "",
     supplier: material.supplier ?? "",
     sku: material.sku ?? "",
-    cost_per_unit: material.cost_per_unit ?? "",
-    low_stock_threshold: material.low_stock_threshold ?? 10,
+    cost_per_unit: material.cost_per_unit ? String(material.cost_per_unit) : "",
+    low_stock_threshold: material.low_stock_threshold ? String(material.low_stock_threshold) : "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -84,12 +84,22 @@ export default function MaterialDetailModal({ material, onClose, onSaved }: Prop
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Cost per Unit (€)</Label>
-                  <Input type="number" step="0.01" value={form.cost_per_unit} onChange={(e) => update({ cost_per_unit: e.target.value })} />
-                </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.cost_per_unit}
+                    onChange={(e) => update({ cost_per_unit: e.target.value })}
+                    onFocus={(e) => e.target.select()}
+                  />                </div>
                 <div className="space-y-2">
                   <Label>Low Stock Threshold</Label>
-                  <Input type="number" step="0.01" value={form.low_stock_threshold} onChange={(e) => update({ low_stock_threshold: Number(e.target.value) })} />
-                </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.low_stock_threshold}
+                    onChange={(e) => update({ low_stock_threshold: e.target.value })}
+                    onFocus={(e) => e.target.select()}
+                  />                </div>
               </div>
               <div className="space-y-2">
                 <Label>Supplier</Label>
