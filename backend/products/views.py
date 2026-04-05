@@ -23,6 +23,72 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        DELETE /api/products/{id}/
+        Deletes the product and all associated images from MakerSuite.
+        Does NOT touch Etsy — call /deactivate-etsy/ first if needed.
+        """
+        product = self.get_object()
+
+        # Delete all internal images from disk
+        for img in product.images.all():
+            img.image.delete(save=False)
+
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"], url_path="deactivate-etsy", parser_classes=[JSONParser])
+    def deactivate_etsy(self, request, pk=None):
+        """
+        POST /api/products/{id}/deactivate-etsy/
+        Sets the linked Etsy listing state to 'inactive' (draft).
+        Etsy does not allow permanent deletion via API — deactivating is the closest equivalent.
+        The seller must go to Etsy manually to permanently delete the listing.
+        Returns:
+            {"status": "deactivated"} on success
+            {"status": "no_listing"} if no Etsy listing is linked
+            {"error": "..."} on failure
+        """
+        product = self.get_object()
+
+        linked_listing = ExternalProductListing.objects.filter(
+            product=product,
+            platform="Etsy"
+        ).first()
+
+        if not linked_listing:
+            return Response({"status": "no_listing"})
+
+        try:
+            import requests as req_lib
+            etsy_token = request.user.etsy_token
+            adapter = EtsyAdapter(
+                access_token=etsy_token.access_token,
+                etsy_user_id=etsy_token.etsy_user_id
+            )
+
+            url = f"{adapter.BASE_URL}/shops/{linked_listing.shop_id}/listings/{linked_listing.platform_listing_id}"
+            response = req_lib.patch(
+                url,
+                headers=adapter._headers(),
+                json={"state": "inactive"},
+            )
+
+            if response.status_code == 401:
+                return Response({"error": "etsy_token_expired"}, status=401)
+
+            response.raise_for_status()
+
+            # Update raw state locally so UI reflects change immediately
+            linked_listing.raw = {**linked_listing.raw, "state": "inactive"}
+            linked_listing.save(update_fields=["raw"])
+
+            return Response({"status": "deactivated"})
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     @action(detail=True, methods=["get"])
     def with_listings(self, request, pk=None):
         product = self.get_object()
@@ -125,7 +191,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
             if not linked_listing:
-                # Create new listing
                 reference = ExternalProductListing.objects.filter(
                     owner=request.user.userprofile,
                     platform="Etsy",
@@ -172,13 +237,17 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
 
-                # Push all internal images to the new listing
                 _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
 
-                return Response({"status": "created", "listing_id": new_listing_id})
+                # Return draft status so frontend can show draft badge
+                listing_state = raw_data.get("state", "draft")
+                return Response({
+                    "status": "created",
+                    "listing_id": new_listing_id,
+                    "listing_state": listing_state,
+                })
 
             else:
-                # Update existing listing
                 update_fields = []
                 field_map = {
                     "tags": "etsy_tags",
@@ -198,7 +267,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
                 result = adapter.update_listing(linked_listing, product)
 
-                # Re-fetch raw
                 listings_json = adapter.fetch_listings(linked_listing.shop_id)
                 updated = next(
                     (l for l in listings_json.get("results", [])
@@ -213,7 +281,6 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.platforms.append("Etsy")
                     product.save(update_fields=["platforms"])
 
-                # Push only unpushed internal images, up to available Etsy slots
                 etsy_image_count = len(linked_listing.raw.get("images", []))
                 _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
 

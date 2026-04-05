@@ -94,7 +94,7 @@ export default function ProductListingsPage() {
       });
 
       if (shopRes.status === 401 || shopRes.status === 403) {
-        toast.error("Your Etsy session has expired — reconnecting...");
+        toast.error("Your Etsy session has expired — reconnecting...", { duration: Infinity });
         const returnPath = encodeURIComponent(window.location.pathname);
         window.location.href = `/api/etsy/login?return_to=${returnPath}`;
         return;
@@ -111,8 +111,8 @@ export default function ProductListingsPage() {
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         })
           .then(async (res) => {
-            if (res.status === 401) {
-              toast.error("Your Etsy session has expired — reconnecting...");
+            if (res.status === 401 || res.status === 403) {
+              toast.error("Your Etsy session has expired — reconnecting...", { duration: Infinity });
               const returnPath = encodeURIComponent(window.location.pathname);
               window.location.href = `/api/etsy/login?return_to=${returnPath}`;
               throw new Error("etsy_token_expired");
@@ -130,47 +130,53 @@ export default function ProductListingsPage() {
             return count;
           }),
         {
-          loading: "Refreshing database…",
-          success: (count: number) => `Database synced:\n${count} product listings from connected platforms synced`,
-          error: (err: Error) => err.message === "etsy_token_expired" ? "" : "Failed to refresh database",
+          loading: "Syncing from Etsy…",
+          success: (count: number) => `Synced ${count} listings from Etsy`,
+          error: (err: Error) => err.message === "etsy_token_expired" ? "" : "Failed to sync from Etsy",
         }
       );
     } catch (err) {
       console.error(err);
-      toast.error("Failed to refresh database");
+      toast.error("Failed to sync from Etsy");
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleAdd = () => navigate("/products/new");
 
-return (
+  const handleDeleted = () => {
+    fetchProducts(page).then((data) => {
+      setProducts(data.results || []);
+      setTotal(data.count || 0);
+      setNextUrl(cleanUrl(data.next));
+      setPrevUrl(cleanUrl(data.previous));
+    }).catch(console.error);
+  };
+
+  return (
     <div className="max-w-full mx-auto px-10 py-10 space-y-6">
-      {/* Title sits on gingham background, outside card */}
       <div>
         <h1 className="text-3xl font-bold text-white">Product Listings</h1>
-        <p className="text-white mt-1">Manage and sync your product listings internally and on connected platforms</p>
+        <p className="text-white mt-1">Manage and sync your marketplace listings</p>
       </div>
 
-      {/* Card starts at toolbar, matches inventory card */}
       <Card className="bg-[#fdf8f6]">
         <CardContent className="p-6 space-y-4">
           {loading ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Loading products φ(*￣0￣)...</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">Loading products…</p>
           ) : error ? (
             <p className="text-sm text-destructive py-8 text-center">{error}</p>
           ) : filteredProducts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No products found ( • ᴖ • ｡)</p>
           ) : (
-            <>
-              <ProductTable
-                products={filteredProducts}
-                onEdit={handleEdit}
-                onRefresh={handleRefresh}
-                onCreateNew={handleAdd}
-              />
-            </>
+            <ProductTable
+              products={filteredProducts}
+              onEdit={handleEdit}
+              onRefresh={handleRefresh}
+              onCreateNew={handleAdd}
+              onDeleted={handleDeleted}
+            />
           )}
         </CardContent>
       </Card>

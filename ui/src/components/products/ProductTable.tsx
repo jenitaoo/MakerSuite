@@ -14,20 +14,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Info } from "lucide-react";
 import { Product } from "../../types/product";
+import DeleteProductModal from "./DeleteProductModal";
 
 type ProductTableProps = {
   products: Product[];
   onEdit: (product: Product) => void;
   onRefresh: () => void;
   onCreateNew: () => void;
+  onDeleted: () => void;
 };
 
-export default function ProductTable({ products, onEdit, onRefresh, onCreateNew }: ProductTableProps) {
+// Draft badge shown when an Etsy listing exists but is not active
+function DraftBadge() {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs gap-1">
+        Draft
+        <span title="This listing was pushed to Etsy as a draft. Go to Etsy to publish it so buyers can see it.">
+          <Info className="size-3 cursor-help" />
+        </span>
+      </Badge>
+    </span>
+  );
+}
+
+export default function ProductTable({ products, onEdit, onRefresh, onCreateNew, onDeleted }: ProductTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [platformFilter, setPlatformFilter] = useState("All");
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   const filtered = useMemo(() => {
     if (platformFilter === "All") return products;
@@ -83,11 +100,20 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
       accessorKey: "platforms",
       header: () => <span className="font-medium text-xs uppercase tracking-wide">Platforms</span>,
       cell: ({ row }) => {
-        const platforms = row.getValue("platforms") as string[];
+        const product = row.original;
+        const platforms = product.platforms as string[];
+        const etsyState = product.etsy_listing_state;
+        const isEtsyDraft = platforms.includes("Etsy") && etsyState && etsyState !== "active";
+
         return (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 items-center">
             {platforms.length > 0
-              ? platforms.map((p) => <Badge key={p} variant="secondary">{p}</Badge>)
+              ? platforms.map((p) => (
+                  <span key={p} className="inline-flex items-center gap-1">
+                    <Badge variant="secondary">{p}</Badge>
+                    {p === "Etsy" && isEtsyDraft && <DraftBadge />}
+                  </span>
+                ))
               : <Badge variant="outline">MakerSuite</Badge>
             }
           </div>
@@ -97,18 +123,20 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
     },
     {
       id: "actions",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Edit</span>,
+      header: () => <span className="font-medium text-xs uppercase tracking-wide">Actions</span>,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => onEdit(row.original)}>✏️</Button>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(row.original)}>✏️</Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => setDeleteTarget(row.original)}
+          >
+            🗑
+          </Button>
+        </div>
       ),
-    },
-    {
-      /**not implemented yet, placeholder */
-      id: "Delete",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Delete</span>,
-        cell: ({ row }) => (
-          <Button variant="ghost" size="sm" onClick={() => onEdit(row.original)}>✖</Button>
-        ),
     },
   ], [onEdit]);
 
@@ -142,9 +170,9 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All Platforms</SelectItem>
-              <SelectItem value="Etsy">Etsy Only</SelectItem>
-              <SelectItem value="MakerSuite">MakerSuite Only</SelectItem>
-              <SelectItem value="Shopify" disabled>Shopify (Disabled)</SelectItem>
+              <SelectItem value="Etsy">Etsy</SelectItem>
+              <SelectItem value="MakerSuite">MakerSuite</SelectItem>
+              <SelectItem value="Shopify" disabled>Shopify (coming soon)</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-gray-500 self-center">
@@ -160,7 +188,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
             Sync from Etsy
           </Button>
           <Button onClick={onCreateNew} className="w-full sm:w-auto">
-            Create New MakerSuite Product
+            Create New Product
           </Button>
         </div>
       </div>
@@ -215,6 +243,19 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew 
           </Button>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <DeleteProductModal
+          product={deleteTarget}
+          hasEtsyListing={deleteTarget.platforms.includes("Etsy")}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => {
+            setDeleteTarget(null);
+            onDeleted();
+          }}
+        />
+      )}
     </div>
   );
 }
