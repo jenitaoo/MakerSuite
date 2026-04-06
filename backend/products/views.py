@@ -63,10 +63,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         try:
             import requests as req_lib
             etsy_token = request.user.etsy_token
-            adapter = EtsyAdapter(
-                access_token=etsy_token.access_token,
-                etsy_user_id=etsy_token.etsy_user_id
-            )
+            adapter = EtsyAdapter(etsy_token)
 
             url = f"{adapter.BASE_URL}/shops/{linked_listing.shop_id}/listings/{linked_listing.platform_listing_id}"
             response = req_lib.patch(
@@ -185,10 +182,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         try:
             import requests as req_lib
             etsy_token = request.user.etsy_token
-            adapter = EtsyAdapter(
-                access_token=etsy_token.access_token,
-                etsy_user_id=etsy_token.etsy_user_id
-            )
+            adapter = EtsyAdapter(etsy_token)
 
             if not linked_listing:
                 reference = ExternalProductListing.objects.filter(

@@ -190,7 +190,7 @@ export default function EditProductListing() {
     if (res.status === 401) {
       const data = await res.json();
       if (data.error === "etsy_token_expired") {
-        toast.error("Your Etsy session has expired — reconnecting...");
+        toast.error("Your Etsy session has expired — Redirecting to login...");
         const returnPath = encodeURIComponent(window.location.pathname);
         window.location.href = `/api/etsy/login?return_to=${returnPath}`;
         return;

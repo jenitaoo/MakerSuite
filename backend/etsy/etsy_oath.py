@@ -154,10 +154,7 @@ class EtsyShopView(View):
         if etsy_token.is_expired():
             return HttpResponse("Token expired.", status=401)
 
-        adapter = EtsyAdapter(
-            access_token=etsy_token.access_token,
-            etsy_user_id=etsy_token.etsy_user_id
-        )
+        adapter = EtsyAdapter(etsy_token)
 
         data = adapter.get_shop()
         return JsonResponse(data)
