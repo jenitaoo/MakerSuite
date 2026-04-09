@@ -284,7 +284,13 @@ class EtsyUploadImageView(View):
             return JsonResponse({"error": "No image provided"}, status=400)
 
         try:
-            etsy_token = request.user.etsy_token
+            try:
+                etsy_token = request.user.etsy_token
+            except Exception:
+                return Response(
+                    {"error": "etsy_not_connected"},
+                    status=400
+                )
             adapter = EtsyAdapter(etsy_token)
             result = adapter.upload_image(listing, image_file, int(rank))
             return JsonResponse({"uploaded": True, "result": result})

@@ -85,6 +85,18 @@ export default function ProductListingsPage() {
 
   const handleEdit = (product: Product) => navigate(`/products/${product.id}/edit`);
 
+  const handleEtsyError = (data: any) => {
+    if (data.error === "etsy_token_expired") {
+      toast.error("Your Etsy session has expired. Reconnect Etsy in your Profile to continue.", { duration: Infinity });
+      return;
+    }
+    if (data.error === "etsy_not_connected") {
+      toast.error("No Etsy account connected. If needed, go to your Profile to connect Etsy.", { duration: Infinity });
+      return;
+    }
+    toast.error(data.error ?? "Failed to sync from Etsy");
+  };
+
   const handleRefresh = async () => {
     setLoading(true);
     try {
@@ -100,7 +112,13 @@ export default function ProductListingsPage() {
         return;
       }
 
-      if (!shopRes.ok) throw new Error("Failed to fetch shop info");
+      if (!shopRes.ok) {
+        const data = await shopRes.json().catch(() => ({}));
+        handleEtsyError(data);
+        setLoading(false);
+        return;
+      }
+
       const shopData = await shopRes.json();
       const shopId = shopData.shop_id;
 

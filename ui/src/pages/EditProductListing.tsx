@@ -169,6 +169,18 @@ export default function EditProductListing() {
     refetch();
   };
 
+  const handleEtsyError = (data: any) => {
+    if (data.error === "etsy_token_expired") {
+      toast.error("Your Etsy session has expired. Reconnect Etsy in your Profile to continue.", { duration: Infinity });
+      return;
+    }
+    if (data.error === "etsy_not_connected") {
+      toast.error("No Etsy account connected. Go to your Profile to connect Etsy.", { duration: Infinity });
+      return;
+    }
+    toast.error(data.error ?? "Failed to push to Etsy");
+  };
+
   const handleSaveToEtsy = async () => {
     if (!form || !id) return;
 
@@ -187,19 +199,9 @@ export default function EditProductListing() {
       }),
     });
 
-    if (res.status === 401) {
-      const data = await res.json();
-      if (data.error === "etsy_token_expired") {
-        toast.error("Your Etsy session has expired — redirecting to login...");
-        const returnPath = encodeURIComponent(window.location.pathname);
-        window.location.href = `/api/etsy/login?return_to=${returnPath}`;
-        return;
-      }
-    }
-
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      toast.error(data.error ?? "Failed to push to Etsy");
+      handleEtsyError(data);
       return;
     }
 

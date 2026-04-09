@@ -62,7 +62,13 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         try:
             import requests as req_lib
-            etsy_token = request.user.etsy_token
+            try:
+                etsy_token = request.user.etsy_token
+            except Exception:
+                return Response(
+                    {"error": "etsy_not_connected"},
+                    status=400
+                )
             adapter = EtsyAdapter(etsy_token)
 
             url = f"{adapter.BASE_URL}/shops/{linked_listing.shop_id}/listings/{linked_listing.platform_listing_id}"
