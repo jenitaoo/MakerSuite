@@ -126,7 +126,12 @@ export default function ProjectDetailPage() {
 
       {/* Actions */}
       <div className="flex gap-3 flex-wrap">
-        <Button onClick={() => setShowLogAction(true)}>Log Make / Sale</Button>
+        <Button onClick={async () => {
+          await fetchAll();
+          setShowLogAction(true);
+        }}>
+          Log Make / Sale
+</Button>
       </div>
 
       {/* Notes */}

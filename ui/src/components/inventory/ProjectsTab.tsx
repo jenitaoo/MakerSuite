@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import { getProjects, deleteProject } from "../../services/inventoryApi";
+import { getProjects, deleteProject, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
 import CreateProjectModal from "./CreateProjectModal";
 import ProjectLogActionModal from "./ProjectLogActionModal";
@@ -9,6 +9,7 @@ import ProjectHistoryModal from "./ProjectHistoryModal";
 import ProjectMaterialsModal from "./ProjectMaterialsModal";
 import EditProjectModal from "./EditProjectModal";
 import ProjectsTable from "./ProjectsTable";
+
 
 export default function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -30,6 +31,14 @@ export default function ProjectsTab() {
     }
   };
 
+  const handleLogAction = async (project: Project) => {
+    try {
+      const fresh = await getProject(project.id);
+      setLogTarget(fresh);
+    } catch {
+      setLogTarget(project); // fall back to stale if fetch fails
+    }
+  };
   useEffect(() => { fetchProjects(); }, []);
 
   const handleDelete = async (project: Project) => {
@@ -55,7 +64,7 @@ export default function ProjectsTab() {
       <ProjectsTable
         projects={projects}
         onDelete={handleDelete}
-        onLogAction={setLogTarget}
+        onLogAction={handleLogAction}
         onHistory={setHistoryTarget}
         onMaterials={setMaterialsTarget}
         onEdit={setEditTarget}

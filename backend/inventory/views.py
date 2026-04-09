@@ -123,6 +123,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         date_made = request.data.get("date_made")
         deduct_materials = request.data.get("deduct_materials", False)
         notes = request.data.get("notes", "")
+        material_overrides = {
+            str(o["material_id"]): o["quantity_used"]
+            for o in request.data.get("material_overrides", [])
+        }
+
 
         if units_made is None:
             return Response({"error": "units_made is required"}, status=400)
@@ -151,9 +156,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # deduct materials if requested
         if deduct_materials:
             for pm in project.project_materials.all():
-                if pm.quantity_used is not None:
+                override_qty = material_overrides.get(str(pm.material_id))
+                deduct_qty = Decimal(str(override_qty)) if override_qty else (
+                    Decimal(str(pm.quantity_used)) if pm.quantity_used is not None else None
+                )
+                if deduct_qty:
                     mat = pm.material
-                    deduct_qty = Decimal(str(pm.quantity_used))
                     if deduct_qty > Decimal(str(mat.quantity)):
                         deduct_qty = Decimal(str(mat.quantity))
                     mat.quantity -= deduct_qty
