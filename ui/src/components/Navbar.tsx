@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,18 @@ import { AuthContext } from "../context/AuthContext";
 import { authService } from "../services/auth";
 import MakerSuite_Logo_White_Filled from "../assets/logos/MakerSuite_Logo_White_Filled.png";
 
+const NAV_LINKS = [
+  { label: "Home", to: "/home" },
+  { label: "Studio", to: "/studio" },
+  { label: "Marketplace", to: "/marketplace" },
+  { label: "Insights", to: "/insights", disabled: true },
+];
+
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const isLoggedIn = !!auth?.user;
 
   const handleLogout = async () => {
@@ -28,24 +36,44 @@ const Navbar = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
+  const isActive = (to: string) =>
+    location.pathname === to || location.pathname.startsWith(to + "/");
+
   return (
     <nav className="navbar-frosted w-full sticky top-0 z-50 text-taupe-800">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
+        <Link to={isLoggedIn ? "/home" : "/"} className="flex items-center gap-2 shrink-0">
           <img src={MakerSuite_Logo_White_Filled} alt="MakerSuite" className="h-10" />
         </Link>
 
         {/* Desktop center nav links */}
         {isLoggedIn && (
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium">
-            <Link to="/crosslist" className="hover:text-primary transition-colors">
-              Product Listings
-            </Link>
-            <Link to="/inventory" className="hover:text-primary transition-colors">
-              Inventory
-            </Link>
+            {NAV_LINKS.map(({ label, to, disabled }) =>
+              disabled ? (
+                <span
+                  key={to}
+                  className="opacity-40 cursor-not-allowed text-sm font-medium"
+                  title="Coming soon"
+                >
+                  {label}
+                </span>
+              ) : (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`transition-colors hover:text-primary ${
+                    isActive(to)
+                      ? "text-primary font-semibold border-b-2 border-primary pb-0.5"
+                      : ""
+                  }`}
+                >
+                  {label}
+                </Link>
+              )
+            )}
           </div>
         )}
 
@@ -72,7 +100,7 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile: avatar (if logged in) + hamburger */}
+        {/* Mobile: avatar + hamburger */}
         <div className="lg:hidden flex items-center gap-3">
           {isLoggedIn && (
             <Link to="/profile">
@@ -95,12 +123,22 @@ const Navbar = () => {
         <div className="lg:hidden border-t bg-background px-6 py-4 flex flex-col gap-4 text-sm font-medium">
           {isLoggedIn ? (
             <>
-              <Link to="/crosslist" onClick={() => setMenuOpen(false)} className="hover:text-primary">
-                Listings
-              </Link>
-              <Link to="/inventory" onClick={() => setMenuOpen(false)} className="hover:text-primary">
-                Inventory
-              </Link>
+              {NAV_LINKS.map(({ label, to, disabled }) =>
+                disabled ? (
+                  <span key={to} className="opacity-40 cursor-not-allowed">
+                    {label} (coming soon)
+                  </span>
+                ) : (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setMenuOpen(false)}
+                    className={`hover:text-primary ${isActive(to) ? "text-primary font-semibold" : ""}`}
+                  >
+                    {label}
+                  </Link>
+                )
+              )}
               <button
                 onClick={() => { setMenuOpen(false); handleLogout(); }}
                 className="text-left text-destructive hover:opacity-80"

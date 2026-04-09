@@ -28,7 +28,7 @@ class EtsyLoginView(View):
             return HttpResponseForbidden("Login required.")
 
         # Store where to return after auth
-        return_to = request.GET.get("return_to", "/crosslist")
+        return_to = request.GET.get("return_to", "/marketplace")
         request.session["etsy_auth_return"] = return_to
 
         code_verifier = secrets.token_urlsafe(64)
@@ -105,7 +105,7 @@ class EtsyCallbackView(View):
             },
         )
 
-        return_to = request.session.pop("etsy_auth_return", "/crosslist")
+        return_to = request.session.pop("etsy_auth_return", "/marketplace")
         return redirect(f"{settings.FRONTEND_URL}{return_to}")
 
 

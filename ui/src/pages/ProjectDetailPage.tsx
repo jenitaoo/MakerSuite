@@ -94,7 +94,7 @@ export default function ProjectDetailPage() {
     <div className="w-full px-4 py-10 space-y-6">
       {/* Header */}
       <div>
-        <button type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/inventory")}>
+        <button type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/studio")}>
           ← Back
         </button>
         <h1 className="text-3xl font-bold text-white">{project.name}</h1>

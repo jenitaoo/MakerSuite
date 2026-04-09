@@ -35,7 +35,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
         </button>
       ),
       cell: ({ row }) => (
-        <button className="font-medium text-left hover:underline" onClick={() => navigate(`/inventory/projects/${row.original.id}`)}>
+        <button className="font-medium text-left hover:underline" onClick={() => navigate(`/studio/projects/${row.original.id}`)}>
           {row.getValue("name")}
         </button>
       ),

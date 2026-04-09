@@ -423,7 +423,7 @@ export default function CreateProductListing() {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
-            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/crosslist")}>
+            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/marketplace")}>
               Cancel
             </Button>
           </div>
