@@ -91,8 +91,11 @@ export default function EditProductListing() {
     setIsDirty(true);
   };
 
+  const etsyImages = raw?.images?.sort((a, b) => a.rank - b.rank) ?? [];
   const existingCount = product?.images?.length ?? 0;
-  const slotsLeft = MAX_IMAGES - existingCount - newImages.length;
+  const etsyImageCount = existingCount === 0 ? etsyImages.length : 0;
+  const effectiveCount = existingCount + etsyImageCount + newImages.length;
+  const slotsLeft = MAX_IMAGES - effectiveCount;
 
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -123,8 +126,6 @@ export default function EditProductListing() {
     if (res.ok) { toast.success("Photo removed"); refetch(); }
     else toast.error("Failed to remove photo");
   };
-
-  const etsyImages = raw?.images?.sort((a, b) => a.rank - b.rank) ?? [];
 
   const handleSaveInternally = async () => {
     if (!form || !id) return;
@@ -295,11 +296,9 @@ export default function EditProductListing() {
               <CardTitle>Product Photos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{existingCount + newImages.length}/{MAX_IMAGES} photos</span>
-              </div>
+              <span className="text-xs text-muted-foreground">{effectiveCount}/{MAX_IMAGES} photos</span>
 
-              {(product.images?.length > 0 || newImages.length > 0) && (
+              {(product.images?.length > 0 || newImages.length > 0) ? (
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {product.images?.map((img, i) => (
                     <div key={img.id} className="relative group">
@@ -310,7 +309,6 @@ export default function EditProductListing() {
                         className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >×</button>
                       {i === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">Main</span>}
-                      {img.pushed_to_etsy && <span className="absolute bottom-1 right-1 bg-[hsl(var(--primary))]/80 text-white text-xs px-1 rounded">Etsy</span>}
                     </div>
                   ))}
                   {newImages.map((img, i) => (
@@ -325,16 +323,35 @@ export default function EditProductListing() {
                     </div>
                   ))}
                 </div>
-              )}
+              ) : etsyImages.length > 0 ? (
+                // Fall back to Etsy photos for synced products with no internal uploads
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {etsyImages.map((img, i) => (
+                    <div key={img.listing_image_id} className="relative">
+                      <img
+                        src={img["url_570xN"]}
+                        alt={img.alt_text ?? `Photo ${i + 1}`}
+                        className="w-full aspect-square object-cover rounded-md border border-border"
+                      />
+                      {i === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">Main</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
-              {slotsLeft > 0 && (
+              {/* Upload area */}
+              {slotsLeft > 0 ? (
                 <label className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-border cursor-pointer hover:bg-muted transition-colors">
                   <span className="text-sm text-muted-foreground">
-                    {existingCount + newImages.length === 0 ? "Click to upload photos" : `Add more (${slotsLeft} slot${slotsLeft !== 1 ? "s" : ""} left)`}
+                    {effectiveCount === 0 ? "Click to upload photos" : `Add more (${slotsLeft} slot${slotsLeft !== 1 ? "s" : ""} left)`}
                   </span>
                   <span className="text-xs text-muted-foreground mt-1">JPG, PNG or WEBP</span>
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleNewImageChange} />
                 </label>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Maximum of {MAX_IMAGES} photos reached.
+                </p>
               )}
 
               {newImages.length > 0 && (
@@ -345,47 +362,10 @@ export default function EditProductListing() {
             </CardContent>
           </Card>
 
-          {/* Etsy Photos */}
-          {etsyListing && (
-            <Card className="bg-[#fdf8f6]">
-              <CardHeader>
-                <CardTitle>Etsy Photos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {etsyImages.length > 0 ? (
-                  <>
-                    <img
-                      src={etsyImages[selectedEtsyImage]["url_570xN"]}
-                      alt={etsyImages[selectedEtsyImage]?.alt_text ?? product.title}
-                      className="w-full max-h-80 object-contain rounded-md border border-border"
-                    />
-                    <div className="flex gap-2 flex-wrap">
-                      {etsyImages.map((img, i) => (
-                        <img
-                          key={img.listing_image_id}
-                          src={img["url_570xN"]}
-                          alt={img.alt_text ?? `Photo ${i + 1}`}
-                          onClick={() => setSelectedEtsyImage(i)}
-                          className={`w-16 h-16 object-cover rounded cursor-pointer border-2 transition-colors ${i === selectedEtsyImage ? "border-[hsl(var(--primary))]" : "border-transparent"}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No Etsy photos yet. Save to Etsy to push your product photos.</p>
-                )}
-                <Label className={`inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-border text-sm hover:bg-muted transition-colors ${uploadingEtsy ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleEtsyImageUpload} disabled={uploadingEtsy} />
-                  {uploadingEtsy ? "Uploading..." : "Upload directly to Etsy"}
-                </Label>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Product Details */}
           <Card className="bg-[#fdf8f6]">
             <CardHeader>
-              <CardTitle>Product Details</CardTitle>
+              <CardTitle>Product Fields</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
