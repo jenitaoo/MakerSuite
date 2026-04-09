@@ -41,14 +41,12 @@ function AppLayout() {
               <div className="flex items-center gap-2">
                 {icon}
                 {message}
-                {t.duration === Infinity && (
-                  <button
-                    onClick={() => toast.dismiss(t.id)}
-                    className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
-                  >
-                    ✕
-                  </button>
-                )}
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
+                >
+                  ✕
+                </button>
               </div>
             )}
           </ToastBar>
