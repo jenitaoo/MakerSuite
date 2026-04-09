@@ -8,3 +8,4 @@ django-allauth==65.4.1
 requests==2.32.3
 djangorestframework_simplejwt==5.5.0
 requests-toolbelt==1.0.0
+Pillow==10.4.0

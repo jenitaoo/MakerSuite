@@ -15,6 +15,7 @@ class RawMaterial(models.Model):
     supplier = models.CharField(max_length=500, blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
     custom_fields = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -106,6 +107,10 @@ class SaleLog(models.Model):
     tags = models.ManyToManyField(SaleTag, blank=True)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=SOURCE_MANUAL)
     created_at = models.DateTimeField(auto_now_add=True)
+    unit_prices = models.JSONField(default=list, blank=True)
+    # e.g. [{"unit": 1, "price": "12.00"}, {"unit": 2, "price": "10.00"}]
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # total sale value for this log
 
     def __str__(self):
         return f"{self.project.name} — {self.units_sold} sold on {self.sale_date}"

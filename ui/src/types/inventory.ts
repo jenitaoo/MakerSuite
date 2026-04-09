@@ -70,6 +70,7 @@ export type Project = {
   sale_logs: SaleLog[];
   created_at: string;
   updated_at: string;
+  product_price: string | null;
 };
 
 export type InventoryLog = {

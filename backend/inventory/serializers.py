@@ -56,12 +56,14 @@ class SaleLogSerializer(serializers.ModelSerializer):
         source='tags',
         required=False,
     )
+    unit_prices = serializers.JSONField(required=False)
+    sale_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     class Meta:
         model = SaleLog
         fields = [
             'id', 'owner', 'project', 'units_sold', 'sale_date',
-            'notes', 'tags', 'tag_ids', 'source', 'created_at',
+            'notes', 'tags', 'tag_ids', 'source', 'created_at', 'unit_prices', 'sale_price'
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -75,9 +77,13 @@ class ProjectSerializer(serializers.ModelSerializer):
     make_logs = MakeLogSerializer(many=True, read_only=True)
     sale_logs = SaleLogSerializer(many=True, read_only=True)
     product_title = serializers.SerializerMethodField()
+    product_price = serializers.SerializerMethodField()
 
     def get_product_title(self, obj):
         return obj.product.title if obj.product else None
+
+    def get_product_price(self, obj):
+        return str(obj.product.internal_price) if obj.product else None
 
     class Meta:
         model = Project
@@ -85,7 +91,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'id', 'owner', 'name', 'product', 'product_title',
             'units_made', 'units_sold', 'in_stock',
             'notes', 'project_materials', 'make_logs', 'sale_logs',
-            'created_at', 'updated_at',
+            'created_at', 'updated_at', 'product_price',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

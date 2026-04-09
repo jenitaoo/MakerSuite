@@ -183,6 +183,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         tag_ids = request.data.get("tag_ids", [])
         source = request.data.get("source", SaleLog.SOURCE_MANUAL)
         notes = request.data.get("notes", "")
+        sale_price = request.data.get("sale_price", None)
+        unit_prices = request.data.get("unit_prices", None)
 
         if not units_sold:
             return Response({"error": "units_sold is required"}, status=400)
@@ -223,6 +225,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             sale_date=sale_date,
             source=source,
             notes=notes or None,
+            sale_price=sale_price,
+            unit_prices=unit_prices or [],
         )
         sale_log.tags.set(tags)
 
