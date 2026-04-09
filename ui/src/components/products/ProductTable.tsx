@@ -20,6 +20,7 @@ import DeleteProductModal from "./DeleteProductModal";
 import EtsyLogo from "../../assets/logos/Etsy_Logo.jpeg";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Info } from "lucide-react";
+import { Filter } from "lucide-react"
 
 type ProductTableProps = {
   products: Product[];
@@ -117,7 +118,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
     },
     {
       accessorKey: "platforms",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Listed On</span>,
+      header: () => <span className="font-medium text-xs uppercase tracking-wide">Platforms</span>,
       cell: ({ row }) => {
         const product = row.original;
         const platforms = product.platforms as string[];
@@ -179,25 +180,26 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-3xl">
           <Input
             placeholder="🔎︎ Search products..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-full sm:w-56 h-8 text-sm"
+            className="w-full sm:flex- h-8 text-sm"
           />
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-full sm:w-40 h-8 text-sm">
+            <SelectTrigger className="w-full sm:flex-1 h-8 text-sm gap-1.5">
+              <Filter className="w-3 h-3 shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All Platforms</SelectItem>
               <SelectItem value="Etsy">Etsy</SelectItem>
               <SelectItem value="MakerSuite">MakerSuite</SelectItem>
-              <SelectItem value="Shopify" disabled>Shopify (coming soon)</SelectItem>
+              <SelectItem value="Shopify" disabled>Shopify (Disabled)</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-sm text-gray-500 self-center">
+          <span className="text-sm text-gray-500 self-center whitespace-nowrap shrink-0">
             {table.getFilteredRowModel().rows.length} of {products.length} products
           </span>
         </div>
