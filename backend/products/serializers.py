@@ -16,19 +16,25 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'url', 'rank', 'pushed_to_etsy', 'created_at']
         read_only_fields = ['id', 'pushed_to_etsy', 'created_at']
 
+
 class ProductSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
-    # primary image URL for table/list views
     image_url = serializers.SerializerMethodField()
+    etsy_listing_state = serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
         first = obj.images.first()
         if first:
             return first.image.url
-        # Fall back to Etsy listing image for synced products with no internal images
         listing = obj.externalproductlisting_set.first()
         return listing.listing_image_url if listing else None
+
+    def get_etsy_listing_state(self, obj):
+        listing = obj.externalproductlisting_set.filter(platform="Etsy").first()
+        if listing and listing.raw:
+            return listing.raw.get("state")
+        return None
 
     class Meta:
         model = Product
@@ -38,6 +44,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'image_url',
             'images',
             'platforms',
+            'etsy_listing_state',
             'title',
             'description',
             'sku',
@@ -46,7 +53,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'image_url', 'images', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'image_url', 'images', 'etsy_listing_state', 'created_at', 'updated_at']
 
 
 class ExternalProductListingSerializer(serializers.ModelSerializer):

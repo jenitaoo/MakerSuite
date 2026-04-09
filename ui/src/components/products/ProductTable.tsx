@@ -14,9 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ArrowUp, ArrowDown, Info } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Product } from "../../types/product";
 import DeleteProductModal from "./DeleteProductModal";
+import EtsyLogo from "../../assets/logos/Etsy_Logo.jpeg";
+import MakerSuiteLogo from "../../assets/logos/MakerSuite_Logo_White_Filled_Pink_Circle_Background.png";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { Info } from "lucide-react";
 
 type ProductTableProps = {
   products: Product[];
@@ -26,18 +30,44 @@ type ProductTableProps = {
   onDeleted: () => void;
 };
 
-// Draft badge shown when an Etsy listing exists but is not active
 function DraftBadge() {
   return (
-    <span className="inline-flex items-center gap-1">
-      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs gap-1">
-        Draft
-        <span title="This listing was pushed to Etsy as a draft. Go to Etsy to publish it so buyers can see it.">
-          <Info className="size-3 cursor-help" />
-        </span>
-      </Badge>
-    </span>
-  );
+    <Tooltip>
+      <TooltipTrigger>
+        <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs gap-1 cursor-help">
+          Draft
+          <Info size={12} />
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        <p>This listing was pushed to Etsy as a draft. It's not visible to buyers yet — go to Etsy to publish it.</p>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+function PlatformIcon({ platform }: { platform: string }) {
+  if (platform === "Etsy") {
+    return (
+      <img
+        src={EtsyLogo}
+        alt="Etsy"
+        title="Etsy"
+        className="w-6 h-6 object-contain rounded-sm"
+      />
+    );
+  }
+  if (platform === "MakerSuite") {
+    return (
+      <img
+        src={MakerSuiteLogo}
+        alt="MakerSuite"
+        title="MakerSuite"
+        className="w-6 h-6 object-contain rounded-full"
+      />
+    );
+  }
+  return <Badge variant="secondary" className="text-xs">{platform}</Badge>;
 }
 
 export default function ProductTable({ products, onEdit, onRefresh, onCreateNew, onDeleted }: ProductTableProps) {
@@ -110,11 +140,11 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
             {platforms.length > 0
               ? platforms.map((p) => (
                   <span key={p} className="inline-flex items-center gap-1">
-                    <Badge variant="secondary">{p}</Badge>
+                    <PlatformIcon platform={p} />
                     {p === "Etsy" && isEtsyDraft && <DraftBadge />}
                   </span>
                 ))
-              : <Badge variant="outline">MakerSuite</Badge>
+              : <PlatformIcon platform="MakerSuite" />
             }
           </div>
         );

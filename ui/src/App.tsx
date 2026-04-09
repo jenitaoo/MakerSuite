@@ -12,51 +12,54 @@ import "./App.css";
 import InventoryPage from "./pages/InventoryPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import Profile from "./pages/Profile";
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 
 // layout wrapper that includes Navbar and Toaster
 function AppLayout() {
   return (
-    <div className="app">
-    <Toaster
-      position="top-center"
-      toastOptions={{
-        style: {
-          border: "1px solid #713200",
-          padding: "16px",
-          color: "#713200",
-        },
-        iconTheme: {
-          primary: "#713200",
-          secondary: "#FFFAEE",
-        },
-        duration: 4000,
-      }}
-    >
-      {(t) => (
-        <ToastBar toast={t}>
-          {({ icon, message }) => (
-            <div className="flex items-center gap-2">
-              {icon}
-              {message}
-              {t.duration === Infinity && (
-                <button
-                  onClick={() => toast.dismiss(t.id)}
-                  className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          )}
-        </ToastBar>
-      )}
-    </Toaster>
-      <Navbar />
-      <main className="main-content">
-        <Outlet />
-      </main>
-    </div>
+    <TooltipProvider>
+      <div className="app">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            border: "1px solid #713200",
+            padding: "16px",
+            color: "#713200",
+          },
+          iconTheme: {
+            primary: "#713200",
+            secondary: "#FFFAEE",
+          },
+          duration: 4000,
+        }}
+      >
+        {(t) => (
+          <ToastBar toast={t}>
+            {({ icon, message }) => (
+              <div className="flex items-center gap-2">
+                {icon}
+                {message}
+                {t.duration === Infinity && (
+                  <button
+                    onClick={() => toast.dismiss(t.id)}
+                    className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
+        <Navbar />
+        <main className="main-content">
+          <Outlet />
+        </main>
+      </div>
+    </TooltipProvider>
   );
 }
 
