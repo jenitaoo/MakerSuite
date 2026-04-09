@@ -18,7 +18,6 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Product } from "../../types/product";
 import DeleteProductModal from "./DeleteProductModal";
 import EtsyLogo from "../../assets/logos/Etsy_Logo.jpeg";
-import MakerSuiteLogo from "../../assets/logos/MakerSuite_Logo_White_Filled_Pink_Circle_Background.png";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Info } from "lucide-react";
 
@@ -54,16 +53,6 @@ function PlatformIcon({ platform }: { platform: string }) {
         alt="Etsy"
         title="Etsy"
         className="w-6 h-6 object-contain rounded-sm"
-      />
-    );
-  }
-  if (platform === "MakerSuite") {
-    return (
-      <img
-        src={MakerSuiteLogo}
-        alt="MakerSuite"
-        title="MakerSuite"
-        className="w-6 h-6 object-contain rounded-full"
       />
     );
   }
@@ -128,23 +117,26 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
     },
     {
       accessorKey: "platforms",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Platforms</span>,
+      header: () => <span className="font-medium text-xs uppercase tracking-wide">Listed On</span>,
       cell: ({ row }) => {
         const product = row.original;
         const platforms = product.platforms as string[];
         const etsyState = product.etsy_listing_state;
         const isEtsyDraft = platforms.includes("Etsy") && etsyState && etsyState !== "active";
 
+          // Filter out MakerSuite — it's implicit for all products
+          const externalPlatforms = platforms.filter((p) => p !== "MakerSuite");
+
         return (
           <div className="flex flex-wrap gap-1 items-center">
-            {platforms.length > 0
-              ? platforms.map((p) => (
+            {externalPlatforms.length > 0
+              ? externalPlatforms.map((p) => (
                   <span key={p} className="inline-flex items-center gap-1">
                     <PlatformIcon platform={p} />
                     {p === "Etsy" && isEtsyDraft && <DraftBadge />}
                   </span>
                 ))
-              : <PlatformIcon platform="MakerSuite" />
+              : null
             }
           </div>
         );
