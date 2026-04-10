@@ -5,7 +5,7 @@ import {
   getProject, getMakeLogs, getProjectSales,
   getProjectMaterials, removeProjectMaterial, getMaterials,
 } from "../services/inventoryApi";
-import { Project, SaleLog, MakeLog, ProjectMaterial, RawMaterial } from "../types/inventory";
+import { Project, SaleLog, MakeLog, ProjectMaterial } from "../types/inventory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

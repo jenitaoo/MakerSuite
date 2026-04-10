@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Pencil, Trash2, History } from "lucide-react";
 import { Product } from "../../types/product";
 import DeleteProductModal from "./DeleteProductModal";
 import LogSaleModal from "./LogSaleModal";
+import SalesHistoryModal from "./SalesHistoryModal";
 import EtsyLogo from "../../assets/logos/Etsy_Logo.jpeg";
 import MakerSuiteLogo from "../../assets/logos/MakerSuite_Logo_White_Filled_Pink_Circle_Background.png";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -56,6 +57,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
   const [platformFilter, setPlatformFilter] = useState("All");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saleTarget, setSaleTarget] = useState<Product | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<Product | null>(null);
 
   const filtered = useMemo(() => {
     if (platformFilter === "All") return products;
@@ -154,6 +156,15 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
             >
               Log Sale
             </Button>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(product)}>
+                  <History className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Sales History</p></TooltipContent>
+            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -274,20 +285,27 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         </div>
       </div>
 
+      {saleTarget && (
+        <LogSaleModal
+          product={saleTarget}
+          onClose={() => setSaleTarget(null)}
+          onLogged={() => { setSaleTarget(null); onSaleLogged(); }}
+        />
+      )}
+
+      {historyTarget && (
+        <SalesHistoryModal
+          product={historyTarget}
+          onClose={() => setHistoryTarget(null)}
+        />
+      )}
+
       {deleteTarget && (
         <DeleteProductModal
           product={deleteTarget}
           hasEtsyListing={deleteTarget.platforms.includes("Etsy")}
           onClose={() => setDeleteTarget(null)}
           onDeleted={() => { setDeleteTarget(null); onDeleted(); }}
-        />
-      )}
-
-      {saleTarget && (
-        <LogSaleModal
-          product={saleTarget}
-          onClose={() => setSaleTarget(null)}
-          onLogged={() => { setSaleTarget(null); onSaleLogged(); }}
         />
       )}
     </div>

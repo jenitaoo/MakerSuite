@@ -5,7 +5,7 @@ import { getProjects, deleteProject, getProject } from "../../services/inventory
 import { Project } from "../../types/inventory";
 import CreateProjectModal from "./CreateProjectModal";
 import LogMakeModal from "./LogMakeModal";
-import ProjectHistoryModal from "./ProjectHistoryModal";
+import MakeHistoryModal from "./MakeHistoryModal";
 import ProjectMaterialsModal from "./ProjectMaterialsModal";
 import EditProjectModal from "./EditProjectModal";
 import ProjectsTable from "./ProjectsTable";
@@ -100,7 +100,7 @@ export default function ProjectsTab() {
         />
       )}
       {historyTarget && (
-        <ProjectHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
+        <MakeHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
       )}
       {materialsTarget && (
         <ProjectMaterialsModal project={materialsTarget} onClose={() => setMaterialsTarget(null)} onSaved={() => { setMaterialsTarget(null); fetchProjects(); }} />
