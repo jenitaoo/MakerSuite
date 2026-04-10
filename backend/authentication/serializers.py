@@ -4,14 +4,16 @@ from django.contrib.auth.password_validation import validate_password
 from .models import UserProfile
 from etsy.models import EtsyToken
 
+
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
     etsy_connected = serializers.SerializerMethodField()
+    hourly_rate = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'full_name', 'photo', 'etsy_connected')
+        fields = ('id', 'username', 'email', 'full_name', 'photo', 'etsy_connected', 'hourly_rate')
 
     def get_full_name(self, obj):
         try:
@@ -31,7 +33,13 @@ class UserSerializer(serializers.ModelSerializer):
         return None
 
     def get_etsy_connected(self, obj):
-        return EtsyToken.objects.filter(user=obj).exists()  # fixed
+        return EtsyToken.objects.filter(user=obj).exists()
+
+    def get_hourly_rate(self, obj):
+        try:
+            return str(obj.userprofile.hourly_rate)
+        except UserProfile.DoesNotExist:
+            return "14.15"
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -71,6 +79,7 @@ class ProfileUpdateSerializer(serializers.Serializer):
     username = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
     photo = serializers.ImageField(required=False)
+    hourly_rate = serializers.DecimalField(max_digits=6, decimal_places=2, required=False)
 
     def validate_username(self, value):
         user = self.context['request'].user

@@ -23,9 +23,9 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
   const [dateMade, setDateMade] = useState(new Date().toISOString().split("T")[0]);
   const [deductMaterials, setDeductMaterials] = useState(false);
   const [makeNotes, setMakeNotes] = useState("");
+  const [durationHours, setDurationHours] = useState("");
+  const [durationMins, setDurationMins] = useState("");
 
-  // material quantity overrides — keyed by project_material id
-  // pre-filled with recipe defaults, user can override per make
   const [materialOverrides, setMaterialOverrides] = useState<Record<number, string>>(() => {
     const defaults: Record<number, string> = {};
     project.project_materials?.forEach((m) => {
@@ -71,6 +71,14 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
     return sum + (isNaN(parsed) ? 0 : parsed);
   }, 0);
 
+  // Convert hours + mins to total minutes for the API
+  const getTotalDurationMinutes = (): number | undefined => {
+    const h = parseInt(durationHours) || 0;
+    const m = parseInt(durationMins) || 0;
+    const total = h * 60 + m;
+    return total > 0 ? total : undefined;
+  };
+
   const handleAddTag = async () => {
     if (!newTagName.trim()) return;
     try {
@@ -95,7 +103,6 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
       if (mode === "make") {
         if (unitsMade < 1) { toast.error("Units made must be at least 1"); return; }
 
-        // Build material overrides — only sent when deduct is checked
         const material_overrides = deductMaterials
           ? project.project_materials
               ?.filter((m) => m.quantity_used !== null)
@@ -110,6 +117,7 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
           date_made: dateMade || undefined,
           deduct_materials: deductMaterials,
           material_overrides,
+          duration_minutes: getTotalDurationMinutes(),
           notes: makeNotes || undefined,
         });
         toast.success("Make logged");
@@ -185,6 +193,37 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                 <Input type="date" value={dateMade} onChange={(e) => setDateMade(e.target.value)} />
               </div>
 
+              {/* Duration — segmented hours + mins input */}
+              <div className="space-y-2">
+                <Label>Duration <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground shrink-0">hrs</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    placeholder="0"
+                    value={durationMins}
+                    onChange={(e) => setDurationMins(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground shrink-0">mins</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  How long did this batch take? Used to calculate your average make time.
+                </p>
+              </div>
+
               {hasMaterials && (
                 <>
                   <div className="flex items-start gap-2">
@@ -201,7 +240,6 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                     </div>
                   </div>
 
-                  {/* Material overrides — only shown when deduct is checked */}
                   {deductMaterials && (
                     <div className="space-y-2 rounded-md border border-border p-3 bg-muted/30">
                       <div className="flex items-center justify-between">
@@ -209,30 +247,30 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                       </div>
                       <div className="space-y-2">
                         {project.project_materials?.map((m) => (
-                            <div key={m.id} className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground flex-1 truncate">
-                                {m.material_name}
-                              </span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder={m.quantity_used ?? "0"}
-                                value={materialOverrides[m.id] ?? m.quantity_used ?? ""}
-                                onChange={(e) =>
-                                  setMaterialOverrides((prev) => ({
-                                    ...prev,
-                                    [m.id]: e.target.value,
-                                  }))
-                                }
-                                onFocus={(e) => e.target.select()}
-                                className="h-8 text-sm w-24 shrink-0"
-                              />
-                              <span className="text-xs text-muted-foreground w-10 shrink-0">
-                                {m.material_unit_type}
-                              </span>
-                            </div>
-                          ))}
+                          <div key={m.id} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground flex-1 truncate">
+                              {m.material_name}
+                            </span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder={m.quantity_used ?? "0"}
+                              value={materialOverrides[m.id] ?? m.quantity_used ?? ""}
+                              onChange={(e) =>
+                                setMaterialOverrides((prev) => ({
+                                  ...prev,
+                                  [m.id]: e.target.value,
+                                }))
+                              }
+                              onFocus={(e) => e.target.select()}
+                              className="h-8 text-sm w-24 shrink-0"
+                            />
+                            <span className="text-xs text-muted-foreground w-10 shrink-0">
+                              {m.material_unit_type}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -264,7 +302,6 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                 <p className="text-xs text-muted-foreground">{project.in_stock} in stock</p>
               </div>
 
-              {/* Per-unit prices */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Price per Unit (€)</Label>
@@ -300,7 +337,6 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                 <Input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
               </div>
 
-              {/* Tags */}
               <div className="space-y-2">
                 <Label>Tags</Label>
                 {tags.length > 0 && (

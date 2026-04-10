@@ -24,6 +24,8 @@ export type ProjectMaterial = {
   material_name: string;
   material_unit_type: string;
   quantity_used: string | null;
+  material_cost_per_unit: string | null;
+  material_photo_url: string | null
 };
 
 export type MakeLog = {
@@ -33,6 +35,7 @@ export type MakeLog = {
   date_made: string | null;
   notes: string | null;
   deducted_materials: boolean;
+  duration_minutes: number | null;
   created_at: string;
 };
 
@@ -71,6 +74,8 @@ export type Project = {
   created_at: string;
   updated_at: string;
   product_price: string | null;
+  avg_duration_minutes?: number | null;
+  material_cost_per_unit?: string | null;
 };
 
 export type InventoryLog = {

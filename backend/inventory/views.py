@@ -8,13 +8,18 @@ from .serializers import (
     MakeLogSerializer, SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
 )
 from decimal import Decimal
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class RawMaterialViewSet(viewsets.ModelViewSet):
     serializer_class = RawMaterialSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         return RawMaterial.objects.filter(owner=self.request.user.userprofile)
+
+    def get_serializer_context(self):
+        return {"request": self.request}
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
@@ -123,11 +128,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         date_made = request.data.get("date_made")
         deduct_materials = request.data.get("deduct_materials", False)
         notes = request.data.get("notes", "")
+        duration_minutes = request.data.get("duration_minutes", None)
         material_overrides = {
             str(o["material_id"]): o["quantity_used"]
             for o in request.data.get("material_overrides", [])
         }
-
 
         if units_made is None:
             return Response({"error": "units_made is required"}, status=400)
@@ -138,12 +143,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             return Response({"error": "units_made must be a positive integer"}, status=400)
 
+        # Parse duration_minutes if provided
+        if duration_minutes is not None:
+            try:
+                duration_minutes = int(duration_minutes)
+                if duration_minutes < 0:
+                    duration_minutes = None
+            except (ValueError, TypeError):
+                duration_minutes = None
+
         make_log = MakeLog.objects.create(
             project=project,
             units_made=units_made,
             date_made=date_made or None,
             notes=notes or None,
             deducted_materials=deduct_materials,
+            duration_minutes=duration_minutes,
         )
 
         # update linked product quantity

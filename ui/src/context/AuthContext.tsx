@@ -8,6 +8,7 @@ export interface User {
   full_name: string;
   photo: string | null;
   etsy_connected: boolean;
+  hourly_rate?: string | null;
 }
 
 interface AuthContextType {

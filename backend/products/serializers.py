@@ -22,6 +22,7 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     image_url = serializers.SerializerMethodField()
     etsy_listing_state = serializers.SerializerMethodField()
+    linked_project_id = serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
         first = obj.images.first()
@@ -35,6 +36,11 @@ class ProductSerializer(serializers.ModelSerializer):
         if listing and listing.raw:
             return listing.raw.get("state")
         return None
+
+    def get_linked_project_id(self, obj):
+        from inventory.models import Project
+        project = Project.objects.filter(product=obj).first()
+        return project.id if project else None
 
     class Meta:
         model = Product
@@ -52,6 +58,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'internal_quantity',
             'created_at',
             'updated_at',
+            'linked_project_id',
         ]
         read_only_fields = ['id', 'image_url', 'images', 'etsy_listing_state', 'created_at', 'updated_at']
 
