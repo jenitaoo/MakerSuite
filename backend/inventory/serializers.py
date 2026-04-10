@@ -5,6 +5,15 @@ from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, Sal
 class RawMaterialSerializer(serializers.ModelSerializer):
     is_low_stock = serializers.ReadOnlyField()
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    photo_url = serializers.SerializerMethodField()
+
+    def get_photo_url(self, obj):
+        if obj.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
     class Meta:
         model = RawMaterial
@@ -13,18 +22,33 @@ class RawMaterialSerializer(serializers.ModelSerializer):
             'low_stock_threshold', 'cost_per_unit',
             'source', 'brand', 'supplier', 'sku',
             'notes', 'custom_fields', 'is_low_stock',
+            'photo', 'photo_url',
             'created_at', 'updated_at', 'tags',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'photo_url']
+        extra_kwargs = {'photo': {'write_only': True, 'required': False}}
 
 
 class ProjectMaterialSerializer(serializers.ModelSerializer):
     material_name = serializers.ReadOnlyField(source='material.name')
     material_unit_type = serializers.ReadOnlyField(source='material.unit_type')
+    material_cost_per_unit = serializers.ReadOnlyField(source='material.cost_per_unit')
+    material_photo_url = serializers.SerializerMethodField()
+
+    def get_material_photo_url(self, obj):
+        if obj.material.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.material.photo.url)
+            return obj.material.photo.url
+        return None
 
     class Meta:
         model = ProjectMaterial
-        fields = ['id', 'material', 'material_name', 'material_unit_type', 'quantity_used']
+        fields = [
+            'id', 'material', 'material_name', 'material_unit_type',
+            'material_cost_per_unit', 'material_photo_url', 'quantity_used',
+        ]
 
 
 class MakeLogSerializer(serializers.ModelSerializer):
@@ -32,7 +56,7 @@ class MakeLogSerializer(serializers.ModelSerializer):
         model = MakeLog
         fields = [
             'id', 'project', 'units_made', 'date_made',
-            'notes', 'deducted_materials', 'created_at',
+            'notes', 'deducted_materials', 'duration_minutes', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -62,8 +86,9 @@ class SaleLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleLog
         fields = [
-            'id', 'owner', 'project', 'units_sold', 'sale_date',
-            'notes', 'tags', 'tag_ids', 'source', 'created_at', 'unit_prices', 'sale_price'
+            'id', 'owner', 'product', 'units_sold', 'sale_date',
+            'notes', 'tags', 'tag_ids', 'source', 'created_at',
+            'unit_prices', 'sale_price',
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -73,9 +98,10 @@ class ProjectSerializer(serializers.ModelSerializer):
     units_made = serializers.ReadOnlyField()
     units_sold = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
+    avg_duration_minutes = serializers.ReadOnlyField()
+    material_cost_per_unit = serializers.SerializerMethodField()
     project_materials = ProjectMaterialSerializer(many=True, read_only=True)
     make_logs = MakeLogSerializer(many=True, read_only=True)
-    sale_logs = SaleLogSerializer(many=True, read_only=True)
     product_title = serializers.SerializerMethodField()
     product_price = serializers.SerializerMethodField()
 
@@ -85,12 +111,17 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_product_price(self, obj):
         return str(obj.product.internal_price) if obj.product else None
 
+    def get_material_cost_per_unit(self, obj):
+        cost = obj.material_cost_per_unit
+        return str(cost) if cost is not None else None
+
     class Meta:
         model = Project
         fields = [
             'id', 'owner', 'name', 'product', 'product_title',
             'units_made', 'units_sold', 'in_stock',
-            'notes', 'project_materials', 'make_logs', 'sale_logs',
+            'avg_duration_minutes', 'material_cost_per_unit',
+            'notes', 'project_materials', 'make_logs',
             'created_at', 'updated_at', 'product_price',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

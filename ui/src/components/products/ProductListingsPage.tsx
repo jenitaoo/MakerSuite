@@ -194,6 +194,7 @@ export default function ProductListingsPage() {
               onRefresh={handleRefresh}
               onCreateNew={handleAdd}
               onDeleted={handleDeleted}
+              onSaleLogged={handleDeleted} // refetch products to update stock count after a sale is logged
             />
           )}
         </CardContent>

@@ -2,13 +2,14 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, SaleLog, InventoryLog
 from .serializers import (
     RawMaterialSerializer, ProjectSerializer, ProjectMaterialSerializer,
     MakeLogSerializer, SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
 )
 from decimal import Decimal
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 
 class RawMaterialViewSet(viewsets.ModelViewSet):
     serializer_class = RawMaterialSerializer
@@ -67,7 +68,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             return Response({"error": "quantity must be a positive number"}, status=400)
 
-        if quantity > float(material.quantity):
+        if quantity > Decimal(str(material.quantity)):
             return Response(
                 {"error": f"Cannot deduct {quantity} — only {material.quantity} in stock"},
                 status=400
@@ -115,7 +116,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             "project_materials__material",
             "make_logs",
-            "sale_logs__tags",
         )
 
     def perform_create(self, serializer):
@@ -143,7 +143,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             return Response({"error": "units_made must be a positive integer"}, status=400)
 
-        # Parse duration_minutes if provided
         if duration_minutes is not None:
             try:
                 duration_minutes = int(duration_minutes)
@@ -161,14 +160,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
             duration_minutes=duration_minutes,
         )
 
-        # update linked product quantity
+        # Update linked product quantity
         if project.product:
             project.product.internal_quantity = (
                 project.product.internal_quantity or 0
             ) + units_made
             project.product.save(update_fields=["internal_quantity"])
 
-        # deduct materials if requested
+        # Deduct materials if requested
         if deduct_materials:
             for pm in project.project_materials.all():
                 override_qty = material_overrides.get(str(pm.material_id))
@@ -197,96 +196,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         logs = project.make_logs.all().order_by("-created_at")
         return Response(MakeLogSerializer(logs, many=True).data)
-
-    @action(detail=True, methods=["post"], url_path="log-sale")
-    def log_sale(self, request, pk=None):
-        project = self.get_object()
-        units_sold = request.data.get("units_sold")
-        sale_date = request.data.get("sale_date")
-        tag_ids = request.data.get("tag_ids", [])
-        source = request.data.get("source", SaleLog.SOURCE_MANUAL)
-        notes = request.data.get("notes", "")
-        sale_price = request.data.get("sale_price", None)
-        unit_prices = request.data.get("unit_prices", None)
-
-        if not units_sold:
-            return Response({"error": "units_sold is required"}, status=400)
-        if not sale_date:
-            return Response({"error": "sale_date is required"}, status=400)
-
-        try:
-            units_sold = int(units_sold)
-            if units_sold <= 0:
-                raise ValueError
-        except (ValueError, TypeError):
-            return Response({"error": "units_sold must be a positive integer"}, status=400)
-
-        if units_sold > project.in_stock:
-            return Response(
-                {"error": f"Cannot log {units_sold} sold — only {project.in_stock} in stock"},
-                status=400
-            )
-
-        # ensure Etsy tag exists if source is etsy
-        if source == SaleLog.SOURCE_ETSY:
-            etsy_tag, _ = SaleTag.objects.get_or_create(
-                owner=request.user.userprofile,
-                name="Etsy",
-            )
-            if etsy_tag.id not in tag_ids:
-                tag_ids.append(etsy_tag.id)
-
-        tags = SaleTag.objects.filter(
-            id__in=tag_ids,
-            owner=request.user.userprofile,
-        )
-
-        sale_log = SaleLog.objects.create(
-            owner=request.user.userprofile,
-            project=project,
-            units_sold=units_sold,
-            sale_date=sale_date,
-            source=source,
-            notes=notes or None,
-            sale_price=sale_price,
-            unit_prices=unit_prices or [],
-        )
-        sale_log.tags.set(tags)
-
-        # update linked product quantity
-        if project.product:
-            project.product.internal_quantity = max(
-                0, (project.product.internal_quantity or 0) - units_sold
-            )
-            project.product.save(update_fields=["internal_quantity"])
-
-        InventoryLog.objects.create(
-            owner=request.user.userprofile,
-            project=project,
-            change_type=InventoryLog.CHANGE_SALE,
-            quantity_change=-units_sold,
-            notes=notes or f"Sale logged for project: {project.name}",
-        )
-
-        return Response(SaleLogSerializer(sale_log).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=["get"])
-    def sales(self, request, pk=None):
-        project = self.get_object()
-        logs = project.sale_logs.all().order_by("-sale_date")
-
-        tag_ids = request.query_params.getlist("tags")
-        if tag_ids:
-            logs = logs.filter(tags__id__in=tag_ids).distinct()
-
-        date_from = request.query_params.get("date_from")
-        date_to = request.query_params.get("date_to")
-        if date_from:
-            logs = logs.filter(sale_date__gte=date_from)
-        if date_to:
-            logs = logs.filter(sale_date__lte=date_to)
-
-        return Response(SaleLogSerializer(logs, many=True).data)
 
     @action(detail=True, methods=["get", "post"], url_path="materials")
     def materials(self, request, pk=None):
@@ -370,6 +279,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         )
 
         return Response(ProjectSerializer(project).data)
+
+
 class SaleTagViewSet(viewsets.ModelViewSet):
     serializer_class = SaleTagSerializer
     permission_classes = [permissions.IsAuthenticated]

@@ -1,3 +1,13 @@
+"""
+Inventory models.
+
+SaleLog refactor (April 2026):
+- SaleLog now references Product directly instead of Project.
+- This better reflects the maker's mental model: sales happen on products,
+  makes happen on projects. A project can exist without any sales.
+- Project.units_sold is now derived via the linked product's sale logs.
+- Project.in_stock = units_made - units_sold (unchanged, but now via product).
+"""
 from django.db import models
 from authentication.models import UserProfile
 from products.models import Product
@@ -15,7 +25,7 @@ class RawMaterial(models.Model):
     supplier = models.CharField(max_length=500, blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    photo = models.ImageField(upload_to='material_photos/', null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
     custom_fields = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -48,11 +58,51 @@ class Project(models.Model):
 
     @property
     def units_sold(self):
-        return sum(log.units_sold for log in self.sale_logs.all())
+        """
+        Units sold is now derived from the linked product's sale logs.
+        If no product is linked, falls back to 0.
+        """
+        if self.product:
+            return sum(log.units_sold for log in self.product.sale_logs.all())
+        return 0
 
     @property
     def in_stock(self):
         return self.units_made - self.units_sold
+
+    @property
+    def avg_duration_minutes(self):
+        """
+        Average duration per unit across all make logs that have a duration set.
+        Returns None if no duration data is available.
+        Used for pricing calculator: labour cost = avg_duration_minutes / 60 * hourly_rate
+        """
+        logs_with_duration = [
+            log for log in self.make_logs.all()
+            if log.duration_minutes is not None and log.units_made > 0
+        ]
+        if not logs_with_duration:
+            return None
+        total_minutes = sum(log.duration_minutes for log in logs_with_duration)
+        total_units = sum(log.units_made for log in logs_with_duration)
+        return round(total_minutes / total_units, 1)
+
+    @property
+    def material_cost_per_unit(self):
+        """
+        Estimated material cost per unit based on recipe (ProjectMaterial quantities × cost_per_unit).
+        Returns None if any material is missing a cost_per_unit.
+        Used for pricing calculator.
+        """
+        from decimal import Decimal
+        total = Decimal("0")
+        for pm in self.project_materials.all():
+            if pm.quantity_used is None:
+                continue
+            if pm.material.cost_per_unit is None:
+                return None
+            total += pm.quantity_used * pm.material.cost_per_unit
+        return total if total > 0 else None
 
 
 class ProjectMaterial(models.Model):
@@ -73,6 +123,7 @@ class MakeLog(models.Model):
     date_made = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     deducted_materials = models.BooleanField(default=False)
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -92,6 +143,11 @@ class SaleTag(models.Model):
 
 
 class SaleLog(models.Model):
+    """
+    Represents a sale of a product.
+    Now linked to Product directly — sales are a Marketplace concern.
+    The linked project (via product.project) is used to update stock counts.
+    """
     SOURCE_ETSY = "etsy"
     SOURCE_MANUAL = "manual"
     SOURCE_CHOICES = [
@@ -100,7 +156,11 @@ class SaleLog(models.Model):
     ]
 
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="sale_logs")
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="sale_logs",
+    )
     units_sold = models.PositiveIntegerField()
     sale_date = models.DateField()
     notes = models.TextField(blank=True, null=True)
@@ -108,12 +168,10 @@ class SaleLog(models.Model):
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=SOURCE_MANUAL)
     created_at = models.DateTimeField(auto_now_add=True)
     unit_prices = models.JSONField(default=list, blank=True)
-    # e.g. [{"unit": 1, "price": "12.00"}, {"unit": 2, "price": "10.00"}]
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    # total sale value for this log
 
     def __str__(self):
-        return f"{self.project.name} — {self.units_sold} sold on {self.sale_date}"
+        return f"{self.product.title} — {self.units_sold} sold on {self.sale_date}"
 
 
 class InventoryLog(models.Model):

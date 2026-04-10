@@ -66,7 +66,10 @@ export default function MaterialsTab() {
       </div>
 
       <MaterialsTable
-        materials={materials}
+          materials={[
+          ...materials.filter((m) => m.is_low_stock),
+          ...materials.filter((m) => !m.is_low_stock),
+        ]}
         onEdit={setEditTarget}
         onRestockDeduct={setLogTarget}
         onHistory={setHistoryTarget}
@@ -76,7 +79,6 @@ export default function MaterialsTab() {
 
       {showCreateModal && (
         <MaterialFormModal
-          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setShowCreateModal(false)}
           onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
         />
@@ -84,7 +86,6 @@ export default function MaterialsTab() {
       {editTarget && (
         <MaterialFormModal
           material={editTarget}
-          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); fetchMaterials(); }}
         />

@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { getProjects, deleteProject, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
 import CreateProjectModal from "./CreateProjectModal";
-import ProjectLogActionModal from "./ProjectLogActionModal";
+import LogMakeModal from "./LogMakeModal";
 import ProjectHistoryModal from "./ProjectHistoryModal";
 import ProjectMaterialsModal from "./ProjectMaterialsModal";
 import EditProjectModal from "./EditProjectModal";
 import ProjectsTable from "./ProjectsTable";
-
 
 export default function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -36,13 +35,14 @@ export default function ProjectsTab() {
       const fresh = await getProject(project.id);
       setLogTarget(fresh);
     } catch {
-      setLogTarget(project); // fall back to stale if fetch fails
+      setLogTarget(project);
     }
   };
+
   useEffect(() => { fetchProjects(); }, []);
 
   const handleDelete = async (project: Project) => {
-    const confirmed = window.confirm(`Delete "${project.name}"? This will also delete all linked makes, sales and inventory logs.`);
+    const confirmed = window.confirm(`Delete "${project.name}"? This will also delete all linked makes and inventory logs.`);
     if (!confirmed) return;
     try {
       await deleteProject(project.id);
@@ -57,8 +57,27 @@ export default function ProjectsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setShowCreate(true)}>+ New Project</Button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
+          {projects.length > 0 && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              defaultValue=""
+              onChange={async (e) => {
+                if (!e.target.value) return;
+                const project = projects.find((p) => p.id === Number(e.target.value));
+                if (project) await handleLogAction(project);
+                e.target.value = "";
+              }}
+            >
+              <option value="" disabled>Log a Make →</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+          <Button variant="outline" onClick={() => setShowCreate(true)}>+ New Project</Button>
+        </div>
       </div>
 
       <ProjectsTable
@@ -74,7 +93,11 @@ export default function ProjectsTab() {
         <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
       )}
       {logTarget && (
-        <ProjectLogActionModal project={logTarget} onClose={() => setLogTarget(null)} onLogged={() => { setLogTarget(null); fetchProjects(); }} />
+        <LogMakeModal
+          project={logTarget}
+          onClose={() => setLogTarget(null)}
+          onLogged={() => { setLogTarget(null); fetchProjects(); }}
+        />
       )}
       {historyTarget && (
         <ProjectHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
