@@ -2,17 +2,16 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
-  getProject, getMakeLogs, getProjectSales,
-  getProjectMaterials, removeProjectMaterial, getMaterials,
+  getProject, getMakeLogs, getProjectMaterials, removeProjectMaterial,
 } from "../services/inventoryApi";
-import { Project, SaleLog, MakeLog, ProjectMaterial } from "../types/inventory";
+import { Project, MakeLog, ProjectMaterial } from "../types/inventory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import ProjectLogActionModal from "../components/inventory/ProjectLogActionModal";
+import LogMakeModal from "../components/inventory/LogMakeModal";
 import ProjectMaterialsModal from "../components/inventory/ProjectMaterialsModal";
 import { AuthContext } from "../context/AuthContext";
 import { getCookie } from "../services/api";
@@ -23,32 +22,24 @@ export default function ProjectDetailPage() {
   const auth = useContext(AuthContext);
 
   const [project, setProject] = useState<Project | null>(null);
-  const [sales, setSales] = useState<SaleLog[]>([]);
   const [makeLogs, setMakeLogs] = useState<MakeLog[]>([]);
   const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLogAction, setShowLogAction] = useState(false);
+  const [showLogMake, setShowLogMake] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
-  const [filterTagIds, setFilterTagIds] = useState<number[]>([]);
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
 
-  // Pricing calculator
   const [hourlyRate, setHourlyRate] = useState(auth?.user?.hourly_rate ?? "14.15");
   const [savingRate, setSavingRate] = useState(false);
 
   const fetchAll = async () => {
     if (!id) return;
     try {
-      const [projectData, salesData, makeLogsData, materialsData] = await Promise.all([
+      const [projectData, makeLogsData, materialsData] = await Promise.all([
         getProject(Number(id)),
-        getProjectSales(Number(id)),
         getMakeLogs(Number(id)),
         getProjectMaterials(Number(id)),
-        getMaterials(),
       ]);
       setProject(projectData);
-      setSales(salesData.results ?? salesData);
       setMakeLogs(makeLogsData.results ?? makeLogsData);
       setMaterials(materialsData.results ?? materialsData);
     } catch {
@@ -59,22 +50,6 @@ export default function ProjectDetailPage() {
   };
 
   useEffect(() => { fetchAll(); }, [id]);
-
-  const fetchSales = async () => {
-    if (!id) return;
-    try {
-      const data = await getProjectSales(Number(id), {
-        tags: filterTagIds.length ? filterTagIds : undefined,
-        date_from: filterDateFrom || undefined,
-        date_to: filterDateTo || undefined,
-      });
-      setSales(data.results ?? data);
-    } catch {
-      toast.error("Failed to load sales");
-    }
-  };
-
-  useEffect(() => { if (project) fetchSales(); }, [filterTagIds, filterDateFrom, filterDateTo]);
 
   const handleRemoveMaterial = async (materialId: number) => {
     if (!id) return;
@@ -115,11 +90,7 @@ export default function ProjectDetailPage() {
   if (loading) return <p className="text-center text-muted-foreground py-12">Loading...</p>;
   if (!project) return <p className="text-center text-destructive py-12">Project not found.</p>;
 
-  const allTags = Array.from(new Map(sales.flatMap((s) => s.tags).map((t) => [t.id, t])).values());
-  const totalSold = sales.reduce((sum, s) => sum + s.units_sold, 0);
   const totalMade = makeLogs.reduce((sum, m) => sum + m.units_made, 0);
-
-  // Pricing calculator values
   const materialCost = project.material_cost_per_unit ? parseFloat(project.material_cost_per_unit) : null;
   const avgMins = project.avg_duration_minutes;
   const rate = parseFloat(hourlyRate) || 14.15;
@@ -141,7 +112,6 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="w-full px-4 py-10 space-y-6">
-      {/* Header */}
       <div>
         <button type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/studio")}>
           ← Back
@@ -149,17 +119,21 @@ export default function ProjectDetailPage() {
         <h1 className="text-3xl font-bold text-white">{project.name}</h1>
       </div>
 
-      {/* Summary card */}
+      <div className="flex gap-3 flex-wrap">
+        <Button onClick={async () => { await fetchAll(); setShowLogMake(true); }}>
+          Log Make
+        </Button>
+      </div>
+
+      {/* Project Overview */}
       <Card className="bg-[#fdf8f6]">
-        <CardHeader>
-          <CardTitle>Project Overview</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Project Overview</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             {[
               { label: "Units Made", value: totalMade },
               { label: "In Stock", value: project.in_stock },
-              { label: "Units Sold", value: totalSold },
+              { label: "Units Sold", value: project.units_sold },
               { label: "Avg Make Time", value: formatDuration(project.avg_duration_minutes) },
               { label: "Material Cost/Unit", value: materialCost !== null ? `€${materialCost.toFixed(2)}` : "—" },
               { label: "Linked Product", value: project.product_title ?? "None", link: project.product ? `/products/${project.product}/edit` : null },
@@ -176,10 +150,20 @@ export default function ProjectDetailPage() {
               </div>
             ))}
           </div>
+          {project.product && (
+            <>
+              <Separator />
+              <p className="text-xs text-muted-foreground">
+                Sales for this project are tracked via its linked product in{" "}
+                <button className="underline hover:text-foreground" onClick={() => navigate("/marketplace")}>
+                  Marketplace
+                </button>.
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Notes */}
       {project.notes && (
         <Card className="bg-[#fdf8f6]">
           <CardContent className="pt-4">
@@ -188,78 +172,57 @@ export default function ProjectDetailPage() {
         </Card>
       )}
 
-      {/* Pricing Calculator */}
+      {/* Suggested Pricing */}
       <Card className="bg-[#fdf8f6]">
-        <CardHeader>
-          <CardTitle>Suggested Pricing</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Suggested Pricing</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Material Cost (€)</p>
-              <p className="font-medium">
-                {materialCost !== null ? `€${materialCost.toFixed(2)}` : "—"}
-              </p>
-              {materialCost === null && (
-                <p className="text-xs text-muted-foreground">Add costs to your materials</p>
-              )}
+              <p className="font-medium">{materialCost !== null ? `€${materialCost.toFixed(2)}` : "—"}</p>
+              {materialCost === null && <p className="text-xs text-muted-foreground">Add costs to your materials</p>}
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Labour</p>
-              <p className="font-medium">
-                {labourCost !== null ? `€${labourCost.toFixed(2)}` : "—"}
-              </p>
-              {avgMins === null || avgMins === undefined ? (
-                <p className="text-xs text-muted-foreground">Log a make with duration</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">{formatDuration(avgMins)} × €{rate.toFixed(2)}/hr</p>
-              )}
+              <p className="font-medium">{labourCost !== null ? `€${labourCost.toFixed(2)}` : "—"}</p>
+              {avgMins === null || avgMins === undefined
+                ? <p className="text-xs text-muted-foreground">Log a make with duration</p>
+                : <p className="text-xs text-muted-foreground">{formatDuration(avgMins)} × €{rate.toFixed(2)}/hr</p>}
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Hourly Rate (€)</p>
               <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={hourlyRate}
+                <Input type="number" step="0.01" min="0" value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="h-8 text-sm"
-                />
-                <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={handleSaveHourlyRate} disabled={savingRate}>
+                  onFocus={(e) => e.target.select()} className="h-8 text-sm" />
+                <Button size="sm" variant="outline" className="h-8 text-xs shrink-0"
+                  onClick={handleSaveHourlyRate} disabled={savingRate}>
                   {savingRate ? "..." : "Save"}
                 </Button>
               </div>
             </div>
           </div>
-
           <Separator />
-
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">Suggested Minimum Price</span>
             <span className={`font-semibold text-base ${minimumPrice !== null ? "text-[hsl(var(--primary))]" : "text-muted-foreground"}`}>
               {minimumPrice !== null ? `€${minimumPrice.toFixed(2)}` : "—"}
             </span>
           </div>
-
           {isPriceTooLow && (
             <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-700 text-xs">
               ⚠ Your current price (€{currentPrice?.toFixed(2)}) is below the suggested minimum. Consider raising it to cover your costs.
             </div>
           )}
-
           <p className="text-xs text-muted-foreground">
             Update your hourly rate in{" "}
-            <button className="underline hover:text-foreground" onClick={() => navigate("/profile")}>
-              Profile Settings
-            </button>{" "}
+            <button className="underline hover:text-foreground" onClick={() => navigate("/profile")}>Profile Settings</button>{" "}
             to apply across all projects.
           </p>
         </CardContent>
       </Card>
 
-      {/* Materials */}
+      {/* Recipe */}
       <Card className="bg-[#fdf8f6]">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -324,7 +287,7 @@ export default function ProjectDetailPage() {
         <CardContent>
           {makeLogs.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              No makes logged yet — click "Log Make / Sale" to record a production run.
+              No makes logged yet — click "Log Make" to record a production run.
             </p>
           ) : (
             <div className="rounded-md border overflow-x-auto">
@@ -359,12 +322,11 @@ export default function ProjectDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Modals */}
-      {showLogAction && (
-        <ProjectLogActionModal
+      {showLogMake && (
+        <LogMakeModal
           project={project}
-          onClose={() => setShowLogAction(false)}
-          onLogged={() => { setShowLogAction(false); fetchAll(); }}
+          onClose={() => setShowLogMake(false)}
+          onLogged={() => { setShowLogMake(false); fetchAll(); }}
         />
       )}
       {showMaterials && (
