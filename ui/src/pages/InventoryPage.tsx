@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getMaterials, getProjects } from "../services/inventoryApi";
 import { RawMaterial, Project } from "../types/inventory";
+import Studio_Bunny_Illustration from "../assets/misc/Studio_Bunny_Illust.png";
 
 // ─── Studio accent colour ─────────────────────────────────────────────────────
 const STUDIO = "#7B8F6F";
@@ -24,7 +25,7 @@ const NAV_SECTIONS = [
 // ─── Wavy separator (studio green) ───────────────────────────────────────────
 function WavySeparator() {
   return (
-    <div className="relative w-full overflow-visible my-2">
+    <div className="relative flex overflow-x-hidden">
       <div
         className="wavy-line-studio opacity-60 absolute left-1/2"
         style={{ width: "100vw", transform: "translateX(-50%)" }}
@@ -134,52 +135,63 @@ export default function InventoryPage() {
       <div className="flex-1 max-w-full pl-12 pr-4 sm:pr-6 lg:pr-10 pb-10 pt-0 space-y-0">
 
         {/* ═══ INTRO ═══════════════════════════════════════════════════════ */}
-        <section
-          id="intro"
-          ref={(el) => { sectionRefs.current["intro"] = el; }}
+      <section
+        id="intro"
+        ref={(el) => { sectionRefs.current["intro"] = el; }}
+      >
+        <div
+          className="scalloped-intro px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10"
+          style={{ backgroundColor: STUDIO }}
         >
-          <div
-            className="scalloped-intro px-4 sm:px-8 lg:px-16 pt-8 sm:pt-12 pb-16 sm:pb-20 space-y-8 sm:space-y-10"
-            style={{ backgroundColor: STUDIO }}
-          >
-            {/* Hero row */}
-            <div className="flex flex-col sm:flex-row items-center gap-8">
-              <div className="hidden sm:flex w-full sm:w-1/2 aspect-video rounded-xl bg-white/10 border border-white/20 overflow-hidden shrink-0 items-center justify-center text-sm text-white/50">
-                Hero image coming soon
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">Studio</h1>
-                <p className="mt-2 sm:mt-3 text-sm sm:text-base text-white/80 leading-relaxed">
-                  Where you make things — track your projects, materials, and makes.
-                </p>
-              </div>
+          {/* Hero row */}
+          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+
+            {/* Image — full width on mobile, 2/5 on desktop */}
+            <div className="w-full lg:w-2/5 overflow-visible shrink-0 flex items-center justify-center">
+              <img
+                src={Studio_Bunny_Illustration}
+                alt="Illustration of a crafting studio"
+                className="w-1/2 lg:w-full max-h-40 sm:max-h-none object-contain lg:scale-125"
+              />
             </div>
 
-            {/* What's Here */}
-            <div className="space-y-3 sm:space-y-4 text-center">
-              <h2 className="text-lg sm:text-xl font-bold text-white">What's Here?</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 w-full max-w-xs sm:max-w-xl mx-auto">
-                {[
-                  { icon: LayoutGrid,   label: "At a Glance",    sub: "Stats and low stock alerts",         id: "at-a-glance"    },
-                  { icon: Package,      label: "Your Projects",  sub: "Recipes, makes and linked products", id: "your-projects"  },
-                  { icon: FlaskConical, label: "Your Materials", sub: "Raw materials and stock levels",     id: "your-materials" },
-                ].map(({ icon: Icon, label, sub, id }) => (
-                  <button
-                    key={label}
-                    onClick={() => scrollTo(id)}
-                    className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-xl p-4 text-left transition-colors group last:col-span-2 last:max-w-[calc(50%-0.5rem)] last:mx-auto sm:last:col-span-1 sm:last:max-w-none sm:last:mx-0"
-                  >
-                    <div className="aspect-video max-h-24 rounded-lg bg-white/10 flex items-center justify-center mb-2 sm:mb-3">
-                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white/60 group-hover:text-white transition-colors" />
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-white">{label}</p>
-                    <p className="text-xs text-white/60 mt-0.5 hidden sm:block">{sub}</p>
-                  </button>
-                ))}
+            {/* Right column */}
+            <div className="flex-1 space-y-8 sm:space-y-10">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white">Studio</h1>
+                <p className="mt-3 text-white/80 text-base leading-relaxed">
+                  Everything you need to make things — track inventory for your projects and materials, link them to products in your Marketplace and log everything you make
+                </p>
               </div>
 
-              {/* Scroll indicator */}
-              <div className="flex justify-center pt-4">
+              {/* Separator */}
+              <div className="border-t border-white/20 w-full" />
+
+              {/* What's Here — hidden on mobile */}
+              <div className="hidden sm:block space-y-3 sm:space-y-4">
+                <h2 className="text-lg sm:text-xl font-bold text-white text-center">What's Here?</h2>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+                  {[
+                    { icon: LayoutGrid,   label: "At a Glance",    sub: "Stats and low stock alerts",         id: "at-a-glance"    },
+                    { icon: Package,      label: "Your Projects",  sub: "Recipes, makes and linked products", id: "your-projects"  },
+                    { icon: FlaskConical, label: "Your Materials", sub: "Raw materials and stock levels",     id: "your-materials" },
+                  ].map(({ icon: Icon, label, sub, id }) => (
+                    <button
+                      key={label}
+                      onClick={() => scrollTo(id)}
+                      className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-xl p-3 sm:p-4 text-left transition-colors group"
+                    >
+                      <div className="rounded-lg bg-white/10 flex items-center justify-center mb-2 p-3">
+                        <Icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                      </div>
+                      <p className="text-xs font-semibold text-white leading-tight">{label}</p>
+                      <p className="text-xs text-white/60 mt-1">{sub}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-2">
                 <button
                   onClick={() => scrollTo("at-a-glance")}
                   className="flex flex-col items-center gap-1 text-white/50 hover:text-white/80 transition-colors animate-bounce"
@@ -189,7 +201,8 @@ export default function InventoryPage() {
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
 
         {/* ═══ AT A GLANCE ═════════════════════════════════════════════════ */}
