@@ -24,7 +24,7 @@ const Login = () => {
     try {
       const data = await authService.login(values);
       auth?.setUser(data.user);
-      navigate("/marketplace");
+      navigate("/home");
     } catch {
       setError("Invalid username or password.");
     }
