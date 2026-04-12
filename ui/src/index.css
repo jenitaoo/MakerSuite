@@ -229,3 +229,33 @@
 a:hover {
   transition: 0.2s ease;
 }
+
+/* ── Scalloped intro box ─────────────────────────────────────────────────── */
+.scalloped-intro {
+  --r: 22px;
+  --h: 13px;
+  --diffusion: 5%;
+  --ellipse-width: calc(1.8 * var(--r));
+  /* scallop only the bottom edge */
+  mask:
+    linear-gradient(#000 0 0) no-repeat 0% 0% / 100% calc(100% - 0.7 * var(--r)),
+    radial-gradient(ellipse var(--r) var(--h) at 50% 50%, #000 calc(100% - var(--diffusion)), transparent)
+      0 100% / var(--ellipse-width) calc(2 * var(--h)) round;
+}
+
+/* ── Wavy section separator ─────────────────────────────────────────────── */
+.wavy-line {
+  --s: 24px;
+  --b: 8px;
+  --m: 0.5;
+  --R: calc(var(--s) * sqrt(var(--m) * var(--m) + 1) + var(--b) / 2);
+  height: calc(2 * var(--R));
+  width: 100%;
+  background: #C17B6F;
+  --_g: #0000 calc(99% - var(--b)), #000 calc(101% - var(--b)) 99%, #0000 101%;
+  mask:
+    radial-gradient(var(--R) at left 50% bottom calc(-1 * var(--m) * var(--s)), var(--_g))
+      calc(50% - 2 * var(--s)) calc(50% - var(--s) / 2 - var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x,
+    radial-gradient(var(--R) at left 50% top calc(-1 * var(--m) * var(--s)), var(--_g))
+      50% calc(50% + var(--s) / 2 + var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x;
+}

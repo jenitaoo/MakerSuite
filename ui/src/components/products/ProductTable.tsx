@@ -132,7 +132,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
                     {p === "Etsy" && isEtsyDraft && <DraftBadge />}
                   </span>
                 ))
-              : <span className="text-xs text-muted-foreground">MakerSuite only</span>
+              : null
             }
           </div>
         );

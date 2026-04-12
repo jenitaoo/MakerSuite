@@ -5,7 +5,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import CrossList from "./pages/CrossList";
+import MarketplacePage from "./pages/MarketplacePage";
 import CreateProductListing from "./pages/CreateProductListing";
 import EditProductListing from "./pages/EditProductListing";
 import "./App.css";
@@ -69,7 +69,7 @@ const router = createBrowserRouter([
       {
         element: <PrivateRoute />,
         children: [
-          // Home dashboard placeholder
+          // Home dashboard — Step 4
           { path: "/home", element: <Dashboard /> },
 
           // Studio — making things
@@ -77,11 +77,11 @@ const router = createBrowserRouter([
           { path: "/studio/projects/:id", element: <ProjectDetailPage /> },
 
           // Marketplace — selling things
-          { path: "/marketplace", element: <CrossList /> },
+          { path: "/marketplace", element: <MarketplacePage /> },
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
 
-          // Insights placeholder
+          // Insights — placeholder for Step 8
           // { path: "/insights", element: <InsightsPage /> },
 
           // Profile
