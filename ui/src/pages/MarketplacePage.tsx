@@ -17,12 +17,15 @@ import {
   AlertTriangle,
   RefreshCw,
   LayoutGrid,
+  ChevronDown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LogSaleModal from "../components/products/LogSaleModal";
 import { Star, Euro } from "lucide-react";
+import Market_Bunny_Illustration from "../assets/misc/Market_Bunny_Illust.png";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -334,61 +337,84 @@ export default function MarketplacePage() {
 
 
     {/* ── Main content ── */}
-    <div className="flex-1 max-w-full pl-16 pr-16 pb-10 pt-0 space-y-6 sm:space-y-8">
+    <div className="flex-1 max-w-full pl-12 pr-4 sm:pr-6 lg:pr-10 pb-10 pt-0 space-y-0">
         {/* Page header */}
         <section
         id="intro"
         ref={(el) => { sectionRefs.current["intro"] = el; }}
         >
         {/* Scalloped box — flush to navbar top, gap on sides, stops before fold */}
-        <div className="scalloped-intro bg-[#C17B6F] px-4 sm:px-8 lg:px-16 pt-8 sm:pt-12 pb-16 sm:pb-20 space-y-8 sm:space-y-10">
+        <div className="scalloped-intro bg-[#C17B6F] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
 
         {/* Hero row */}
-        <div className="flex flex-col sm:flex-row items-center gap-8">
-            <div className="hidden sm:block w-full sm:w-1/2 aspect-video rounded-xl bg-white/10 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center text-sm text-white/50">
-            Hero image coming soon
-            </div>
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+
+        {/* Bunny — full width on mobile, 2/5 on desktop */}
+        <div className="w-full lg:w-2/5 overflow-visible shrink-0 flex items-center justify-center">
+        <img
+            src={Market_Bunny_Illustration}
+            alt="Illustration of a bunny in front of a market stall"
+            className="w-1/2 lg:w-full max-h-40 sm:max-h-none object-contain lg:scale-125"
+        />
+        </div>
+        {/* Right column — title + What's Here */}
+        <div className="flex-1 space-y-8 sm:space-y-10">
             <div>
-            <h1 className="text-4xl font-bold text-white">Marketplace</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">Marketplace</h1>
             <p className="mt-3 text-white/80 text-base leading-relaxed">
                 Everything you need to sell your products — in person, online, or both.
             </p>
             </div>
-        </div>
 
-        {/* What's Here */}
-        <div className="space-y-3 sm:space-y-4 text-center">
-            <h2 className="text-lg sm:text-xl font-bold text-white">What's Here?</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 w-full max-w-xs sm:max-w-xl mx-auto">
-            {[
-                { icon: LayoutGrid, label: "At a Glance",   sub: "An overview of your products and how they're performing",     id: "at-a-glance"  },
-                { icon: Store,      label: "Your Markets",  sub: "Prepare for and document in-person markets and sales",  id: "your-markets" },
-                { icon: Package,    label: "Your Listings", sub: "Manage your product listings  — in person, online, or both", id: "your-listings" },
-            ].map(({ icon: Icon, label, sub, id }) => (
-                <button
-                key={label}
-                onClick={() => scrollTo(id)}
-                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-xl p-4 text-left transition-colors group last:col-span-2 last:max-w-[calc(50%-0.5rem)] last:mx-auto sm:last:col-span-1 sm:last:max-w-none sm:last:mx-0"
-                >
-                <div className="aspect-video rounded-lg bg-white/10 flex items-center justify-center mb-2 sm:mb-3">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white/60 group-hover:text-white transition-colors" />
+             {/* Separator */}
+            <div className="border-t border-white/20 w-full" />
+
+            {/* What's Here — hidden on mobile */}
+            <div className="hidden sm:block space-y-3 sm:space-y-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white text-center">What's Here?</h2>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+                {[
+                    { icon: LayoutGrid, label: "At a Glance",   sub: "An overview of your products and how they're performing", id: "at-a-glance"  },
+                    { icon: Store,      label: "Your Markets",  sub: "Prepare for and document in-person markets and sales",    id: "your-markets" },
+                    { icon: Package,    label: "Your Listings", sub: "Manage your product listings — in person, online, or both", id: "your-listings" },
+                ].map(({ icon: Icon, label, sub, id }) => (
+                    <button
+                    key={label}
+                    onClick={() => scrollTo(id)}
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-xl p-3 sm:p-4 text-left transition-colors group w-full last:col-span-2 last:max-w-[calc(50%-0.25rem)] last:mx-auto sm:last:col-span-1 sm:last:max-w-none sm:last:mx-0"
+                    >
+                    <div className="rounded-lg bg-white/10 flex items-center justify-center mb-2 p-3">
+                        <Icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                    </div>
+                    <p className="text-xs font-semibold text-white leading-tight">{label}</p>
+                    <p className="text-xs text-white/60 mt-1">{sub}</p>
+                    </button>
+                ))}
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-white">{label}</p>
-                <p className="text-xs text-white/60 mt-0.5 hidden sm:block">{sub}</p>
-                </button>
-            ))}
+            </div>
+
+            <div className="flex justify-center pt-2">
+            <button
+                onClick={() => scrollTo("at-a-glance")}
+                className="flex flex-col items-center gap-1 text-white/50 hover:text-white/80 transition-colors animate-bounce"
+            >
+                <ChevronDown className="w-5 h-5" />
+            </button>
             </div>
         </div>
+        </div>
+
         </div>
         </section>
 
 
         {/* ═══ AT A GLANCE ═════════════════════════════════════════════════ */}
         <section
-          id="at-a-glance"
-          ref={(el) => { sectionRefs.current["at-a-glance"] = el; }}
-          className="space-y-4"
+        id="at-a-glance"
+        ref={(el) => { sectionRefs.current["at-a-glance"] = el; }}
+        className="space-y-4 pt-8 sm:pt-12 scroll-mt-20"
         >
+
             <div>
               <h2 className="text-xl font-bold text-white">At A Glance</h2>
               <p className="text-white text-sm mt-0.5">
@@ -495,9 +521,9 @@ export default function MarketplacePage() {
 
         {/* ═══ YOUR MARKETS ════════════════════════════════════════════════ */}
         <section
-          id="your-markets"
-          ref={(el) => { sectionRefs.current["your-markets"] = el; }}
-          className="space-y-4"
+        id="your-markets"
+        ref={(el) => { sectionRefs.current["your-markets"] = el; }}
+        className="space-y-4 pt-8 sm:pt-12 scroll-mt-20"
         >
           <div className="flex items-end justify-between">
             <div>
@@ -553,9 +579,9 @@ export default function MarketplacePage() {
 
         {/* ═══ YOUR PRODUCT LISTINGS ═══════════════════════════════════════ */}
         <section
-          id="your-listings"
-          ref={(el) => { sectionRefs.current["your-listings"] = el; }}
-          className="space-y-4"
+        id="your-listings"
+        ref={(el) => { sectionRefs.current["your-listings"] = el; }}
+        className="space-y-4 pt-8 sm:pt-12 scroll-mt-20"
         >
           <div className="flex items-end justify-between">
             <div>

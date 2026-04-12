@@ -58,7 +58,7 @@ export default function ProjectsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {projects.length > 0 && (
             <select
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
@@ -76,7 +76,7 @@ export default function ProjectsTab() {
               ))}
             </select>
           )}
-          <Button variant="outline" onClick={() => setShowCreate(true)}>+ New Project</Button>
+          <Button onClick={() => setShowCreate(true)}>+ New Project</Button>
         </div>
       </div>
 
