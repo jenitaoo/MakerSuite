@@ -5,8 +5,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from decimal import Decimal
 
 from .platforms.etsy.etsy import EtsyAdapter
-from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES
-from .serializers import ProductSerializer, ProductImageSerializer, ExternalProductListingSerializer
+from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES, SaleTag, SaleLog, Market, MarketProduct
+from .serializers import ProductSerializer, ProductImageSerializer, ExternalProductListingSerializer, SaleTagSerializer, SaleLogSerializer, MarketSerializer
 from .sync import SyncManager
 
 
@@ -72,7 +72,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
         # Import here to avoid circular imports
-        from inventory.models import SaleTag, SaleLog, InventoryLog
+        from products.models import SaleTag, SaleLog, InventoryLog
 
         # Ensure Etsy tag exists if source is etsy
         if source == "etsy":
@@ -124,7 +124,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         Returns all sale logs for this product.
         """
         product = self.get_object()
-        from inventory.models import SaleLog
+        from products.models import SaleLog
         from inventory.serializers import SaleLogSerializer
         logs = product.sale_logs.all().order_by("-sale_date")
         return Response(SaleLogSerializer(logs, many=True).data)
@@ -360,6 +360,37 @@ class ExternalProductListingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ExternalProductListing.objects.filter(owner=self.request.user.userprofile)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.userprofile)
+
+class SaleTagViewSet(viewsets.ModelViewSet):
+    serializer_class = SaleTagSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return SaleTag.objects.filter(owner=self.request.user.userprofile)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.userprofile)
+
+    def destroy(self, request, *args, **kwargs):
+        tag = self.get_object()
+        if tag.name == "Etsy":
+            return Response(
+                {"error": "The Etsy tag is reserved and cannot be deleted"},
+                status=400
+            )
+        return super().destroy(request, *args, **kwargs)
+
+class MarketViewSet(viewsets.ModelViewSet):
+    serializer_class = MarketSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Market.objects.filter(
+            owner=self.request.user.userprofile
+        ).prefetch_related("market_products", "sale_logs")
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)

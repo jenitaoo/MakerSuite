@@ -3,10 +3,11 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, SaleLog, InventoryLog
+from .models import RawMaterial, Project, ProjectMaterial, MakeLog, InventoryLog
+from products.models import SaleTag, SaleLog
 from .serializers import (
     RawMaterialSerializer, ProjectSerializer, ProjectMaterialSerializer,
-    MakeLogSerializer, SaleTagSerializer, SaleLogSerializer, InventoryLogSerializer
+    MakeLogSerializer, InventoryLogSerializer
 )
 from decimal import Decimal
 
@@ -279,23 +280,3 @@ class ProjectViewSet(viewsets.ModelViewSet):
         )
 
         return Response(ProjectSerializer(project).data)
-
-
-class SaleTagViewSet(viewsets.ModelViewSet):
-    serializer_class = SaleTagSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return SaleTag.objects.filter(owner=self.request.user.userprofile)
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user.userprofile)
-
-    def destroy(self, request, *args, **kwargs):
-        tag = self.get_object()
-        if tag.name == "Etsy":
-            return Response(
-                {"error": "The Etsy tag is reserved and cannot be deleted"},
-                status=400
-            )
-        return super().destroy(request, *args, **kwargs)

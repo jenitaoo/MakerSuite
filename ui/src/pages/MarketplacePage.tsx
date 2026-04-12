@@ -381,7 +381,7 @@ export default function MarketplacePage() {
         </div>
         </div>
         </section>
-        
+
 
         {/* ═══ AT A GLANCE ═════════════════════════════════════════════════ */}
         <section

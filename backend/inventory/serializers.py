@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import RawMaterial, Project, ProjectMaterial, MakeLog, SaleTag, SaleLog, InventoryLog
-
+from .models import RawMaterial, Project, ProjectMaterial, MakeLog, InventoryLog
 
 class RawMaterialSerializer(serializers.ModelSerializer):
     is_low_stock = serializers.ReadOnlyField()
@@ -57,38 +56,6 @@ class MakeLogSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'project', 'units_made', 'date_made',
             'notes', 'deducted_materials', 'duration_minutes', 'created_at',
-        ]
-        read_only_fields = ['id', 'created_at']
-
-
-class SaleTagSerializer(serializers.ModelSerializer):
-    owner = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = SaleTag
-        fields = ['id', 'owner', 'name', 'created_at']
-        read_only_fields = ['id', 'created_at']
-
-
-class SaleLogSerializer(serializers.ModelSerializer):
-    owner = serializers.PrimaryKeyRelatedField(read_only=True)
-    tags = SaleTagSerializer(many=True, read_only=True)
-    tag_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        write_only=True,
-        queryset=SaleTag.objects.all(),
-        source='tags',
-        required=False,
-    )
-    unit_prices = serializers.JSONField(required=False)
-    sale_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
-
-    class Meta:
-        model = SaleLog
-        fields = [
-            'id', 'owner', 'product', 'units_sold', 'sale_date',
-            'notes', 'tags', 'tag_ids', 'source', 'created_at',
-            'unit_prices', 'sale_price',
         ]
         read_only_fields = ['id', 'created_at']
 

@@ -2,7 +2,7 @@
 Serializers for the Product and ExternalProductListing models.
 """
 from rest_framework import serializers
-from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES
+from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES, SaleTag, SaleLog, Market, MarketProduct
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -91,3 +91,69 @@ class ExternalProductListingSerializer(serializers.ModelSerializer):
             'etsy_listing_type',
         ]
         read_only_fields = ['id', 'last_synced']
+
+class SaleTagSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = SaleTag
+        fields = ['id', 'owner', 'name', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class SaleLogSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    tags = SaleTagSerializer(many=True, read_only=True)
+    tag_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        write_only=True,
+        queryset=SaleTag.objects.all(),
+        source='tags',
+        required=False,
+    )
+    unit_prices = serializers.JSONField(required=False)
+    sale_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+
+    class Meta:
+        model = SaleLog
+        fields = [
+            'id', 'owner', 'product', 'market', 'units_sold', 'sale_date',
+            'notes', 'tags', 'tag_ids', 'source', 'created_at',
+            'unit_prices', 'sale_price',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class MarketProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketProduct
+        fields = ['id', 'product', 'units_brought']
+
+
+class MarketSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    is_upcoming = serializers.ReadOnlyField()
+    market_products = MarketProductSerializer(many=True, read_only=True)
+    total_revenue = serializers.SerializerMethodField()
+    units_sold = serializers.SerializerMethodField()
+
+    def get_total_revenue(self, obj):
+        from decimal import Decimal
+        total = sum(
+            log.sale_price or Decimal("0")
+            for log in obj.sale_logs.all()
+        )
+        return str(total) if total else None
+
+    def get_units_sold(self, obj):
+        return sum(log.units_sold for log in obj.sale_logs.all())
+
+    class Meta:
+        model = Market
+        fields = [
+            'id', 'owner', 'name', 'date', 'location', 'notes',
+            'application_status', 'is_upcoming',
+            'market_products', 'total_revenue', 'units_sold',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
