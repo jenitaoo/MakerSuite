@@ -15,10 +15,10 @@ import {
   Calendar,
   ChevronRight,
   AlertTriangle,
-  RefreshCw,
   LayoutGrid,
   ChevronDown,
   Search,
+  Trash2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import LogSaleModal from "../components/products/LogSaleModal";
 import { Star, Euro } from "lucide-react";
 import Market_Bunny_Illustration from "../assets/misc/Market_Bunny_Illust.png";
 import AddMarketModal from "../components/products/AddMarketModal";
+import DeleteMarketModal from "../components/products/DeleteMarketModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,9 +144,11 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 function MarketCard({
   market,
   onLogSale,
+  onDelete,
 }: {
   market: Market;
   onLogSale: () => void;
+  onDelete: () => void;
 }) {
   const navigate = useNavigate();
   const badge =
@@ -229,12 +232,12 @@ function MarketCard({
             </div>
           )}
 
-        {/* Log a sale — pushed to bottom of card */}
-        <div className="mt-auto pt-3">
+        {/* Log a sale + Delete — pushed to bottom of card */}
+        <div className="mt-auto pt-3 flex items-center gap-2">
           <Button
             variant="default"
             size="sm"
-            className="w-full gap-1.5"
+            className="flex-1 gap-1.5"
             onClick={(e) => {
               e.stopPropagation();
               onLogSale();
@@ -243,8 +246,19 @@ function MarketCard({
             <ClipboardList className="w-3.5 h-3.5" aria-hidden="true" />
             Log a sale
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            aria-label="Delete market"
+          >
+            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+          </Button>
         </div>
-
       </CardContent>
     </Card>
   );
@@ -267,6 +281,7 @@ export default function MarketplacePage() {
   const [marketSearch, setMarketSearch] = useState("");
   const [marketStatusFilter, setMarketStatusFilter] = useState<string | undefined>(undefined);
   const [marketTimeFilter, setMarketTimeFilter] = useState<string | undefined>(undefined);
+  const [deleteMarket, setDeleteMarket] = useState<Market | null>(null);
 
   // Modals
   const [logSaleOpen, setLogSaleOpen] = useState(false);
@@ -842,7 +857,7 @@ export default function MarketplacePage() {
                     ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredUpcoming.map((m) => (
-                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} />
+                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
                         ))}
                     </div>
                     )}
@@ -862,7 +877,7 @@ export default function MarketplacePage() {
                     ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredPast.map((m) => (
-                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} />
+                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
                         ))}
                     </div>
                     )}

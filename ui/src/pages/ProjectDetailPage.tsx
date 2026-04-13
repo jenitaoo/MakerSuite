@@ -87,7 +87,8 @@ export default function ProjectDetailPage() {
     }
   };
 
-  useEffect(() => { window.scrollTo(0, 0); fetchAll(); }, [id]);
+  useEffect(() => { fetchAll(); }, [id]);
+
 
   const handleRemoveMaterial = async (materialId: number) => {
     if (!id || !window.confirm("Remove this material from the project?")) return;

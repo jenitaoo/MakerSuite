@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowUpDown, ArrowUp, ArrowDown, History, Package,
+  ArrowUpDown, ArrowUp, ArrowDown, History, ToolCase,
   Pencil, Trash2, Search, Eye, ExternalLink,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -199,19 +199,6 @@ export default function ProjectsSection() {
         const project = row.original;
         return (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost" size="sm" className="h-7 w-7 p-0"
-                  onClick={() => navigate(`/studio/projects/${project.id}`)}
-                  aria-label="View project"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top"><p>View Project</p></TooltipContent>
-            </Tooltip>
-
             <Button
               size="sm"
               onClick={() => handleLogAction(project)}
@@ -232,10 +219,23 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMaterialsTarget(project)}>
-                  <Package className="h-3.5 w-3.5" />
+                  <ToolCase className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top"><p>Manage Materials</p></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost" size="sm" className="h-7 w-7 p-0"
+                  onClick={() => navigate(`/studio/projects/${project.id}`)}
+                  aria-label="View project"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>View Project</p></TooltipContent>
             </Tooltip>
 
             <Tooltip>

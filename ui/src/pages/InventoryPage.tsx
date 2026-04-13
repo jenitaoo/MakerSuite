@@ -171,8 +171,8 @@ export default function InventoryPage() {
                   <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
                     {[
                       { icon: LayoutGrid,   label: "At a Glance",    sub: "Stats and low stock alerts",         id: "at-a-glance"    },
-                      { icon: Package,      label: "Your Projects",  sub: "Recipes, makes and linked products", id: "your-projects"  },
-                      { icon: FlaskConical, label: "Your Materials", sub: "Raw materials and stock levels",     id: "your-materials" },
+                      { icon: ClipboardList,      label: "Your Projects",  sub: "Recipes, makes and linked products", id: "your-projects"  },
+                      { icon: ToolCase, label: "Your Materials", sub: "Raw materials and stock levels",     id: "your-materials" },
                     ].map(({ icon: Icon, label, sub, id }) => (
                       <button
                         key={label}
