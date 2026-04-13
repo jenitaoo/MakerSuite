@@ -9,6 +9,7 @@ import { ImagePlus, X } from "lucide-react";
 import { updateProject, uploadProjectImage, deleteProjectImage } from "../../services/inventoryApi";
 import { getCookie } from "../../services/api";
 import { Project, ProjectImage } from "../../types/inventory";
+import { TagsInput } from "@/components/ui/tags-input";
 
 type Product = { id: number; title: string };
 type Props = { project: Project; onClose: () => void; onSaved: () => void };
@@ -27,6 +28,9 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const originalProductId = project.product ? Number(project.product) : 0;
+
+  const [tags, setTags] = useState<string[]>(project.tags ?? []);
+
 
   useEffect(() => {
     fetch("/api/product-list/?page_size=100", {
@@ -63,6 +67,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         name,
         product: productId || null,
         notes: notes || null,
+        tags,
       });
 
       if (newFile) {
@@ -163,6 +168,12 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
               </p>
             )}
           </div>
+
+        <div className="space-y-2">
+          <Label>Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, seasonal" />
+          <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
+        </div>
 
           <div className="space-y-2">
             <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>

@@ -394,6 +394,12 @@ class MarketViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)  # ← was .userprofile
+        # Auto-create a matching sale tag for this market
+        market = serializer.save(owner=self.request.user)
+        SaleTag.objects.get_or_create(
+            owner=self.request.user.userprofile,
+            name=market.name,
+        )
 
     @action(detail=True, methods=["get", "post"], url_path="products")
     def products(self, request, pk=None):

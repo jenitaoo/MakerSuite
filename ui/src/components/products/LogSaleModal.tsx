@@ -288,17 +288,15 @@ function SaleDetailsForm({
   onClose: () => void;
 }) {
   const [unitsSold, setUnitsSold] = useState(1);
-  const [saleDate, setSaleDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
   const [tags, setTags] = useState<SaleTag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [unitPrices, setUnitPrices] = useState<string[]>([
-    product.internal_price ?? "",
-  ]);
+  const [unitPrices, setUnitPrices] = useState<string[]>([product.internal_price ?? ""]);
+  const [markets, setMarkets] = useState<{ id: number; name: string }[]>([]);
+  const [selectedMarketId, setSelectedMarketId] = useState<number | "">(marketId ?? "");
 
   const defaultPrice = product.internal_price ?? "";
   const inStock = product.internal_quantity ?? 0;
@@ -307,15 +305,27 @@ function SaleDetailsForm({
     getTags()
       .then((data) => setTags(data.results ?? data))
       .catch(() => {});
+
+    // Only fetch markets if not already locked to one
+    if (!marketId) {
+      fetch("/api/markets/", {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          "X-CSRFToken": getCookie("csrftoken") ?? "",
+        },
+      })
+        .then((r) => r.json())
+        .then((d) => setMarkets(d.results ?? d))
+        .catch(() => {});
+    }
   }, []);
 
   const handleUnitsSoldChange = (val: number) => {
     const clamped = Math.max(1, Math.min(val, inStock));
     setUnitsSold(clamped);
     setUnitPrices((prev) =>
-      Array(clamped)
-        .fill("")
-        .map((_, i) => prev[i] ?? defaultPrice)
+      Array(clamped).fill("").map((_, i) => prev[i] ?? defaultPrice)
     );
   };
 
@@ -347,16 +357,15 @@ function SaleDetailsForm({
   };
 
   const handleSave = async () => {
-    if (unitsSold > inStock) {
-      toast.error(`Only ${inStock} in stock`);
-      return;
-    }
+    if (unitsSold > inStock) { toast.error(`Only ${inStock} in stock`); return; }
     setSaving(true);
     try {
       const unit_prices = unitPrices.map((p, i) => ({
         unit: i + 1,
         price: p || defaultPrice || "0",
       }));
+
+      const resolvedMarketId = marketId ?? (selectedMarketId || undefined);
 
       const payload = {
         units_sold: unitsSold,
@@ -366,11 +375,11 @@ function SaleDetailsForm({
         unit_prices,
         sale_price: totalSaleValue.toFixed(2),
         notes: notes || undefined,
-        ...(marketId ? { product: product.id } : {}),
+        ...(resolvedMarketId ? { product: product.id } : {}),
       };
 
-      const url = marketId
-        ? `/api/markets/${marketId}/sales/`
+      const url = resolvedMarketId
+        ? `/api/markets/${resolvedMarketId}/sales/`
         : `/api/products/${product.id}/log-sale/`;
 
       const res = await fetch(url, {
@@ -390,11 +399,14 @@ function SaleDetailsForm({
         return;
       }
 
-      toast.success(
-        marketId && marketName
-          ? `Sale logged for ${marketName}`
-          : "Sale logged"
-      );
+      const hasEmptyPrice = unitPrices.some((p) => !p || parseFloat(p) <= 0);
+      if (hasEmptyPrice) {
+        toast.error("Please enter a price for each unit before logging the sale.");
+        return;
+      }
+
+      const resolvedMarketName = marketName ?? markets.find((m) => m.id === selectedMarketId)?.name;
+      toast.success(resolvedMarketName ? `Sale logged for ${resolvedMarketName}` : "Sale logged");
       onLogged();
     } catch {
       toast.error("Failed to log sale");
@@ -409,31 +421,19 @@ function SaleDetailsForm({
       <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50 border border-border mb-4">
         <div className="w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
           {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.title}
-              className="w-full h-full object-cover"
-            />
+            <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
           ) : (
             <Package className="w-4 h-4 text-muted-foreground" />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
-            {product.title}
-          </p>
+          <p className="text-sm font-medium text-foreground truncate">{product.title}</p>
           <p className="text-xs text-muted-foreground">
-            {product.internal_price ? `€${product.internal_price}` : "No price"}{" "}
-            · {inStock} in stock
+            {product.internal_price ? `€${product.internal_price}` : "No price"} · {inStock} in stock
           </p>
         </div>
         {onBack && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-muted-foreground shrink-0"
-            onClick={onBack}
-          >
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground shrink-0" onClick={onBack}>
             Change
           </Button>
         )}
@@ -442,19 +442,13 @@ function SaleDetailsForm({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label>Date</Label>
-          <Input
-            type="date"
-            value={saleDate}
-            onChange={(e) => setSaleDate(e.target.value)}
-          />
+          <Input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
         </div>
 
         <div className="space-y-2">
           <Label>Units Sold</Label>
           <Input
-            type="number"
-            min={1}
-            max={inStock}
+            type="number" min={1} max={inStock}
             value={unitsSold}
             onChange={(e) => handleUnitsSoldChange(Number(e.target.value))}
             onFocus={(e) => e.target.select()}
@@ -465,22 +459,14 @@ function SaleDetailsForm({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Price per Unit (€)</Label>
-            {defaultPrice && (
-              <span className="text-xs text-muted-foreground">
-                Default: €{defaultPrice}
-              </span>
-            )}
+            {defaultPrice && <span className="text-xs text-muted-foreground">Default: €{defaultPrice}</span>}
           </div>
           <div className="space-y-2">
             {unitPrices.map((price, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-12 shrink-0">
-                  Unit {i + 1}
-                </span>
+                <span className="text-xs text-muted-foreground w-12 shrink-0">Unit {i + 1}</span>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="number" step="0.01" min="0"
                   placeholder={defaultPrice || "0.00"}
                   value={price}
                   onChange={(e) => handleUnitPriceChange(i, e.target.value)}
@@ -492,14 +478,40 @@ function SaleDetailsForm({
           </div>
           <div className="flex items-center justify-between pt-1 border-t border-border">
             <span className="text-sm font-medium">Total</span>
-            <span className="text-sm font-medium">
-              €{totalSaleValue.toFixed(2)}
-            </span>
+            <span className="text-sm font-medium">€{totalSaleValue.toFixed(2)}</span>
           </div>
         </div>
 
+        {/* ── Market ── */}
         <div className="space-y-2">
-          <Label>Tags</Label>
+          <Label>
+            Market <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          {marketId ? (
+            // Locked — came from a market context
+            <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+              {marketName}
+            </div>
+          ) : (
+            <select
+              value={selectedMarketId}
+              onChange={(e) => setSelectedMarketId(e.target.value ? Number(e.target.value) : "")}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">— Not from a market —</option>
+              {markets.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Associate this sale with an in-person market if applicable.
+          </p>
+        </div>
+
+        {/* ── Sale Labels ── */}
+        <div className="space-y-2">
+          <Label>Sale Labels <span className="text-muted-foreground font-normal">(optional)</span></Label>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((tag) => (
@@ -522,39 +534,26 @@ function SaleDetailsForm({
             <Input
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
-              placeholder="New tag name..."
+              placeholder="e.g. Word of Mouth, Instagram, Custom Order…"
               onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
               className="flex-1"
             />
-            <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>
-              + Add
-            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>+ Add</Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Click a tag to select it. Press Enter or + Add to create a new one.
+            Label how this sale came in. Press Enter or + Add to create new ones.
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label>
-            Notes{" "}
-            <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Textarea
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+          <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
 
       <DialogFooter className="pt-2">
-        <Button variant="outline" onClick={onClose} disabled={saving}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Logging..." : "Log Sale"}
-        </Button>
+        <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>{saving ? "Logging..." : "Log Sale"}</Button>
       </DialogFooter>
     </>
   );

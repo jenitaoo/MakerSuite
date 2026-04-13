@@ -79,6 +79,7 @@ export type Project = {
   units_sold: number;
   in_stock: number;
   notes: string | null;
+  tags: string[];
   avg_duration_minutes: number | null;
   material_cost_per_unit: string | null;
   images: ProjectImage[];

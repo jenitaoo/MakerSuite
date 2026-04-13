@@ -9,11 +9,15 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ArrowUpDown, ArrowUp, ArrowDown, History, ToolCase,
-  Pencil, Trash2, Search, Eye, ExternalLink,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  ArrowUpDown, ArrowUp, ArrowDown, History,
+  Pencil, Trash2, Search, Eye, ExternalLink, Check, X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getProjects, deleteProject, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
 import CreateProjectModal from "./CreateProjectModal";
@@ -21,6 +25,7 @@ import LogMakeModal from "./LogMakeModal";
 import MakeHistoryModal from "./MakeHistoryModal";
 import ProjectMaterialsModal from "./ProjectMaterialsModal";
 import EditProjectModal from "./EditProjectModal";
+import DeleteProjectModal from "./DeleteProjectModal";
 
 export default function ProjectsSection() {
   const navigate = useNavigate();
@@ -28,12 +33,15 @@ export default function ProjectsSection() {
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   const [showCreate, setShowCreate] = useState(false);
   const [logTarget, setLogTarget] = useState<Project | null>(null);
   const [historyTarget, setHistoryTarget] = useState<Project | null>(null);
   const [materialsTarget, setMaterialsTarget] = useState<Project | null>(null);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -48,6 +56,23 @@ export default function ProjectsSection() {
 
   useEffect(() => { fetchProjects(); }, []);
 
+  const allTags = useMemo(
+    () => [...new Set(projects.flatMap((p) => p.tags ?? []))].sort(),
+    [projects]
+  );
+
+  const filteredByTags = useMemo(() => {
+    if (selectedTags.length === 0) return projects;
+    return projects.filter((p) =>
+      selectedTags.some((tag) => (p.tags ?? []).includes(tag))
+    );
+  }, [projects, selectedTags]);
+
+  const toggleTag = (tag: string) =>
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+
   const handleLogAction = async (project: Project) => {
     try {
       const fresh = await getProject(project.id);
@@ -57,16 +82,7 @@ export default function ProjectsSection() {
     }
   };
 
-  const handleDelete = async (project: Project) => {
-    if (!window.confirm(`Delete "${project.name}"? This will also delete all linked makes.`)) return;
-    try {
-      await deleteProject(project.id);
-      toast.success("Project deleted");
-      fetchProjects();
-    } catch {
-      toast.error("Failed to delete project");
-    }
-  };
+  const handleDelete = (project: Project) => setDeleteTarget(project);
 
   const SortHeader = ({ column, label }: { column: any; label: string }) => (
     <button
@@ -152,7 +168,7 @@ export default function ProjectsSection() {
         return <span className="text-neutral-700">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>;
       },
     },
-    // ── Avg Materials Cost ─────────────────────────────────────────────
+    // ── Materials Cost ─────────────────────────────────────────────────
     {
       accessorKey: "material_cost_per_unit",
       header: ({ column }) => <SortHeader column={column} label="Materials Cost" />,
@@ -163,11 +179,28 @@ export default function ProjectsSection() {
           : <span className="text-neutral-400">—</span>;
       },
     },
+    // ── Tags ───────────────────────────────────────────────────────────
+    {
+      accessorKey: "tags",
+      header: ({ column }) => <SortHeader column={column} label="Tags" />,
+      enableSorting: true,
+      cell: ({ row }) => {
+        const tags: string[] = row.original.tags ?? [];
+        if (!tags.length) return <span className="text-neutral-400">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+            ))}
+          </div>
+        );
+      },
+    },
     // ── Linked Product ─────────────────────────────────────────────────
     {
       id: "linked_product",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Product</span>,
-      enableSorting: false,
+      header: ({ column }) => <SortHeader column={column} label="Linked Product" />,
+      enableSorting: true,
       size: 64,
       cell: ({ row }) => {
         const project = row.original;
@@ -199,14 +232,9 @@ export default function ProjectsSection() {
         const project = row.original;
         return (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button
-              size="sm"
-              onClick={() => handleLogAction(project)}
-              className="text-xs h-7 px-2"
-            >
+            <Button size="sm" onClick={() => handleLogAction(project)} className="text-xs h-7 px-2">
               Log Make
             </Button>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(project)}>
@@ -215,16 +243,14 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>Make History</p></TooltipContent>
             </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMaterialsTarget(project)}>
-                  <ToolCase className="h-3.5 w-3.5" />
+                  <Search className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top"><p>Manage Materials</p></TooltipContent>
             </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -237,7 +263,6 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>View Project</p></TooltipContent>
             </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditTarget(project)}>
@@ -246,7 +271,6 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>Edit</p></TooltipContent>
             </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -266,7 +290,7 @@ export default function ProjectsSection() {
   ], [navigate]);
 
   const table = useReactTable({
-    data: projects,
+    data: filteredByTags,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
@@ -282,16 +306,76 @@ export default function ProjectsSection() {
 
   return (
     <div className="space-y-4">
+
+      {/* ── Toolbar ── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-8 h-8 w-48 text-sm"
-          />
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search projects..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-8 h-8 w-48 text-sm"
+            />
+          </div>
+
+          {/* Tag filter */}
+          {allTags.length > 0 && (
+            <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedTags.length > 0 ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                >
+                  Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-0 bg-white" align="start">
+                <Command>
+                  <CommandInput placeholder="Search tags..." />
+                  <CommandList>
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup>
+                      {allTags.map((tag) => (
+                        <CommandItem key={tag} value={tag} onSelect={() => toggleTag(tag)}>
+                          <Check className={cn("mr-2 size-3", selectedTags.includes(tag) ? "opacity-100" : "opacity-0")} />
+                          {tag}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+                {selectedTags.length > 0 && (
+                  <div className="border-t p-2">
+                    <Button
+                      variant="ghost" size="sm"
+                      className="w-full h-7 text-xs text-muted-foreground"
+                      onClick={() => setSelectedTags([])}
+                    >
+                      <X className="size-3 mr-1" /> Clear filters
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {/* Active tag chips */}
+          {selectedTags.map((tag) => (
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="text-xs gap-1 pr-1 cursor-pointer"
+              onClick={() => toggleTag(tag)}
+            >
+              {tag} <X className="size-3" />
+            </Badge>
+          ))}
         </div>
+
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground whitespace-nowrap">
             {table.getFilteredRowModel().rows.length} of {projects.length} projects
@@ -300,6 +384,7 @@ export default function ProjectsSection() {
         </div>
       </div>
 
+      {/* ── Table ── */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -341,6 +426,7 @@ export default function ProjectsSection() {
         </Table>
       </div>
 
+      {/* ── Pagination ── */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
@@ -349,6 +435,7 @@ export default function ProjectsSection() {
         </div>
       </div>
 
+      {/* ── Modals ── */}
       {showCreate && (
         <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
       )}
@@ -363,6 +450,13 @@ export default function ProjectsSection() {
       )}
       {editTarget && (
         <EditProjectModal project={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchProjects(); }} />
+      )}
+      {deleteTarget && (
+        <DeleteProjectModal
+          project={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => { setDeleteTarget(null); fetchProjects(); }}
+        />
       )}
     </div>
   );

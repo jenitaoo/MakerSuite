@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, X } from "lucide-react";
 import { getCookie } from "../../services/api";
 import { createProject, uploadProjectImage } from "../../services/inventoryApi";
+import { TagsInput } from "@/components/ui/tags-input";
 
 type Product = { id: number; title: string };
 type Props = { onClose: () => void; onCreated: () => void };
@@ -16,6 +17,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [productId, setProductId] = useState<number | "">("");
   const [notes, setNotes] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -53,6 +55,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         name,
         product: productId || null,
         notes: notes || null,
+        tags,
       });
 
       if (imageFile) {
@@ -76,38 +79,22 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Image upload */}
           <div className="space-y-2">
             <Label>Photo <span className="text-muted-foreground font-normal">(optional)</span></Label>
             {imagePreview ? (
               <div className="relative w-full h-36">
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-md border border-neutral-200" />
-                <button
-                  type="button"
-                  onClick={clearImage}
-                  className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full p-0.5 transition-colors"
-                  aria-label="Remove image"
-                >
+                <button type="button" onClick={clearImage} className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full p-0.5 transition-colors" aria-label="Remove image">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors"
-              >
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors">
                 <ImagePlus className="h-6 w-6 mb-1" aria-hidden="true" />
                 <span className="text-xs">Click to upload</span>
               </button>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
           </div>
 
           <div className="space-y-2">
@@ -128,6 +115,12 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               ))}
             </select>
             <p className="text-xs text-muted-foreground">Link this project to a product listing to keep quantities in sync.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, seasonal" />
+            <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
           </div>
 
           <div className="space-y-2">

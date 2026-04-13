@@ -81,6 +81,7 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

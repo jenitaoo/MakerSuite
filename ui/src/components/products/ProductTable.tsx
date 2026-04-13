@@ -99,6 +99,16 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
       ),
     },
     {
+      accessorKey: "sku",
+      header: ({ column }) => <SortHeader column={column} label="SKU" />,
+      cell: ({ row }) => {
+        const sku = row.getValue("sku") as string | null;
+        return sku
+          ? <span className="text-neutral-600 text-sm font-mono">{sku}</span>
+          : <span className="text-neutral-400">—</span>;
+      },
+    },
+    {
       accessorKey: "internal_price",
       header: ({ column }) => <SortHeader column={column} label="Price" />,
       cell: ({ row }) => `€${row.getValue("internal_price")}`,
@@ -115,7 +125,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
     },
     {
       accessorKey: "platforms",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Listed On</span>,
+      header: ({ column }) => <SortHeader column={column} label="Listed On" />,
       cell: ({ row }) => {
         const product = row.original;
         const platforms = product.platforms as string[];

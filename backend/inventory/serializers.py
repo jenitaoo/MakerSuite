@@ -8,22 +8,39 @@ class RawMaterialSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
     def get_photo_url(self, obj):
-        return obj.photo.url if obj.photo else None
+        request = self.context.get("request")
+        if obj.photo:
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
     class Meta:
         model = RawMaterial
         fields = [
-            "id", "owner", "name", "unit_type", "quantity",
-            "low_stock_threshold", "cost_per_unit",
-            "source", "brand", "supplier", "sku",
-            "notes", "custom_fields", "is_low_stock",
-            "photo", "photo_url",
-            "created_at", "updated_at", "tags",
+            "id",
+            "owner",
+            "name",
+            "unit_type",
+            "quantity",
+            "low_stock_threshold",
+            "cost_per_unit",
+            "source",
+            "brand",
+            "supplier",
+            "sku",
+            "notes",
+            "tags",
+            "custom_fields",
+            "created_at",
+            "updated_at",
+            "is_low_stock",
+            "photo_url",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "photo_url"]
-        extra_kwargs = {"photo": {"write_only": True, "required": False}}
-
-
+        extra_kwargs = {
+            "photo": {"write_only": True, "required": False}
+        }
 class ProjectImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
 

@@ -5,17 +5,13 @@ import ProductTable from "../components/products/ProductTable";
 import { getCookie } from "../../src/services/api.ts";
 import { Product } from "../../src/types/product";
 import {
-  ShoppingBag,
   Store,
-  TrendingUp,
   Package,
   PlusCircle,
   ClipboardList,
   MapPin,
   Calendar,
   ChevronRight,
-  AlertTriangle,
-  LayoutGrid,
   ChevronDown,
   Search,
   Trash2
@@ -62,7 +58,6 @@ type Market = {
 // ─── Side nav config ──────────────────────────────────────────────────────────
 
 const NAV_SECTIONS = [
-  { id: "at-a-glance",   label: "At a Glance", icon: LayoutGrid },
   { id: "your-markets",  label: "Markets",      icon: Store      },
   { id: "your-products", label: "Products",     icon: Package    },
 ] as const;
@@ -442,20 +437,6 @@ export default function MarketplacePage() {
     }
   };
 
-  // ── Derived stats ───────────────────────────────────────────────────────────
-
-  const outOfStock = products.filter((p) => p.internal_quantity === 0);
-  const lowStock = products.filter(
-    (p) => p.internal_quantity > 0 && p.internal_quantity <= 3
-  );
-  const onEtsy = products.filter((p) => p.platforms?.includes("Etsy")).length;
-  const onShopify = products.filter((p) => p.platforms?.includes("Shopify")).length;
-  const notListed = products.filter(
-    (p) =>
-      !p.platforms ||
-      (p.platforms.length === 1 && p.platforms[0] === "MakerSuite")
-  ).length;
-
   // ── Market filters ──────────────────────────────────────────────────────────
 
  const filterMarket = (m: Market) => {
@@ -548,14 +529,8 @@ export default function MarketplacePage() {
                   <h2 className="text-lg sm:text-xl font-bold text-white text-center">
                     What's Here?
                   </h2>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-6">
                     {[
-                      {
-                        icon: LayoutGrid,
-                        label: "At a Glance",
-                        sub: "Stock alerts, sales stats and quick actions",
-                        id: "at-a-glance",
-                      },
                       {
                         icon: Store,
                         label: "Your Markets",
@@ -594,8 +569,8 @@ export default function MarketplacePage() {
 
                 <div className="flex justify-center pt-2">
                   <button
-                    onClick={() => scrollTo("at-a-glance")}
-                    aria-label="Scroll to At a Glance section"
+                    onClick={() => scrollTo("your-markets")}
+                    aria-label="Scroll to Your Markets section"
                     className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors animate-bounce"
                   >
                     <ChevronDown className="w-5 h-5" aria-hidden="true" />
@@ -605,172 +580,6 @@ export default function MarketplacePage() {
             </div>
           </div>
         </section>
-
-        {/* ═══ AT A GLANCE ═════════════════════════════════════════════════ */}
-        <section
-          id="at-a-glance"
-          ref={(el) => { sectionRefs.current["at-a-glance"] = el; }}
-          className="space-y-4 pt-8 sm:pt-12 scroll-mt-20"
-          aria-label="At a Glance"
-        >
-          <div className="mb-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">
-              At a Glance
-            </h2>
-            <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-              Your products and sales performance. Low stock alerts and quick actions are below.
-            </p>
-          </div>
-
-          {outOfStock.length > 0 && (
-            <div
-              className="rounded-md border border-red-300 bg-red-50 px-4 py-3 flex items-start gap-3"
-              role="alert"
-            >
-              <AlertTriangle
-                className="h-4 w-4 text-red-700 mt-0.5 shrink-0"
-                aria-hidden="true"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-red-700">
-                  {outOfStock.length} product
-                  {outOfStock.length !== 1 ? "s" : ""} out of stock
-                </p>
-                <p className="text-sm text-red-700 mt-0.5 truncate">
-                  {outOfStock.map((p) => p.title).join(", ")}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-red-400 text-red-700 hover:bg-red-100 shrink-0 font-semibold"
-                onClick={() => scrollTo("your-products")}
-              >
-                View Products
-              </Button>
-            </div>
-          )}
-
-          {lowStock.length > 0 && (
-            <div
-              className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3"
-              role="alert"
-            >
-              <AlertTriangle
-                className="h-4 w-4 text-amber-700 mt-0.5 shrink-0"
-                aria-hidden="true"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-700">
-                  {lowStock.length} product
-                  {lowStock.length !== 1 ? "s are" : " is"} running low on
-                  stock
-                </p>
-                <p className="text-sm text-amber-700 mt-0.5 truncate">
-                  {lowStock.map((p) => p.title).join(", ")}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-amber-400 text-amber-700 hover:bg-amber-100 shrink-0 font-semibold"
-                onClick={() => scrollTo("your-products")}
-              >
-                View Products
-              </Button>
-            </div>
-          )}
-
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 space-y-4">
-              <p className="text-sm font-semibold uppercase tracking-widest text-neutral-700 pt-1">
-                Quick Stats
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard
-                  label="Total Products"
-                  value={products.length}
-                  icon={Package}
-                />
-                <StatCard
-                  label="Listed on Etsy"
-                  value={onEtsy}
-                  icon={Store}
-                  sub={
-                    onEtsy === 0
-                      ? "Not connected yet"
-                      : `${Math.round((onEtsy / products.length) * 100)}% of your products`
-                  }
-                />
-                <StatCard
-                  label="Listed on Shopify"
-                  value={onShopify}
-                  icon={Store}
-                  sub={
-                    onShopify === 0
-                      ? "Not connected yet"
-                      : `${Math.round((onShopify / products.length) * 100)}% of your products`
-                  }
-                />
-                <StatCard
-                  label="Not Listed Anywhere"
-                  value={notListed}
-                  icon={Package}
-                  sub={
-                    notListed === 0
-                      ? "All products are listed"
-                      : "Only visible in MakerSuite"
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard
-                  label="Sales This Month"
-                  value="—"
-                  icon={TrendingUp}
-                  sub="Coming soon"
-                />
-                <StatCard
-                  label="Revenue This Month"
-                  value="—"
-                  icon={ShoppingBag}
-                  sub="Coming soon"
-                />
-                <StatCard
-                  label="Best Seller"
-                  value="—"
-                  icon={Star}
-                  sub="Coming soon"
-                />
-                <StatCard
-                  label="Avg. Sale Value"
-                  value="—"
-                  icon={Euro}
-                  sub="Coming soon"
-                />
-              </div>
-              <div className="flex flex-wrap gap-3 pt-1">
-                <Button
-                  onClick={() => setLogSaleOpen(true)}
-                  className="gap-2"
-                >
-                  <ClipboardList className="w-4 h-4" aria-hidden="true" />
-                  Log a Sale
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/products/new")}
-                  className="gap-2"
-                >
-                  <PlusCircle className="w-4 h-4" aria-hidden="true" />
-                  New Product Listing
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <WavySeparator />
 
         {/* ═══ YOUR MARKETS ════════════════════════════════════════════════ */}
         <section
@@ -939,7 +748,7 @@ export default function MarketplacePage() {
 
       </div>
 
-      {/* ── Log sale modal ── */}
+      {/* ── Modals ── */}
     {(logSaleOpen || logSaleMarket) && (
     <LogSaleModal
         products={products}                    // triggers picker on step 1
@@ -948,6 +757,13 @@ export default function MarketplacePage() {
         onClose={() => { setLogSaleOpen(false); setLogSaleMarket(null); }}
         onLogged={() => { setLogSaleOpen(false); setLogSaleMarket(null); loadProducts(); loadMarkets(); }}
     />
+    )}
+    {deleteMarket && (
+      <DeleteMarketModal
+        market={deleteMarket}
+        onClose={() => setDeleteMarket(null)}
+        onDeleted={() => { setDeleteMarket(null); loadMarkets(); }}
+      />
     )}
     {addMarketOpen && (
     <AddMarketModal

@@ -20,6 +20,7 @@ import RestockDeductModal from "./RestockDeductModal";
 import MaterialHistoryModal from "./MaterialHistoryModal";
 import MaterialDetailModal from "./MaterialDetailModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import DeleteMaterialModal from "./DeleteMaterialModal";
 
 export default function MaterialsSection() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
@@ -30,6 +31,7 @@ export default function MaterialsSection() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const outOfStockCount = materials.filter((m) => parseFloat(m.quantity) === 0).length;
+  const [deleteTarget, setDeleteTarget] = useState<RawMaterial | null>(null);
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
@@ -56,20 +58,7 @@ export default function MaterialsSection() {
 
   useEffect(() => { fetchMaterials(); }, []);
 
-  const handleDelete = async (material: RawMaterial) => {
-    if (!window.confirm(`Delete "${material.name}"?`)) return;
-    try {
-      await deleteMaterial(material.id);
-      toast.success("Material deleted");
-      fetchMaterials();
-    } catch (err: any) {
-      toast.error(
-        err.message?.includes("linked")
-          ? "Remove this material from all projects before deleting."
-          : "Failed to delete material"
-      );
-    }
-  };
+  const handleDelete = (material: RawMaterial) => setDeleteTarget(material);
 
   const allTags = useMemo(
     () => [...new Set(materials.flatMap((m) => m.tags ?? []))].sort(),
@@ -122,23 +111,33 @@ export default function MaterialsSection() {
         );
       },
     },
-    // ── Name ───────────────────────────────────────────────────────────
+
     {
       accessorKey: "name",
       header: ({ column }) => <SortHeader column={column} label="Name" />,
       cell: ({ row }) => <span className="font-medium text-neutral-700">{row.getValue("name")}</span>,
     },
     {
-      accessorKey: "unit_type",
-      header: ({ column }) => <SortHeader column={column} label="Unit Type" />,
+      accessorKey: "sku",
+      header: ({ column }) => <SortHeader column={column} label="SKU" />,
+      cell: ({ row }) => {
+        const sku = row.getValue("sku") as string | null;
+        return sku
+          ? <span className="text-neutral-600 text-sm font-mono">{sku}</span>
+          : <span className="text-neutral-400">—</span>;
+      },
     },
     {
       accessorKey: "quantity",
       header: ({ column }) => <SortHeader column={column} label="In Stock" />,
       cell: ({ row }) => {
         const m = row.original;
-        return <span className="text-neutral-700">{m.quantity} {m.unit_type}</span>;
+        return <span className="text-neutral-700">{m.quantity}</span>;
       },
+    },
+    {
+      accessorKey: "unit_type",
+      header: ({ column }) => <SortHeader column={column} label="Unit Type" />,
     },
     {
       accessorKey: "is_low_stock",
@@ -167,17 +166,17 @@ export default function MaterialsSection() {
     },
     {
       accessorKey: "brand",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Brand</span>,
+      header: ({ column }) => <SortHeader column={column} label="Brand" />,
       cell: ({ row }) => row.getValue("brand") ?? "—",
     },
     {
       accessorKey: "source",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Source</span>,
+      header: ({ column }) => <SortHeader column={column} label="Source" />,
       cell: ({ row }) => row.getValue("source") ?? "—",
     },
     {
       accessorKey: "tags",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Tags</span>,
+      header: ({ column }) => <SortHeader column={column} label="Tags" />,
       cell: ({ row }) => {
         const tags: string[] = row.getValue("tags") ?? [];
         if (!tags.length) return <span className="text-muted-foreground">—</span>;
@@ -407,6 +406,13 @@ export default function MaterialsSection() {
       )}
       {detailTarget && (
         <MaterialDetailModal material={detailTarget} onClose={() => setDetailTarget(null)} onSaved={() => { setDetailTarget(null); fetchMaterials(); }} />
+      )}
+      {deleteTarget && (
+        <DeleteMaterialModal
+          material={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => { setDeleteTarget(null); fetchMaterials(); }}
+        />
       )}
     </div>
   );
