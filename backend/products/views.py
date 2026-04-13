@@ -88,8 +88,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             owner=request.user.userprofile,
         )
 
-        # Create the sale log linked to the product
-        from inventory.serializers import SaleLogSerializer
         sale_log = SaleLog.objects.create(
             owner=request.user.userprofile,
             product=product,
@@ -125,7 +123,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         product = self.get_object()
         from products.models import SaleLog
-        from inventory.serializers import SaleLogSerializer
+        from products.serializers import SaleLogSerializer
         logs = product.sale_logs.all().order_by("-sale_date")
         return Response(SaleLogSerializer(logs, many=True).data)
 
