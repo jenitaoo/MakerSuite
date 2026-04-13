@@ -125,10 +125,12 @@ class SaleLogSerializer(serializers.ModelSerializer):
 
 
 class MarketProductSerializer(serializers.ModelSerializer):
+    product_title = serializers.CharField(source="product.title", read_only=True)
+
     class Meta:
         model = MarketProduct
-        fields = ['id', 'product', 'units_brought']
-
+        fields = ['id', 'product', 'product_title', 'units_brought']
+        read_only_fields = ['id', 'product_title']
 
 class MarketSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -136,24 +138,27 @@ class MarketSerializer(serializers.ModelSerializer):
     market_products = MarketProductSerializer(many=True, read_only=True)
     total_revenue = serializers.SerializerMethodField()
     units_sold = serializers.SerializerMethodField()
+    products_brought = serializers.SerializerMethodField()
 
     def get_total_revenue(self, obj):
         from decimal import Decimal
         total = sum(
-            log.sale_price or Decimal("0")
+            (log.sale_price or Decimal("0")) * log.units_sold
             for log in obj.sale_logs.all()
         )
-        return str(total) if total else None
+        return f"€{total:.2f}" if total else None
 
     def get_units_sold(self, obj):
-        return sum(log.units_sold for log in obj.sale_logs.all())
+        return sum(log.units_sold for log in obj.sale_logs.all()) or None
+
+    def get_products_brought(self, obj):
+        return obj.market_products.count() or None
 
     class Meta:
         model = Market
         fields = [
             'id', 'owner', 'name', 'date', 'location', 'notes',
-            'application_status', 'is_upcoming',
-            'market_products', 'total_revenue', 'units_sold',
-            'created_at',
+            'application_status', 'is_upcoming', 'market_products',
+            'total_revenue', 'units_sold', 'products_brought', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']

@@ -12,4 +12,7 @@ export type Product = {
   // Populated by ProductListingsPage by joining product with its listing data
   // "active" | "draft" | "inactive" | undefined (no Etsy listing)
   etsy_listing_state?: string;
+  linked_project_id: number | null;
+  created_at: string;
+  updated_at: string;
 };

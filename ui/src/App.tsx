@@ -13,6 +13,7 @@ import InventoryPage from "./pages/InventoryPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import Profile from "./pages/Profile";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import MarketDetailPage from "./pages/MarketDetailPage";
 
 function AppLayout() {
   return (
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
           { path: "/marketplace", element: <MarketplacePage /> },
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
+          { path: "/marketplace/markets/:id/", element: <MarketDetailPage /> },
 
           // Insights — placeholder for Step 8
           // { path: "/insights", element: <InsightsPage /> },

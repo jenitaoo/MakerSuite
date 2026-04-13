@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Pencil, Trash2, History } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Pencil, Trash2, History, RefreshCw } from "lucide-react";
 import { Product } from "../../types/product";
 import DeleteProductModal from "./DeleteProductModal";
 import LogSaleModal from "./LogSaleModal";
@@ -234,10 +234,12 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Button variant="outline" disabled className="hidden sm:block w-full sm:w-auto text-muted-foreground">
+          <Button variant="outline" disabled className="hidden sm:inline-flex items-center w-full sm:w-auto text-muted-foreground gap-2">
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             Sync from Shopify
           </Button>
-          <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={onRefresh} className="w-full sm:w-auto">
+          <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={onRefresh} className="w-full sm:w-auto gap-2 inline-flex items-center">
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             Sync from Etsy
           </Button>
           <Button onClick={onCreateNew} className="w-full sm:w-auto">

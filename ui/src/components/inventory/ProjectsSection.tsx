@@ -218,24 +218,6 @@ export default function ProjectsSection() {
             />
           </div>
 
-          {/* Log a Make dropdown */}
-          {projects.length > 0 && (
-            <select
-              className="h-8 rounded-md border border-input bg-background px-3 text-sm"
-              defaultValue=""
-              onChange={async (e) => {
-                if (!e.target.value) return;
-                const project = projects.find((p) => p.id === Number(e.target.value));
-                if (project) await handleLogAction(project);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>Log a Make →</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
         </div>
 
         <div className="flex items-center gap-3">

@@ -158,13 +158,23 @@ class SaleLog(models.Model):
         (SOURCE_MANUAL, "Manual"),
     ]
 
-    owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    owner = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="markets"
+    )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name="sale_logs",
     )
-
+    market = models.ForeignKey(
+        "Market",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sale_logs",
+    )
     units_sold = models.PositiveIntegerField()
     sale_date = models.DateField()
     notes = models.TextField(blank=True, null=True)

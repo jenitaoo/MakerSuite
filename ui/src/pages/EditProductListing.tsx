@@ -22,7 +22,7 @@ type FormState = {
   title: string;
   description: string;
   price: string;
-  quantity: number;
+  quantity: string;
   sku: string;
   tags: string[];
   materials: string[];
@@ -84,6 +84,7 @@ export default function EditProductListing() {
   }
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (form) {
       setTagsInput(form.tags.join(", "));
       setMaterialsInput(form.materials.join(", "));
@@ -148,8 +149,8 @@ export default function EditProductListing() {
     const body = new FormData();
     body.append("title", form.title);
     body.append("description", form.description);
-    body.append("internal_price", form.price);
-    body.append("internal_quantity", String(form.quantity));
+    body.append("internal_price", String(parseInt(String(form.quantity)) || 0));
+    body.append("internal_quantity", String(parseInt(String(form.quantity)) || 0));
     body.append("sku", form.sku);
 
     await toast.promise(
@@ -443,7 +444,7 @@ export default function EditProductListing() {
                 </div>
                 <div className="space-y-2">
                   <Label>Quantity</Label>
-                  <Input type="number" min="0" placeholder="0" value={form.quantity} onChange={(e) => update({ quantity: Number(e.target.value) })} />
+                  <Input type="number" min="0" placeholder="0" value={form.quantity} onChange={(e) => update({ quantity: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>SKU</Label>

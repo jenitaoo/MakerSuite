@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from .platforms.etsy.etsy import EtsyAdapter
 from .models import Product, ProductImage, ExternalProductListing, MAX_PRODUCT_IMAGES, SaleTag, SaleLog, Market, MarketProduct
-from .serializers import ProductSerializer, ProductImageSerializer, ExternalProductListingSerializer, SaleTagSerializer, SaleLogSerializer, MarketSerializer
+from .serializers import ProductSerializer, ProductImageSerializer, ExternalProductListingSerializer, SaleTagSerializer, SaleLogSerializer, MarketSerializer, MarketProductSerializer
 from .sync import SyncManager
 
 
@@ -388,9 +388,88 @@ class MarketViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Market.objects.filter(
-            owner=self.request.user.userprofile
-        ).prefetch_related("market_products", "sale_logs")
+        return (
+            Market.objects
+            .filter(owner=self.request.user)  # ← was .userprofile
+            .prefetch_related("market_products__product", "sale_logs")
+        )
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user.userprofile)
+        serializer.save(owner=self.request.user)  # ← was .userprofile
+
+    @action(detail=True, methods=["get", "post"], url_path="products")
+    def products(self, request, pk=None):
+        market = self.get_object()
+
+        if request.method == "GET":
+            qs = market.market_products.select_related("product")
+            return Response(MarketProductSerializer(qs, many=True).data)
+
+        serializer = MarketProductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.validated_data["product"]
+
+        if product.owner != request.user.userprofile:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        mp, created = MarketProduct.objects.update_or_create(
+            market=market,
+            product=product,
+            defaults={"units_brought": serializer.validated_data.get("units_brought", 1)},
+        )
+        return Response(
+            MarketProductSerializer(mp).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["patch", "delete"], url_path="products/(?P<product_pk>[^/.]+)")
+    def product_detail(self, request, pk=None, product_pk=None):
+        market = self.get_object()
+        from django.shortcuts import get_object_or_404
+        mp = get_object_or_404(MarketProduct, market=market, product_id=product_pk)
+
+        if request.method == "DELETE":
+            mp.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        serializer = MarketProductSerializer(mp, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get", "post"], url_path="sales")
+    def sales(self, request, pk=None):
+        market = self.get_object()
+
+        if request.method == "GET":
+            qs = market.sale_logs.select_related("product").order_by("-sale_date")
+            return Response(SaleLogSerializer(qs, many=True).data)
+
+        # POST — log a sale against this market
+        data = request.data.copy()
+        serializer = SaleLogSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        product = serializer.validated_data["product"]
+        if product.owner != request.user.userprofile:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        units_sold = serializer.validated_data["units_sold"]
+        current_qty = product.internal_quantity or 0
+        if units_sold > current_qty:
+            return Response(
+                {"error": f"Cannot log {units_sold} sold — only {current_qty} in stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.db import transaction
+        with transaction.atomic():
+            sale = serializer.save(
+                owner=request.user.userprofile,
+                market=market,
+                source=SaleLog.SOURCE_MANUAL,
+            )
+            product.internal_quantity = max(0, current_qty - units_sold)
+            product.save(update_fields=["internal_quantity"])
+
+        return Response(SaleLogSerializer(sale).data, status=status.HTTP_201_CREATED)
