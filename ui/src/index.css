@@ -137,7 +137,7 @@
     background-size: 500px;
     background-attachment: fixed;
     mix-blend-mode: multiply;
-    opacity: 0.28;
+    opacity: 0.05;
     pointer-events: none;
     z-index: 0;
   }
