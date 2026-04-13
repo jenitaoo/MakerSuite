@@ -1,25 +1,19 @@
-// src/components/PrivateRoute.tsx
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { authService } from "../services/auth";
+import { AuthContext } from "../context/AuthContext";
 
 const PrivateRoute = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const auth = useContext(AuthContext);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const user = await authService.getCurrentUser();
-      setIsAuthenticated(!!user);
-    };
-
-    checkAuth();
-  }, []);
-
-  if (isAuthenticated === null) {
-    return <div>Loading...</div>;
+  if (auth?.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-white/70 text-sm">Loading…</p>
+      </div>
+    );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+  return auth?.user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default PrivateRoute;

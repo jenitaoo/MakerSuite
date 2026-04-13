@@ -175,6 +175,28 @@
   color: hsl(20, 43%, 91%); /* warm cream on hover */
 }
 
+
+/* --------------------------------------------------
+   Footer — frosted rosy brown, white text
+-------------------------------------------------- */
+.footer-frosted {
+  background-color: hsla(8, 41%, 70%, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsla(8, 36%, 40%, 0.3);
+  color: #ffffff;
+}
+
+.footer-frosted a,
+.footer-frosted button {
+  color: #ffffff;
+}
+
+.footer-frosted a:hover,
+.footer-frosted button:hover {
+  color: hsl(20, 43%, 91%); /* warm cream on hover */
+}
+
 /* --------------------------------------------------
    LAYOUT
 -------------------------------------------------- */

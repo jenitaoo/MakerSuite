@@ -1,10 +1,11 @@
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useLocation } from "react-router-dom";
 import { Toaster, toast, ToastBar } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
+import LandingPage from "./pages/LandingPage";
 import MarketplacePage from "./pages/MarketplacePage";
 import CreateProductListing from "./pages/CreateProductListing";
 import EditProductListing from "./pages/EditProductListing";
@@ -15,8 +16,11 @@ import Profile from "./pages/Profile";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import MarketDetailPage from "./pages/MarketDetailPage";
 import InsightsPage from "./pages/InsightsPage";
+import Footer from "./components/Footer";
 
 function AppLayout() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return (
     <TooltipProvider>
       <div className="app">
@@ -56,6 +60,7 @@ function AppLayout() {
         <main className="main-content">
           <Outlet />
         </main>
+        <Footer />
       </div>
     </TooltipProvider>
   );
@@ -65,33 +70,21 @@ const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { path: "/", element: <Navigate to="/login" /> },
+      { path: "/", element: <LandingPage /> },
+      { path: "/home", element: <LandingPage /> },
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
       {
         element: <PrivateRoute />,
         children: [
-          // Home dashboard — Step 4
-          { path: "/home", element: <Dashboard /> },
-
-          // Studio — making things
           { path: "/studio", element: <InventoryPage /> },
           { path: "/studio/projects/:id", element: <ProjectDetailPage /> },
-
-          // Marketplace — selling things
           { path: "/marketplace", element: <MarketplacePage /> },
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
           { path: "/marketplace/markets/:id/", element: <MarketDetailPage /> },
-
-          // Insights — placeholder for Step 8
           { path: "/insights", element: <InsightsPage /> },
-
-          // Profile
           { path: "/profile", element: <Profile /> },
-
-          // Legacy redirects — keep old URLs working during transition
-          { path: "/dashboard", element: <Navigate to="/home" replace /> },
           { path: "/crosslist", element: <Navigate to="/marketplace" replace /> },
           { path: "/inventory", element: <Navigate to="/studio" replace /> },
           { path: "/inventory/projects/:id", element: <Navigate to="/studio/projects/:id" replace /> },
