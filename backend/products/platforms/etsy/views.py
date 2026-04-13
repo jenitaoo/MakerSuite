@@ -10,10 +10,7 @@ class EtsyImportListingsView(View):
 
         etsy_token = request.user.etsy_token
 
-        adapter = EtsyAdapter(
-            access_token=etsy_token.access_token,
-            etsy_user_id=etsy_token.etsy_user_id
-        )
+        adapter = EtsyAdapter(etsy_token)
 
         listings_json = adapter.fetch_listings(shop_id)
         results = listings_json.get("results", [])

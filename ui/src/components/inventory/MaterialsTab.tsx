@@ -59,14 +59,17 @@ export default function MaterialsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setShowCreateModal(true)}>
-          + Add Material
-        </Button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowCreateModal(true)}>+ Add Material</Button>
+        </div>
       </div>
 
       <MaterialsTable
-        materials={materials}
+          materials={[
+          ...materials.filter((m) => m.is_low_stock),
+          ...materials.filter((m) => !m.is_low_stock),
+        ]}
         onEdit={setEditTarget}
         onRestockDeduct={setLogTarget}
         onHistory={setHistoryTarget}
@@ -76,7 +79,6 @@ export default function MaterialsTab() {
 
       {showCreateModal && (
         <MaterialFormModal
-          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setShowCreateModal(false)}
           onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
         />
@@ -84,7 +86,6 @@ export default function MaterialsTab() {
       {editTarget && (
         <MaterialFormModal
           material={editTarget}
-          existingTags={[...new Set(materials.flatMap((m) => m.tags ?? []))]}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); fetchMaterials(); }}
         />

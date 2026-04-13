@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { TagsInput } from "@/components/ui/tags-input";
+import { ImagePlus, X } from "lucide-react";
 import { createMaterial, updateMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
 
 type Props = {
   material?: RawMaterial;
-  existingTags?: string[];   // all tags used across materials — for autocomplete
+  existingTags?: string[];
   onClose: () => void;
   onSaved: () => void;
 };
@@ -33,7 +34,26 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
   });
   const [saving, setSaving] = useState(false);
 
+  // Photo state
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(material?.photo_url ?? null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const update = (patch: Partial<typeof form>) => setForm((p) => ({ ...p, ...patch }));
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const clearPhoto = () => {
+    setPhotoFile(null);
+    // If editing, keep showing existing photo until they save with a new one
+    setPhotoPreview(isEdit ? (material?.photo_url ?? null) : null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error("Name is required"); return; }
@@ -46,10 +66,10 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
         low_stock_threshold: form.low_stock_threshold !== "" ? Number(form.low_stock_threshold) : null,
       };
       if (isEdit) {
-        await updateMaterial(material.id, payload);
+        await updateMaterial(material.id, payload, photoFile ?? undefined);
         toast.success("Material updated");
       } else {
-        await createMaterial(payload);
+        await createMaterial(payload, photoFile ?? undefined);
         toast.success("Material created");
       }
       onSaved();
@@ -68,6 +88,54 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+
+          {/* ── Photo ── */}
+          <div className="space-y-2">
+            <Label>Photo <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            {photoPreview ? (
+              <div className="relative w-full h-36">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover rounded-md border border-neutral-200"
+                />
+                <button
+                  type="button"
+                  onClick={clearPhoto}
+                  className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full p-0.5 transition-colors"
+                  aria-label="Remove photo"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                {/* Allow replacing */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white rounded-md px-2 py-0.5 text-xs transition-colors"
+                >
+                  Replace
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors"
+              >
+                <ImagePlus className="h-6 w-6 mb-1" aria-hidden="true" />
+                <span className="text-xs">Click to upload</span>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+          </div>
+
+          {/* ── Name + Unit Type ── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Name *</Label>
@@ -83,11 +151,8 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             <div className="space-y-2">
               <Label>Initial Quantity</Label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.quantity}
-                placeholder="0"
+                type="number" min="0" step="0.01"
+                value={form.quantity} placeholder="0"
                 onChange={(e) => update({ quantity: e.target.value })}
                 onFocus={(e) => e.target.select()}
               />
@@ -98,14 +163,12 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             <div className="space-y-2">
               <Label>Low Stock Threshold</Label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.low_stock_threshold}
-                placeholder="0"
+                type="number" min="0" step="0.01"
+                value={form.low_stock_threshold} placeholder="0"
                 onChange={(e) => update({ low_stock_threshold: e.target.value })}
                 onFocus={(e) => e.target.select()}
-              />            </div>
+              />
+            </div>
             <div className="space-y-2">
               <Label>Cost per Unit (€)</Label>
               <Input type="number" min="0" step="0.01" value={form.cost_per_unit} onChange={(e) => update({ cost_per_unit: e.target.value })} placeholder="0.00" />
@@ -134,7 +197,6 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             </div>
           </div>
 
-          {/* Tags */}
           <div className="space-y-2">
             <Label>Tags</Label>
             <TagsInput
@@ -143,9 +205,7 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
               suggestions={existingTags}
               placeholder="e.g. yarn, bead, paint"
             />
-            <p className="text-xs text-muted-foreground">
-              Type and press Enter or comma to add. Used for filtering and search.
-            </p>
+            <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
           </div>
 
           <div className="space-y-2">

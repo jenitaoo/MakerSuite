@@ -44,7 +44,7 @@ export default function CreateProductListing() {
       title: "",
       description: "",
       internal_price: "",
-      internal_quantity: 0,
+      internal_quantity: "",
       sku: "",
       tags: "",
       materials: "",
@@ -230,7 +230,7 @@ export default function CreateProductListing() {
                 rules={{ required: "Title is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>Title *</FormLabel>
                     <FormControl>
                       <Input placeholder="Product title" {...field} />
                     </FormControl>
@@ -274,7 +274,7 @@ export default function CreateProductListing() {
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
+                        <Input type="number" step="0.01" min="0" placeholder="0" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,7 +302,7 @@ export default function CreateProductListing() {
               <CardTitle>
                 Etsy Fields{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  optional — fill in if publishing to Etsy later
+                  (Optional for internal product listings, but all required if you want to publish to Etsy)
                 </span>
               </CardTitle>
             </CardHeader>
@@ -423,7 +423,7 @@ export default function CreateProductListing() {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
-            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/crosslist")}>
+            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/marketplace")}>
               Cancel
             </Button>
           </div>

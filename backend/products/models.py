@@ -3,6 +3,7 @@ Models for the Product Listings Feature.
 """
 from django.db import models
 from authentication.models import UserProfile
+from django.conf import settings
 
 MAX_PRODUCT_IMAGES = 10
 
@@ -83,3 +84,106 @@ class ExternalProductListing(models.Model):
 
     def __str__(self):
         return f"{self.platform} - {self.platform_listing_id}"
+
+class Market(models.Model):
+    class ApplicationStatus(models.TextChoices):
+        NOT_APPLIED = "not_applied", "Not Applied"
+        APPLIED = "applied", "Applied"
+        ACCEPTED = "accepted", "Accepted"
+        REJECTED = "rejected", "Rejected"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="markets"
+    )
+    name = models.CharField(max_length=255)
+    date = models.DateField()
+    location = models.CharField(max_length=500, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    application_status = models.CharField(
+        max_length=20,
+        choices=ApplicationStatus.choices,
+        default=ApplicationStatus.NOT_APPLIED
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_upcoming(self):
+        from django.utils import timezone
+        return self.date >= timezone.now().date()
+
+class MarketProduct(models.Model):
+    market = models.ForeignKey(
+        Market, on_delete=models.CASCADE, related_name="market_products"
+    )
+    product = models.ForeignKey(
+        "products.Product", on_delete=models.CASCADE
+    )
+    units_brought = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        unique_together = ("market", "product")
+
+
+
+class SaleTag(models.Model):
+    owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("owner", "name")
+
+    def __str__(self):
+        return self.name
+
+
+class SaleLog(models.Model):
+    """
+    Represents a sale of a product.
+    Now linked to Product directly — sales are a Marketplace concern.
+    The linked project (via product.project) is used to update stock counts.
+    """
+    SOURCE_ETSY = "etsy"
+    SOURCE_MANUAL = "manual"
+    SOURCE_CHOICES = [
+        (SOURCE_ETSY, "Etsy"),
+        (SOURCE_MANUAL, "Manual"),
+    ]
+
+    owner = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="markets"
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="sale_logs",
+    )
+    market = models.ForeignKey(
+        "Market",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sale_logs",
+    )
+    units_sold = models.PositiveIntegerField()
+    sale_date = models.DateField()
+    notes = models.TextField(blank=True, null=True)
+    tags = models.ManyToManyField(SaleTag, blank=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=SOURCE_MANUAL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    unit_prices = models.JSONField(default=list, blank=True)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.product.title} — {self.units_sold} sold on {self.sale_date}"
+

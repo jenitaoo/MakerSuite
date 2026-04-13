@@ -34,7 +34,7 @@
     --muted: 20 30% 88%;                /* muted cream */
     --muted-foreground: 8 15% 45%;      /* mid brown */
 
-    --accent: 40 20% 46%;               /* sage */
+    --accent: 48 22% 67%;               /* sage */
     --accent-foreground: 8 20% 20%;
 
     --destructive: 0 65% 50%;
@@ -76,6 +76,10 @@
     --input: 8 15% 25%;
     --ring: 8 36% 65%;
   }
+
+  body[data-scroll-locked] {
+    padding-right: 0 !important;
+  }
 }
 
 /* --------------------------------------------------
@@ -103,12 +107,14 @@
   html, body, #root {
     height: 100%;
     width: 100%;
+    scrollbar-gutter: stable;
   }
 
   body {
     font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 20px;
+    font-weight: 450;
+    line-height: 1.7;
     color: hsl(var(--foreground));
     position: relative;
 
@@ -126,13 +132,12 @@
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url('assets/misc/Seamless_Pattern_Crafts_Black.png');
+    background-image: url('/assets/misc/Seamless_Pattern_Crafts_Black.png');
     background-repeat: repeat;
-    background-size: clamp(300px, 10vw, 550px);
+    background-size: 500px;
     background-attachment: fixed;
-    filter: sepia(1) saturate(10) hue-rotate(360deg) brightness(1);
     mix-blend-mode: multiply;
-    opacity: 0.07;
+    opacity: 0.28;
     pointer-events: none;
     z-index: 0;
   }
@@ -145,7 +150,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    color: hsl(var(--accent));
+    color: hsl(var(--primary));
   }
 }
 
@@ -153,7 +158,7 @@
    NAVBAR — frosted rosy brown, white text
 -------------------------------------------------- */
 .navbar-frosted {
-  background-color: hsla(8, 41%, 70%, 0.4);
+  background-color: hsla(8, 41%, 70%, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid hsla(8, 36%, 40%, 0.3);
@@ -167,6 +172,28 @@
 
 .navbar-frosted a:hover,
 .navbar-frosted button:hover {
+  color: hsl(20, 43%, 91%); /* warm cream on hover */
+}
+
+
+/* --------------------------------------------------
+   Footer — frosted rosy brown, white text
+-------------------------------------------------- */
+.footer-frosted {
+  background-color: hsla(8, 41%, 70%, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsla(8, 36%, 40%, 0.3);
+  color: #ffffff;
+}
+
+.footer-frosted a,
+.footer-frosted button {
+  color: #ffffff;
+}
+
+.footer-frosted a:hover,
+.footer-frosted button:hover {
   color: hsl(20, 43%, 91%); /* warm cream on hover */
 }
 
@@ -228,4 +255,87 @@
 -------------------------------------------------- */
 a:hover {
   transition: 0.2s ease;
+}
+
+/* --------------------------------------------------
+   SCROLL OFFSET — accounts for fixed navbar (~56px)
+-------------------------------------------------- */
+section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* --------------------------------------------------
+   SCALLOPED INTRO BOX — bottom scallop only
+-------------------------------------------------- */
+.scalloped-intro {
+  --r: 22px;
+  --h: 13px;
+  --diffusion: 5%;
+  --ellipse-width: calc(1.8 * var(--r));
+  mask:
+    linear-gradient(#000 0 0) no-repeat 0% 0% / 100% calc(100% - 0.7 * var(--r)),
+    radial-gradient(ellipse var(--r) var(--h) at 50% 50%, #000 calc(100% - var(--diffusion)), transparent)
+      0 100% / var(--ellipse-width) calc(2 * var(--h)) round;
+}
+
+/* --------------------------------------------------
+   WAVY SECTION SEPARATOR — Marketplace (pink)
+-------------------------------------------------- */
+.wavy-line {
+  --s: 24px;
+  --b: 8px;
+  --m: 0.5;
+  --R: calc(var(--s) * sqrt(var(--m) * var(--m) + 1) + var(--b) / 2);
+  height: calc(2 * var(--R));
+  width: 100%;
+  background: #C17B6F;
+  --_g: #0000 calc(99% - var(--b)), #000 calc(101% - var(--b)) 99%, #0000 101%;
+  mask:
+    radial-gradient(var(--R) at left 50% bottom calc(-1 * var(--m) * var(--s)), var(--_g))
+      calc(50% - 2 * var(--s)) calc(50% - var(--s) / 2 - var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x,
+    radial-gradient(var(--R) at left 50% top calc(-1 * var(--m) * var(--s)), var(--_g))
+      50% calc(50% + var(--s) / 2 + var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x;
+}
+
+/* --------------------------------------------------
+   WAVY SECTION SEPARATOR — Studio (Blue)
+-------------------------------------------------- */
+.wavy-line-studio {
+  --s: 24px;
+  --b: 8px;
+  --m: 0.5;
+  --R: calc(var(--s) * sqrt(var(--m) * var(--m) + 1) + var(--b) / 2);
+  height: calc(2 * var(--R));
+  width: 100%;
+  background: #8496af;
+  --_g: #0000 calc(99% - var(--b)), #000 calc(101% - var(--b)) 99%, #0000 101%;
+  mask:
+    radial-gradient(var(--R) at left 50% bottom calc(-1 * var(--m) * var(--s)), var(--_g))
+      calc(50% - 2 * var(--s)) calc(50% - var(--s) / 2 - var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x,
+    radial-gradient(var(--R) at left 50% top calc(-1 * var(--m) * var(--s)), var(--_g))
+      50% calc(50% + var(--s) / 2 + var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x;
+}
+
+body[data-scroll-locked] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* --------------------------------------------------
+   WAVY SECTION SEPARATOR — Insights (dusty lavender)
+-------------------------------------------------- */
+.wavy-line-insights {
+  --s: 24px;
+  --b: 8px;
+  --m: 0.5;
+  --R: calc(var(--s) * sqrt(var(--m) * var(--m) + 1) + var(--b) / 2);
+  height: calc(2 * var(--R));
+  width: 100%;
+  background: #8B7BA8;
+  --_g: #0000 calc(99% - var(--b)), #000 calc(101% - var(--b)) 99%, #0000 101%;
+  mask:
+    radial-gradient(var(--R) at left 50% bottom calc(-1 * var(--m) * var(--s)), var(--_g))
+      calc(50% - 2 * var(--s)) calc(50% - var(--s) / 2 - var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x,
+    radial-gradient(var(--R) at left 50% top calc(-1 * var(--m) * var(--s)), var(--_g))
+      50% calc(50% + var(--s) / 2 + var(--b) / 2) / calc(4 * var(--s)) calc(var(--s) + var(--b)) repeat-x;
 }

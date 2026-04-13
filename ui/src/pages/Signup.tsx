@@ -28,8 +28,19 @@ const Signup = () => {
       await authService.signup(values);
       toast.success("Account created! You can now log in.");
       navigate("/login");
-    } catch {
-      setError("Signup failed. Please try again.");
+    } catch (err: any) {
+      const data = err?.response?.data || err?.data;
+      if (data?.username) {
+        setError(`Username: ${data.username[0]}`);
+      } else if (data?.email) {
+        setError(`Email: ${data.email[0]}`);
+      } else if (data?.password) {
+        setError(`Password: ${data.password[0]}`);
+      } else if (data?.non_field_errors) {
+        setError(data.non_field_errors[0]);
+      } else {
+        setError("Signup failed. Please check your details and try again.");
+      }
     }
   };
 
@@ -64,16 +75,12 @@ const Signup = () => {
                 placeholder="jane_smith"
                 {...register("username", {
                   required: "Username is required",
-                  minLength: { value: 3, message: "" }
+                  minLength: { value: 3, message: "Must be at least 3 characters" },
+                  pattern: { value: /^\S+$/, message: "Must not contain spaces" }
                 })}
               />
-              <p className="text-xs text-muted-foreground">Must contain at least 3 characters and contain no spaces</p>
-              {errors.username && (
-                <p className="text-sm text-destructive">{errors.username.message}</p>
-              )}
-              {errors.username && (
-                <p className="text-sm text-destructive">{errors.username.message}</p>
-              )}
+              <p className="text-xs text-muted-foreground">At least 3 characters, no spaces</p>
+              {errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -95,18 +102,12 @@ const Signup = () => {
                 placeholder="••••••••"
                 {...register("password", {
                   required: "Password is required",
-                  minLength: { value: 8, message: "" }
+                  minLength: { value: 8, message: "Must be at least 8 characters" },
+                  pattern: { value: /[a-zA-Z]/, message: "Must contain at least one letter" }
                 })}
               />
-              <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
-                <li>At least 8 characters</li>
-                <li>Can't be entirely numbers</li>
-                <li>Can't be a commonly used password</li>
-                <li>Can't be too similar to your name or email</li>
-              </ul>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              <p className="text-xs text-muted-foreground">At least 8 characters, including a letter</p>
+              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password2">Confirm Password</Label>

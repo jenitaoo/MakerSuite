@@ -19,23 +19,52 @@ export async function getMaterials() {
   return res.json();
 }
 
-export async function createMaterial(data: Record<string, unknown>) {
+export async function createMaterial(data: Record<string, unknown>, photo?: File) {
+  const formData = new FormData();
+  Object.entries(data).forEach(([k, v]) => {
+    if (v === null || v === undefined) return;
+    if (Array.isArray(v)) {
+      formData.append(k, JSON.stringify(v)); // tags array
+    } else {
+      formData.append(k, String(v));
+    }
+  });
+  if (photo) formData.append("photo", photo);
+
   const res = await fetch(`${BASE}/materials/`, {
     method: "POST",
     credentials: "include",
-    headers: headers(),
-    body: JSON.stringify(data),
+    headers: {
+      Accept: "application/json",
+      "X-CSRFToken": getCookie("csrftoken") ?? "",
+      // no Content-Type — browser sets multipart boundary
+    },
+    body: formData,
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-export async function updateMaterial(id: number, data: Record<string, unknown>) {
+export async function updateMaterial(id: number, data: Record<string, unknown>, photo?: File) {
+  const formData = new FormData();
+  Object.entries(data).forEach(([k, v]) => {
+    if (v === null || v === undefined) return;
+    if (Array.isArray(v)) {
+      formData.append(k, JSON.stringify(v));
+    } else {
+      formData.append(k, String(v));
+    }
+  });
+  if (photo) formData.append("photo", photo);
+
   const res = await fetch(`${BASE}/materials/${id}/`, {
     method: "PATCH",
     credentials: "include",
-    headers: headers(),
-    body: JSON.stringify(data),
+    headers: {
+      Accept: "application/json",
+      "X-CSRFToken": getCookie("csrftoken") ?? "",
+    },
+    body: formData,
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -128,6 +157,35 @@ export async function deleteProject(id: number) {
     method: "DELETE",
     credentials: "include",
     headers: headers(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+export async function uploadProjectImage(projectId: number, file: File): Promise<{ id: number; image_url: string; order: number }> {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await fetch(`${BASE}/projects/${projectId}/images/`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "X-CSRFToken": getCookie("csrftoken") ?? "",
+      // no Content-Type — browser sets multipart boundary automatically
+    },
+    body: formData,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function deleteProjectImage(projectId: number, imageId: number) {
+  const res = await fetch(`${BASE}/projects/${projectId}/images/${imageId}/`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "X-CSRFToken": getCookie("csrftoken") ?? "",
+    },
   });
   if (!res.ok) throw new Error(await res.text());
 }

@@ -1,6 +1,43 @@
+"""
+Inventory models.
+
+SaleLog refactor (April 2026):
+- SaleLog now references Product directly instead of Project.
+- This better reflects the maker's mental model: sales happen on products,
+  makes happen on projects. A project can exist without any sales.
+- Project.units_sold is now derived via the linked product's sale logs.
+- Project.in_stock = units_made - units_sold (unchanged, but now via product).
+"""
+import io
+from PIL import Image as PilImage
+from django.core.files.base import ContentFile
 from django.db import models
 from authentication.models import UserProfile
 from products.models import Product
+
+
+def _resize_to_jpeg(field, max_px=1200):
+    """
+    Open an ImageField, resize to max_px on longest side, re-save as JPEG.
+    Mutates the field in place (save=False). Call before super().save().
+    """
+    img = PilImage.open(field)
+
+    # Apply EXIF orientation before anything else
+    try:
+        from PIL import ImageOps
+        img = ImageOps.exif_transpose(img)
+    except Exception:
+        pass
+
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    img.thumbnail((max_px, max_px), PilImage.LANCZOS)
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=85, optimize=True)
+    buffer.seek(0)
+    filename = field.name.rsplit(".", 1)[0] + ".jpg"
+    field.save(filename, ContentFile(buffer.read()), save=False)
 
 
 class RawMaterial(models.Model):
@@ -15,6 +52,7 @@ class RawMaterial(models.Model):
     supplier = models.CharField(max_length=500, blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    photo = models.ImageField(upload_to="material_photos/", null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
     custom_fields = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,11 +61,19 @@ class RawMaterial(models.Model):
     def __str__(self):
         return f"{self.name} ({self.quantity} {self.unit_type})"
 
+    def save(self, *args, **kwargs):
+        # Only process on first save (new upload), not on every model.save()
+        if self.photo and not self.pk:
+            _resize_to_jpeg(self.photo)
+        super().save(*args, **kwargs)
+
     @property
     def is_low_stock(self):
         if self.low_stock_threshold is None:
             return False
-        return self.quantity <= self.low_stock_threshold
+        if self.quantity is None:
+            return False
+        return 0 < self.quantity <= self.low_stock_threshold
 
 
 class Project(models.Model):
@@ -35,6 +81,7 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -47,11 +94,55 @@ class Project(models.Model):
 
     @property
     def units_sold(self):
-        return sum(log.units_sold for log in self.sale_logs.all())
+        if self.product:
+            return sum(log.units_sold for log in self.product.sale_logs.all())
+        return 0
 
     @property
     def in_stock(self):
         return self.units_made - self.units_sold
+
+    @property
+    def avg_duration_minutes(self):
+        logs_with_duration = [
+            log for log in self.make_logs.all()
+            if log.duration_minutes is not None and log.units_made > 0
+        ]
+        if not logs_with_duration:
+            return None
+        total_minutes = sum(log.duration_minutes for log in logs_with_duration)
+        total_units = sum(log.units_made for log in logs_with_duration)
+        return round(total_minutes / total_units, 1)
+
+    @property
+    def material_cost_per_unit(self):
+        from decimal import Decimal
+        total = Decimal("0")
+        for pm in self.project_materials.all():
+            if pm.quantity_used is None:
+                continue
+            if pm.material.cost_per_unit is None:
+                return None
+            total += pm.quantity_used * pm.material.cost_per_unit
+        return total if total > 0 else None
+
+
+class ProjectImage(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="project_images/")
+    order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+
+    def __str__(self):
+        return f"Image for {self.project.name}"
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.pk:
+            _resize_to_jpeg(self.image)
+        super().save(*args, **kwargs)
 
 
 class ProjectMaterial(models.Model):
@@ -72,43 +163,11 @@ class MakeLog(models.Model):
     date_made = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     deducted_materials = models.BooleanField(default=False)
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.project.name} — {self.units_made} made on {self.date_made}"
-
-
-class SaleTag(models.Model):
-    owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("owner", "name")
-
-    def __str__(self):
-        return self.name
-
-
-class SaleLog(models.Model):
-    SOURCE_ETSY = "etsy"
-    SOURCE_MANUAL = "manual"
-    SOURCE_CHOICES = [
-        (SOURCE_ETSY, "Etsy"),
-        (SOURCE_MANUAL, "Manual"),
-    ]
-
-    owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="sale_logs")
-    units_sold = models.PositiveIntegerField()
-    sale_date = models.DateField()
-    notes = models.TextField(blank=True, null=True)
-    tags = models.ManyToManyField(SaleTag, blank=True)
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=SOURCE_MANUAL)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.project.name} — {self.units_sold} sold on {self.sale_date}"
 
 
 class InventoryLog(models.Model):

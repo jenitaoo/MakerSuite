@@ -12,10 +12,18 @@ export type RawMaterial = {
   tags?: string[];
   sku: string | null;
   notes: string | null;
+  photo?: string | null;
+  photo_url?: string | null;
   custom_fields: Record<string, string>;
   is_low_stock: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type ProjectImage = {
+  id: number;
+  image_url: string;
+  order: number;
 };
 
 export type ProjectMaterial = {
@@ -24,6 +32,8 @@ export type ProjectMaterial = {
   material_name: string;
   material_unit_type: string;
   quantity_used: string | null;
+  material_cost_per_unit: string | null;
+  material_photo_url: string | null;
 };
 
 export type MakeLog = {
@@ -33,6 +43,7 @@ export type MakeLog = {
   date_made: string | null;
   notes: string | null;
   deducted_materials: boolean;
+  duration_minutes: number | null;
   created_at: string;
 };
 
@@ -46,12 +57,14 @@ export type SaleTag = {
 export type SaleLog = {
   id: number;
   owner: number;
-  project: number;
+  product: number;
   units_sold: number;
   sale_date: string;
   notes: string | null;
   tags: SaleTag[];
   source: "etsy" | "manual";
+  unit_prices: { unit: number; price: string }[];
+  sale_price: string | null;
   created_at: string;
 };
 
@@ -61,13 +74,17 @@ export type Project = {
   name: string;
   product: number | null;
   product_title: string | null;
+  product_price: string | null;
   units_made: number;
   units_sold: number;
   in_stock: number;
   notes: string | null;
+  tags: string[];
+  avg_duration_minutes: number | null;
+  material_cost_per_unit: string | null;
+  images: ProjectImage[];
   project_materials: ProjectMaterial[];
   make_logs: MakeLog[];
-  sale_logs: SaleLog[];
   created_at: string;
   updated_at: string;
 };

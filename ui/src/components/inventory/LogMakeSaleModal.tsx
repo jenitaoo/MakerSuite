@@ -17,18 +17,37 @@ type Props = {
 export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) {
   const [unitsSold, setUnitsSold] = useState(1);
   const [saleDate, setSaleDate] = useState(new Date().toISOString().split("T")[0]);
-  const [source, setSource] = useState<"manual" | "etsy">("manual");
   const [notes, setNotes] = useState("");
   const [tags, setTags] = useState<SaleTag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [unitPrices, setUnitPrices] = useState<string[]>([project.product_price ?? ""]);
+
+  const defaultPrice = project.product_price ?? "";
 
   useEffect(() => {
     getTags()
       .then((data) => setTags(data.results ?? data))
       .catch(() => {});
   }, []);
+
+  const handleUnitsSoldChange = (val: number) => {
+    const clamped = Math.max(1, Math.min(val, project.in_stock));
+    setUnitsSold(clamped);
+    setUnitPrices((prev) =>
+      Array(clamped).fill("").map((_, i) => prev[i] ?? defaultPrice)
+    );
+  };
+
+  const handleUnitPriceChange = (index: number, value: string) => {
+    setUnitPrices((prev) => prev.map((p, i) => (i === index ? value : p)));
+  };
+
+  const totalSaleValue = unitPrices.reduce((sum, p) => {
+    const parsed = parseFloat(p);
+    return sum + (isNaN(parsed) ? 0 : parsed);
+  }, 0);
 
   const handleAddTag = async () => {
     if (!newTagName.trim()) return;
@@ -55,11 +74,18 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
     }
     setSaving(true);
     try {
+      const unit_prices = unitPrices.map((p, i) => ({
+        unit: i + 1,
+        price: p || defaultPrice || "0",
+      }));
+
       await logSale(project.id, {
         units_sold: unitsSold,
         sale_date: saleDate,
         tag_ids: selectedTagIds,
-        source,
+        source: "manual",
+        unit_prices,
+        sale_price: totalSaleValue.toFixed(2),
         notes: notes || undefined,
       });
       toast.success("Sale logged");
@@ -80,19 +106,6 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Units Sold</Label>
-            <Input
-              type="number"
-              min={1}
-              max={project.in_stock}
-              value={unitsSold}
-              onChange={(e) => setUnitsSold(Number(e.target.value))}
-              onFocus={(e) => e.target.select()}
-            />
-            <p className="text-xs text-muted-foreground">{project.in_stock} in stock</p>
-          </div>
-
-          <div className="space-y-2">
             <Label>Date</Label>
             <Input
               type="date"
@@ -101,24 +114,47 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
             />
           </div>
 
-          {/* Source toggle */}
           <div className="space-y-2">
-            <Label>Source</Label>
-            <div className="flex rounded-md border border-border overflow-hidden">
-              {(["manual", "etsy"] as const).map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setSource(opt)}
-                  className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
-                    source === opt
-                      ? "bg-[hsl(var(--primary))] text-white"
-                      : "bg-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {opt === "etsy" ? "Etsy" : "Manual"}
-                </button>
+            <Label>Units Sold</Label>
+            <Input
+              type="number"
+              min={1}
+              max={project.in_stock}
+              value={unitsSold}
+              onChange={(e) => handleUnitsSoldChange(Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
+            />
+            <p className="text-xs text-muted-foreground">{project.in_stock} in stock</p>
+          </div>
+
+          {/* Per-unit prices */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Price per Unit (€)</Label>
+              {defaultPrice && (
+                <span className="text-xs text-muted-foreground">Default: €{defaultPrice}</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              {unitPrices.map((price, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-12 shrink-0">Unit {i + 1}</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder={defaultPrice || "0.00"}
+                    value={price}
+                    onChange={(e) => handleUnitPriceChange(i, e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="h-8 text-sm"
+                  />
+                </div>
               ))}
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-border">
+              <span className="text-sm font-medium">Total</span>
+              <span className="text-sm font-medium">€{totalSaleValue.toFixed(2)}</span>
             </div>
           </div>
 

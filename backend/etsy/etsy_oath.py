@@ -28,7 +28,7 @@ class EtsyLoginView(View):
             return HttpResponseForbidden("Login required.")
 
         # Store where to return after auth
-        return_to = request.GET.get("return_to", "/crosslist")
+        return_to = request.GET.get("return_to", "/marketplace")
         request.session["etsy_auth_return"] = return_to
 
         code_verifier = secrets.token_urlsafe(64)
@@ -105,7 +105,7 @@ class EtsyCallbackView(View):
             },
         )
 
-        return_to = request.session.pop("etsy_auth_return", "/crosslist")
+        return_to = request.session.pop("etsy_auth_return", "/marketplace")
         return redirect(f"{settings.FRONTEND_URL}{return_to}")
 
 
@@ -154,10 +154,7 @@ class EtsyShopView(View):
         if etsy_token.is_expired():
             return HttpResponse("Token expired.", status=401)
 
-        adapter = EtsyAdapter(
-            access_token=etsy_token.access_token,
-            etsy_user_id=etsy_token.etsy_user_id
-        )
+        adapter = EtsyAdapter(etsy_token)
 
         data = adapter.get_shop()
         return JsonResponse(data)
