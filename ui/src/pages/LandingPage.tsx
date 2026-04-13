@@ -116,7 +116,7 @@ export default function LandingPage() {
                 </span>
               </h1>
               <p className="mt-4 text-white/85 text-base sm:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                MakerSuite is a lightweight tool designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
+                MakerSuite is a centralised workspace designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -125,7 +125,7 @@ export default function LandingPage() {
                 className="bg-white text-[#C17B6F] hover:bg-white/90 font-semibold gap-2"
                 onClick={() => navigate("/signup")}
               >
-                Get Started <ArrowRight className="w-4 h-4" />
+                Sign up to get started<ArrowRight className="w-4 h-4" />
               </Button>
               <Button
                 size="lg"
@@ -133,7 +133,7 @@ export default function LandingPage() {
                 className="border-white/40 text-white hover:bg-white/10 font-semibold"
                 onClick={() => navigate("/login")}
               >
-                Log In
+                Log in
               </Button>
             </div>
           </div>

@@ -17,7 +17,7 @@ export default function Footer() {
               className="h-10 object-contain"
             />
             <p className="text-white/70 text-xs leading-relaxed">
-              A centalised workspace designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
+              A centralised workspace designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
             </p>
             <p className="text-white/70 text-xs leading-relaxed">
               MakerSuite was designed around real pain points from real makers, gathered through personal experience and research.
@@ -87,7 +87,7 @@ export default function Footer() {
 
       {/* ── Bottom bar ── */}
       <div className="border-t border-white/10 px-4 sm:px-8 lg:px-16 py-4">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-white/40 text-xs">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-white/90 text-xs">
           <span>MakerSuite · Built by Jenny Huynh · TU Dublin FYP 2025/26</span>
           <span>BSc Computer Science · TU856</span>
         </div>
