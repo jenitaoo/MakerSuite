@@ -29,6 +29,7 @@ export default function MaterialsSection() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const outOfStockCount = materials.filter((m) => parseFloat(m.quantity) === 0).length;
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
@@ -142,13 +143,25 @@ export default function MaterialsSection() {
     {
       accessorKey: "is_low_stock",
       header: () => <span className="font-medium text-xs uppercase tracking-wide">Status</span>,
-      cell: ({ row }) => row.getValue("is_low_stock") ? (
-        <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Low Stock</Badge>
-      ) : (
-        <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">OK</Badge>
-      ),
+      cell: ({ row }) => {
+        const m = row.original;
+        const qty = parseFloat(m.quantity);
+        if (qty === 0) return (
+          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of Stock</Badge>
+        );
+        if (m.is_low_stock) return (
+          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Low Stock</Badge>
+        );
+        return (
+          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">OK</Badge>
+        );
+      },
       filterFn: (row, _, filterValue) => {
-        if (filterValue === "low") return row.getValue("is_low_stock") === true;
+        const m = row.original as RawMaterial;
+        const qty = parseFloat(m.quantity);
+        if (filterValue === "out") return qty === 0;
+        if (filterValue === "low") return m.is_low_stock && qty > 0;
+        if (filterValue === "ok") return !m.is_low_stock && qty > 0;
         return true;
       },
     },
@@ -267,19 +280,20 @@ export default function MaterialsSection() {
             />
           </div>
 
-          {/* Low stock filter */}
-          <Button
-            variant={(table.getColumn("is_low_stock")?.getFilterValue() as string) === "low" ? "default" : "outline"}
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => {
+          {/* Status filter */}
+          <select
+            value={(table.getColumn("is_low_stock")?.getFilterValue() as string) ?? ""}
+            onChange={(e) => {
               const col = table.getColumn("is_low_stock");
-              col?.setFilterValue(col.getFilterValue() === "low" ? undefined : "low");
+              col?.setFilterValue(e.target.value || undefined);
             }}
+            className="h-8 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            {lowStockCount > 0 && <span className="mr-1 text-amber-500">⚠</span>}
-            Low Stock {lowStockCount > 0 && `(${lowStockCount})`}
-          </Button>
+            <option value="">All statuses</option>
+            <option value="ok">In Stock</option>
+            <option value="low">Low Stock {lowStockCount > 0 ? `(${lowStockCount})` : ""}</option>
+            <option value="out">Out of Stock {outOfStockCount > 0 ? `(${outOfStockCount})` : ""}</option>
+          </select>
 
           {/* Tag filter */}
           {allTags.length > 0 && (

@@ -71,7 +71,9 @@ class RawMaterial(models.Model):
     def is_low_stock(self):
         if self.low_stock_threshold is None:
             return False
-        return self.quantity <= self.low_stock_threshold
+        if self.quantity is None:
+            return False
+        return 0 < self.quantity <= self.low_stock_threshold
 
 
 class Project(models.Model):
