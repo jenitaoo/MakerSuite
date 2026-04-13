@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { label: "Home", to: "/home" },
   { label: "Studio", to: "/studio" },
   { label: "Marketplace", to: "/marketplace" },
-  { label: "Insights", to: "/insights", disabled: true },
+  { label: "Insights", to: "/insights", disabled: false },
 ];
 
 const Navbar = () => {

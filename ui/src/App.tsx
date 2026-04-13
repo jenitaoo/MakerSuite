@@ -14,6 +14,7 @@ import ProjectDetailPage from "./pages/ProjectDetailPage";
 import Profile from "./pages/Profile";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import MarketDetailPage from "./pages/MarketDetailPage";
+import InsightsPage from "./pages/InsightsPage";
 
 function AppLayout() {
   return (
@@ -84,7 +85,7 @@ const router = createBrowserRouter([
           { path: "/marketplace/markets/:id/", element: <MarketDetailPage /> },
 
           // Insights — placeholder for Step 8
-          // { path: "/insights", element: <InsightsPage /> },
+          { path: "/insights", element: <InsightsPage /> },
 
           // Profile
           { path: "/profile", element: <Profile /> },

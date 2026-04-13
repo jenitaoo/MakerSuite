@@ -4,7 +4,7 @@ import MaterialsSection from "../components/inventory/MaterialsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  AlertTriangle, Package, Clock, FlaskConical,
+  AlertTriangle, Package, Clock,
   Layers, LayoutGrid, ChevronDown, ClipboardList,
   ToolCase,
 } from "lucide-react";
@@ -13,7 +13,7 @@ import { RawMaterial, Project } from "../types/inventory";
 import Studio_Bunny_Illustration from "../assets/misc/Studio_Bunny_Illust.png";
 
 // ─── Studio accent colour ─────────────────────────────────────────────────────
-const STUDIO = "#7B8F6F";
+const STUDIO = "#8496af";
 
 // ─── Side nav config ──────────────────────────────────────────────────────────
 const NAV_SECTIONS = [
