@@ -3,11 +3,11 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import RawMaterial, Project, ProjectMaterial, MakeLog, InventoryLog
+from .models import RawMaterial, Project, ProjectImage, ProjectMaterial, MakeLog, InventoryLog
 from products.models import SaleTag, SaleLog
 from .serializers import (
-    RawMaterialSerializer, ProjectSerializer, ProjectMaterialSerializer,
-    MakeLogSerializer, InventoryLogSerializer
+    RawMaterialSerializer, ProjectSerializer, ProjectImageSerializer,
+    ProjectMaterialSerializer, MakeLogSerializer, InventoryLogSerializer,
 )
 from decimal import Decimal
 
@@ -24,7 +24,26 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         return {"request": self.request}
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user.userprofile)
+        tags = self.request.data.get("tags")
+        if isinstance(tags, str):
+            import json
+            try:
+                tags = json.loads(tags)
+            except (ValueError, TypeError):
+                tags = []
+        serializer.save(owner=self.request.user.userprofile, tags=tags if tags is not None else [])
+
+    def perform_update(self, serializer):
+        tags = self.request.data.get("tags")
+        if isinstance(tags, str):
+            import json
+            try:
+                tags = json.loads(tags)
+            except (ValueError, TypeError):
+                tags = []
+            serializer.save(tags=tags)
+        else:
+            serializer.save()
 
     @action(detail=True, methods=["post"])
     def restock(self, request, pk=None):
@@ -72,7 +91,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         if quantity > Decimal(str(material.quantity)):
             return Response(
                 {"error": f"Cannot deduct {quantity} — only {material.quantity} in stock"},
-                status=400
+                status=400,
             )
 
         material.quantity -= quantity
@@ -102,7 +121,7 @@ class RawMaterialViewSet(viewsets.ModelViewSet):
         if material.project_materials.exists():
             return Response(
                 {"error": "This material is linked to one or more projects. Remove it from those projects first."},
-                status=400
+                status=400,
             )
         return super().destroy(request, *args, **kwargs)
 
@@ -117,10 +136,52 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             "project_materials__material",
             "make_logs",
+            "images",          # ← new
         )
+
+    def get_serializer_context(self):
+        return {"request": self.request}   # ← needed for image_url absolute URIs
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user.userprofile)
+
+    # ── Images ────────────────────────────────────────────────────────────
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="images",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_image(self, request, pk=None):
+        project = self.get_object()
+        image_file = request.FILES.get("image")
+        if not image_file:
+            return Response({"error": "image is required"}, status=400)
+
+        order = request.data.get("order", 0)
+        img = ProjectImage.objects.create(project=project, image=image_file, order=order)
+        return Response(
+            ProjectImageSerializer(img, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="images/(?P<image_id>[^/.]+)",
+    )
+    def delete_image(self, request, pk=None, image_id=None):
+        project = self.get_object()
+        try:
+            img = ProjectImage.objects.get(id=image_id, project=project)
+        except ProjectImage.DoesNotExist:
+            return Response({"error": "Image not found"}, status=404)
+        img.image.delete(save=False)   # delete file from storage
+        img.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # ── Log Make ──────────────────────────────────────────────────────────
 
     @action(detail=True, methods=["post"], url_path="log-make")
     def log_make(self, request, pk=None):
@@ -161,14 +222,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
             duration_minutes=duration_minutes,
         )
 
-        # Update linked product quantity
         if project.product:
             project.product.internal_quantity = (
                 project.product.internal_quantity or 0
             ) + units_made
             project.product.save(update_fields=["internal_quantity"])
 
-        # Deduct materials if requested
         if deduct_materials:
             for pm in project.project_materials.all():
                 override_qty = material_overrides.get(str(pm.material_id))
@@ -239,18 +298,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["delete"],
-        url_path="materials/(?P<material_id>[^/.]+)"
+        url_path="materials/(?P<material_id>[^/.]+)",
     )
     def remove_material(self, request, pk=None, material_id=None):
         project = self.get_object()
         try:
-            pm = ProjectMaterial.objects.get(
-                project=project,
-                material_id=material_id,
-            )
+            pm = ProjectMaterial.objects.get(project=project, material_id=material_id)
         except ProjectMaterial.DoesNotExist:
             return Response({"error": "Material not found on this project"}, status=404)
-
         pm.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

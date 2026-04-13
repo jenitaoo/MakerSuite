@@ -20,6 +20,12 @@ export type RawMaterial = {
   updated_at: string;
 };
 
+export type ProjectImage = {
+  id: number;
+  image_url: string;
+  order: number;
+};
+
 export type ProjectMaterial = {
   id: number;
   material: number;
@@ -51,7 +57,7 @@ export type SaleTag = {
 export type SaleLog = {
   id: number;
   owner: number;
-  product: number;          // now references Product, not Project
+  product: number;
   units_sold: number;
   sale_date: string;
   notes: string | null;
@@ -75,6 +81,7 @@ export type Project = {
   notes: string | null;
   avg_duration_minutes: number | null;
   material_cost_per_unit: string | null;
+  images: ProjectImage[];
   project_materials: ProjectMaterial[];
   make_logs: MakeLog[];
   created_at: string;

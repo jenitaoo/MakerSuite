@@ -9,8 +9,10 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown, History, Package, Pencil, Trash2, Search } from "lucide-react";
+import {
+  ArrowUpDown, ArrowUp, ArrowDown, History, Package,
+  Pencil, Trash2, Search, Eye, ExternalLink,
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getProjects, deleteProject, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
@@ -27,7 +29,6 @@ export default function ProjectsSection() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  // Modals
   const [showCreate, setShowCreate] = useState(false);
   const [logTarget, setLogTarget] = useState<Project | null>(null);
   const [historyTarget, setHistoryTarget] = useState<Project | null>(null);
@@ -80,70 +81,145 @@ export default function ProjectsSection() {
   );
 
   const columns: ColumnDef<Project>[] = useMemo(() => [
+    // ── Image ──────────────────────────────────────────────────────────
+    {
+      id: "image",
+      header: () => <span className="sr-only">Image</span>,
+      enableSorting: false,
+      size: 56,
+      cell: ({ row }) => {
+        const first = row.original.images?.[0];
+        return first ? (
+          <img
+            src={first.image_url}
+            alt=""
+            aria-hidden="true"
+            className="h-14 w-14 rounded-md object-cover border border-neutral-200"
+          />
+        ) : (
+          <div
+            className="h-14 w-14 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <span className="text-neutral-300 text-lg">✦</span>
+          </div>
+        );
+      },
+    },
+    // ── Name ───────────────────────────────────────────────────────────
     {
       accessorKey: "name",
       header: ({ column }) => <SortHeader column={column} label="Name" />,
       cell: ({ row }) => (
-        <button
-          className="font-medium text-left hover:underline max-w-[30ch] truncate block"
-          onClick={() => navigate(`/studio/projects/${row.original.id}`)}
+        <span
+          className="font-medium max-w-[28ch] truncate block text-neutral-700"
           title={row.getValue("name")}
         >
           {row.getValue("name")}
-        </button>
+        </span>
       ),
     },
+    // ── Units Made ─────────────────────────────────────────────────────
     {
       accessorKey: "units_made",
       header: ({ column }) => <SortHeader column={column} label="Units Made" />,
+      cell: ({ row }) => (
+        <span className="text-neutral-700">{row.getValue("units_made")}</span>
+      ),
     },
+    // ── In Stock ───────────────────────────────────────────────────────
     {
-      accessorKey: "avg_duration_minutes",
-      header: ({ column }) => <SortHeader column={column} label="Avg. Make Time" />,
+      accessorKey: "in_stock",
+      header: ({ column }) => <SortHeader column={column} label="In Stock" />,
       cell: ({ row }) => {
-        const mins = row.getValue("avg_duration_minutes") as number | null;
-        if (!mins) return <span className="text-muted-foreground">—</span>;
-        const h = Math.floor(mins / 60);
-        const m = Math.round(mins % 60);
-        return <span>{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>;
-      },
-    },
-    {
-      accessorKey: "material_cost_per_unit",
-      header: ({ column }) => <SortHeader column={column} label="Material Cost/Unit" />,
-      cell: ({ row }) => {
-        const cost = row.getValue("material_cost_per_unit") as string | null;
-        return cost ? <span>€{cost}</span> : <span className="text-muted-foreground">—</span>;
-      },
-    },
-    {
-      accessorKey: "product_title",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Linked Product</span>,
-      cell: ({ row }) => {
-        const project = row.original;
-        return project.product ? (
-          <button
-            className="text-sm hover:underline text-left max-w-[20ch] truncate block text-[hsl(var(--primary))]"
-            onClick={() => navigate(`/products/${project.product}/edit`)}
-            title={project.product_title ?? ""}
-          >
-            {project.product_title}
-          </button>
-        ) : (
-          <span className="text-sm text-muted-foreground">—</span>
+        const val = row.getValue("in_stock") as number;
+        return (
+          <span className={val === 0 ? "text-neutral-400" : "text-neutral-700"}>
+            {val}
+          </span>
         );
       },
     },
+    // ── Avg Make Time ──────────────────────────────────────────────────
+    {
+      accessorKey: "avg_duration_minutes",
+      header: ({ column }) => <SortHeader column={column} label="Avg Make Time" />,
+      cell: ({ row }) => {
+        const mins = row.getValue("avg_duration_minutes") as number | null;
+        if (!mins) return <span className="text-neutral-400">—</span>;
+        const h = Math.floor(mins / 60);
+        const m = Math.round(mins % 60);
+        return <span className="text-neutral-700">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>;
+      },
+    },
+    // ── Avg Materials Cost ─────────────────────────────────────────────
+    {
+      accessorKey: "material_cost_per_unit",
+      header: ({ column }) => <SortHeader column={column} label="Materials Cost" />,
+      cell: ({ row }) => {
+        const cost = row.getValue("material_cost_per_unit") as string | null;
+        return cost
+          ? <span className="text-neutral-700">€{parseFloat(cost).toFixed(2)}</span>
+          : <span className="text-neutral-400">—</span>;
+      },
+    },
+    // ── Linked Product ─────────────────────────────────────────────────
+    {
+      id: "linked_product",
+      header: () => <span className="font-medium text-xs uppercase tracking-wide">Product</span>,
+      enableSorting: false,
+      size: 64,
+      cell: ({ row }) => {
+        const project = row.original;
+        if (!project.product) return <span className="text-neutral-400">—</span>;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label={`Go to linked product: ${project.product_title}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/products/${project.product}/edit`);
+                }}
+                className="text-[#C17B6F] hover:text-[#a5655a] transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top"><p>{project.product_title}</p></TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    // ── Actions ────────────────────────────────────────────────────────
     {
       id: "actions",
       header: () => <span className="font-medium text-xs uppercase tracking-wide">Actions</span>,
       cell: ({ row }) => {
         const project = row.original;
         return (
-          <div className="flex items-center gap-1">
-            <Button size="sm" onClick={() => handleLogAction(project)} className="text-xs h-7 px-2">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost" size="sm" className="h-7 w-7 p-0"
+                  onClick={() => navigate(`/studio/projects/${project.id}`)}
+                  aria-label="View project"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>View Project</p></TooltipContent>
+            </Tooltip>
+
+            <Button
+              size="sm"
+              onClick={() => handleLogAction(project)}
+              className="text-xs h-7 px-2"
+            >
               Log Make
             </Button>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(project)}>
@@ -152,6 +228,7 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>Make History</p></TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMaterialsTarget(project)}>
@@ -160,6 +237,7 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>Manage Materials</p></TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditTarget(project)}>
@@ -168,6 +246,7 @@ export default function ProjectsSection() {
               </TooltipTrigger>
               <TooltipContent side="top"><p>Edit</p></TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -203,23 +282,16 @@ export default function ProjectsSection() {
 
   return (
     <div className="space-y-4">
-
-      {/* ── Toolbar — one row ── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-8 h-8 w-48 text-sm"
-            />
-          </div>
-
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search projects..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-8 h-8 w-48 text-sm"
+          />
         </div>
-
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground whitespace-nowrap">
             {table.getFilteredRowModel().rows.length} of {projects.length} projects
@@ -228,7 +300,6 @@ export default function ProjectsSection() {
         </div>
       </div>
 
-      {/* ── Table ── */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -253,7 +324,11 @@ export default function ProjectsSection() {
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-neutral-50"
+                  onClick={() => navigate(`/studio/projects/${row.original.id}`)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -266,7 +341,6 @@ export default function ProjectsSection() {
         </Table>
       </div>
 
-      {/* ── Pagination ── */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
@@ -275,7 +349,6 @@ export default function ProjectsSection() {
         </div>
       </div>
 
-      {/* ── Modals ── */}
       {showCreate && (
         <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
       )}

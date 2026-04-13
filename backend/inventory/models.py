@@ -8,9 +8,36 @@ SaleLog refactor (April 2026):
 - Project.units_sold is now derived via the linked product's sale logs.
 - Project.in_stock = units_made - units_sold (unchanged, but now via product).
 """
+import io
+from PIL import Image as PilImage
+from django.core.files.base import ContentFile
 from django.db import models
 from authentication.models import UserProfile
 from products.models import Product
+
+
+def _resize_to_jpeg(field, max_px=1200):
+    """
+    Open an ImageField, resize to max_px on longest side, re-save as JPEG.
+    Mutates the field in place (save=False). Call before super().save().
+    """
+    img = PilImage.open(field)
+
+    # Apply EXIF orientation before anything else
+    try:
+        from PIL import ImageOps
+        img = ImageOps.exif_transpose(img)
+    except Exception:
+        pass
+
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    img.thumbnail((max_px, max_px), PilImage.LANCZOS)
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=85, optimize=True)
+    buffer.seek(0)
+    filename = field.name.rsplit(".", 1)[0] + ".jpg"
+    field.save(filename, ContentFile(buffer.read()), save=False)
 
 
 class RawMaterial(models.Model):
@@ -25,7 +52,7 @@ class RawMaterial(models.Model):
     supplier = models.CharField(max_length=500, blank=True, null=True)
     sku = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    photo = models.ImageField(upload_to='material_photos/', null=True, blank=True)
+    photo = models.ImageField(upload_to="material_photos/", null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
     custom_fields = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -33,6 +60,12 @@ class RawMaterial(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.quantity} {self.unit_type})"
+
+    def save(self, *args, **kwargs):
+        # Only process on first save (new upload), not on every model.save()
+        if self.photo and not self.pk:
+            _resize_to_jpeg(self.photo)
+        super().save(*args, **kwargs)
 
     @property
     def is_low_stock(self):
@@ -58,10 +91,6 @@ class Project(models.Model):
 
     @property
     def units_sold(self):
-        """
-        Units sold is now derived from the linked product's sale logs.
-        If no product is linked, falls back to 0.
-        """
         if self.product:
             return sum(log.units_sold for log in self.product.sale_logs.all())
         return 0
@@ -72,11 +101,6 @@ class Project(models.Model):
 
     @property
     def avg_duration_minutes(self):
-        """
-        Average duration per unit across all make logs that have a duration set.
-        Returns None if no duration data is available.
-        Used for pricing calculator: labour cost = avg_duration_minutes / 60 * hourly_rate
-        """
         logs_with_duration = [
             log for log in self.make_logs.all()
             if log.duration_minutes is not None and log.units_made > 0
@@ -89,11 +113,6 @@ class Project(models.Model):
 
     @property
     def material_cost_per_unit(self):
-        """
-        Estimated material cost per unit based on recipe (ProjectMaterial quantities × cost_per_unit).
-        Returns None if any material is missing a cost_per_unit.
-        Used for pricing calculator.
-        """
         from decimal import Decimal
         total = Decimal("0")
         for pm in self.project_materials.all():
@@ -103,6 +122,24 @@ class Project(models.Model):
                 return None
             total += pm.quantity_used * pm.material.cost_per_unit
         return total if total > 0 else None
+
+
+class ProjectImage(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="project_images/")
+    order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+
+    def __str__(self):
+        return f"Image for {self.project.name}"
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.pk:
+            _resize_to_jpeg(self.image)
+        super().save(*args, **kwargs)
 
 
 class ProjectMaterial(models.Model):
@@ -128,6 +165,7 @@ class MakeLog(models.Model):
 
     def __str__(self):
         return f"{self.project.name} — {self.units_made} made on {self.date_made}"
+
 
 class InventoryLog(models.Model):
     CHANGE_RESTOCK = "restock"

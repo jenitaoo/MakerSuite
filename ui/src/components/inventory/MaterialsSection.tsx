@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Check, X, Search, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMaterials, deleteMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
@@ -19,6 +19,7 @@ import MaterialFormModal from "./MaterialFormModal";
 import RestockDeductModal from "./RestockDeductModal";
 import MaterialHistoryModal from "./MaterialHistoryModal";
 import MaterialDetailModal from "./MaterialDetailModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function MaterialsSection() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
@@ -95,10 +96,36 @@ export default function MaterialsSection() {
   );
 
   const columns: ColumnDef<RawMaterial>[] = useMemo(() => [
+    // ── Image ──────────────────────────────────────────────────────────
+    {
+      id: "image",
+      header: () => <span className="sr-only">Image</span>,
+      enableSorting: false,
+      size: 56,
+      cell: ({ row }) => {
+        const m = row.original;
+        return m.photo_url ? (
+          <img
+            src={m.photo_url}
+            alt=""
+            aria-hidden="true"
+            className="h-14 w-14 rounded-md object-cover border border-neutral-200"
+          />
+        ) : (
+          <div
+            className="h-14 w-14 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <span className="text-neutral-300 text-lg">✦</span>
+          </div>
+        );
+      },
+    },
+    // ── Name ───────────────────────────────────────────────────────────
     {
       accessorKey: "name",
       header: ({ column }) => <SortHeader column={column} label="Name" />,
-      cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+      cell: ({ row }) => <span className="font-medium text-neutral-700">{row.getValue("name")}</span>,
     },
     {
       accessorKey: "unit_type",
@@ -109,7 +136,7 @@ export default function MaterialsSection() {
       header: ({ column }) => <SortHeader column={column} label="In Stock" />,
       cell: ({ row }) => {
         const m = row.original;
-        return <span>{m.quantity} {m.unit_type}</span>;
+        return <span className="text-neutral-700">{m.quantity} {m.unit_type}</span>;
       },
     },
     {
@@ -154,18 +181,51 @@ export default function MaterialsSection() {
       cell: ({ row }) => {
         const material = row.original;
         return (
-          <div className="flex gap-1 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setLogTarget(material)}>Restock / Use</Button>
-            <Button variant="outline" size="sm" onClick={() => setHistoryTarget(material)}>History</Button>
-            <Button variant="outline" size="sm" onClick={() => setDetailTarget(material)}>Details</Button>
-            <Button variant="outline" size="sm" onClick={() => setEditTarget(material)}>Edit</Button>
-            <Button
-              variant="outline" size="sm"
-              className="text-red-600 hover:bg-red-50 border-red-200"
-              onClick={() => handleDelete(material)}
-            >
-              Delete
-            </Button>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setLogTarget(material)}>
+                  Restock / Use
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Restock / Use</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(material)}>
+                  <History className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>History</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailTarget(material)}>
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Details</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditTarget(material)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Edit</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleDelete(material)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Delete</p></TooltipContent>
+            </Tooltip>
           </div>
         );
       },
