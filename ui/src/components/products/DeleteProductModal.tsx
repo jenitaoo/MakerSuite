@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { getCookie } from "../../services/api";
+import { getCookie, API_URL } from "../../services/api";
 import { persistentSuccess, persistentError } from "../../utils/toast-utils";
 import { Product } from "../../types/product";
 
@@ -24,7 +24,7 @@ export default function DeleteProductModal({ product, hasEtsyListing, onClose, o
     // Step 1: deactivate on Etsy if linked
     if (hasEtsyListing) {
       try {
-        const res = await fetch(`/api/products/${product.id}/deactivate-etsy/`, {
+        const res = await fetch(`${API_URL}/api/products/${product.id}/deactivate-etsy/`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -46,7 +46,7 @@ export default function DeleteProductModal({ product, hasEtsyListing, onClose, o
 
     // Step 2: delete internally regardless of Etsy result
     try {
-      const res = await fetch(`/api/products/${product.id}/`, {
+      const res = await fetch(`${API_URL}/api/products/${product.id}/`, {
         method: "DELETE",
         credentials: "include",
         headers: {

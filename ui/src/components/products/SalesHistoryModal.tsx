@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCookie } from "../../services/api";
+import { getCookie, API_URL } from "../../services/api";
 import { Product } from "../../types/product";
 import { SaleLog } from "../../types/inventory";
 
@@ -17,7 +17,7 @@ export default function SalesHistoryModal({ product, onClose }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/products/${product.id}/sales/`, {
+    fetch(`${API_URL}/api/products/${product.id}/sales/`, {
       credentials: "include",
       headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
     })

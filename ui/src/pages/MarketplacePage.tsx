@@ -264,7 +264,7 @@ export default function MarketplacePage() {
   const loadProducts = () => {
     setLoadingProducts(true);
     setProductError(null);
-    fetch(`/api/product-list/?page_size=200`, {
+    fetch(`${API_URL}/api/product-list/?page_size=200`, {
       credentials: "include",
       headers: {
         Accept: "application/json",
@@ -383,7 +383,7 @@ export default function MarketplacePage() {
       }
       const { shop_id } = await shopRes.json();
       await toast.promise(
-        fetch(`/api/etsy/shops/${shop_id}/import/`, {
+        fetch(`${API_URL}/api/etsy/shops/${shop_id}/import/`, {
           method: "POST",
           credentials: "include",
           headers: {

@@ -117,7 +117,7 @@ export default function CreateProductListing() {
         const imageData = new FormData();
         images.forEach((img) => imageData.append("images", img.file));
 
-        const imgRes = await fetch(`/api/products/${productId}/images/`, {
+        const imgRes = await fetch(`${API_URL}/api/products/${productId}/images/`, {
           method: "POST",
           credentials: "include",
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
