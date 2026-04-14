@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 
 export type ProductImage = {
   id: number;
@@ -108,7 +108,7 @@ export function useProductWithListings(id: string | undefined): UseProductWithLi
     setLoading(true);
     setError(null);
 
-    fetch(`/api/products/${id}/with_listings/`, {
+    fetch(`${API_URL}/api/products/${id}/with_listings/`, {
       credentials: "include",
       headers: {
         Accept: "application/json",

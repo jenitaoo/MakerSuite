@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useContext } from "react";
 import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useProductWithListings, ExternalListing, EtsyRaw } from "../hooks/useProductWithListings";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,7 +93,7 @@ export default function EditProductListing() {
   // Fetch linked project when product loads
   useEffect(() => {
     if (!product?.linked_project_id) return;
-    fetch(`/api/inventory/projects/${product.linked_project_id}/`, {
+    fetch(`${API_URL}/api/inventory/projects/${product.linked_project_id}/`, {
       credentials: "include",
       headers: { Accept: "application/json" },
     })
@@ -134,7 +134,7 @@ export default function EditProductListing() {
 
   const handleDeleteExistingImage = async (imageId: number) => {
     if (!id) return;
-    const res = await fetch(`/api/products/${id}/images/${imageId}/`, {
+    const res = await fetch(`${API_URL}/api/products/${id}/images/${imageId}/`, {
       method: "DELETE",
       credentials: "include",
       headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },
@@ -153,7 +153,7 @@ export default function EditProductListing() {
     body.append("sku", form.sku);
 
     await toast.promise(
-      fetch(`/api/products/${id}/`, {
+      fetch(`${API_URL}/api/products/${id}/`, {
         method: "PATCH",
         credentials: "include",
         headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
@@ -165,7 +165,7 @@ export default function EditProductListing() {
     if (newImages.length > 0) {
       const imageData = new FormData();
       newImages.forEach((img) => imageData.append("images", img.file));
-      const imgRes = await fetch(`/api/products/${id}/images/`, {
+      const imgRes = await fetch(`${API_URL}/api/products/${id}/images/`, {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
@@ -198,7 +198,7 @@ export default function EditProductListing() {
 
   const handleSaveToEtsy = async () => {
     if (!form || !id) return;
-    const res = await fetch(`/api/products/${id}/push-to-etsy/`, {
+    const res = await fetch(`${API_URL}/api/products/${id}/push-to-etsy/`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },

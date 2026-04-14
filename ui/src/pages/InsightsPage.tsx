@@ -211,7 +211,7 @@ export default function InsightsPage() {
         setMarkets(marketData);
 
         const salePromises = (productData as Product[]).map((p) =>
-          fetch(`/api/products/${p.id}/sales/`, { credentials: "include", headers })
+          fetch(`${API_URL}/api/products/${p.id}/sales/`, { credentials: "include", headers })
             .then((r) => r.ok ? r.json() : [])
             .then((d) => Array.isArray(d) ? d : d.results ?? [])
         );

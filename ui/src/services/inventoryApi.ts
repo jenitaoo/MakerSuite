@@ -1,6 +1,6 @@
-import { getCookie } from "./api";
+import { getCookie, API_URL } from "./api";
 
-const BASE = "/api/inventory";
+const BASE = `${API_URL}/api/inventory`;
 
 const headers = () => ({
   "Content-Type": "application/json",

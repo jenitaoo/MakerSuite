@@ -26,7 +26,7 @@ export default function ProductListingsPage() {
   const navigate = useNavigate();
 
   async function fetchProducts() {
-    const res = await fetch(`/api/product-list/?page_size=200`, {
+    const res = await fetch(`${API_URL}/api/product-list/?page_size=200`, {
       credentials: "include",
       headers: {
         Accept: "application/json",
@@ -87,7 +87,7 @@ export default function ProductListingsPage() {
       const { shop_id } = await shopRes.json();
 
       await toast.promise(
-        fetch(`/api/etsy/shops/${shop_id}/import/`, {
+        fetch(`${API_URL}/api/etsy/shops/${shop_id}/import/`, {
           method: "POST",
           credentials: "include",
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },

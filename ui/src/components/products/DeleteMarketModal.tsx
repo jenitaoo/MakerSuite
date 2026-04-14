@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { getCookie } from "../../services/api";
+import { getCookie, API_URL } from "../../services/api";
 import toast from "react-hot-toast";
 
 type Market = { id: number; name: string };
@@ -18,7 +18,7 @@ export default function DeleteMarketModal({ market, onClose, onDeleted }: Props)
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/markets/${market.id}/`, {
+      const res = await fetch(`${API_URL}/api/markets/${market.id}/`, {
         method: "DELETE",
         credentials: "include",
         headers: {

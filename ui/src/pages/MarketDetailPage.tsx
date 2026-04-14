@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getCookie } from "../../src/services/api";
+import { getCookie, API_URL } from "../../src/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,15 +176,15 @@ export default function MarketDetailPage() {
   const loadAll = async () => {
     try {
       const [mRes, sRes, pRes] = await Promise.all([
-        fetch(`/api/markets/${id}/`, {
+        fetch(`${API_URL}/api/markets/${id}/`, {
           credentials: "include",
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         }),
-        fetch(`/api/markets/${id}/sales/`, {
+        fetch(`${API_URL}/api/markets/${id}/sales/`, {
           credentials: "include",
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         }),
-        fetch(`/api/product-list/?page_size=200`, {
+        fetch(`${API_URL}/api/product-list/?page_size=200`, {
           credentials: "include",
           headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
         }),
@@ -223,7 +223,7 @@ export default function MarketDetailPage() {
     if (!editDate) { toast.error("Date is required"); return; }
     setSaving(true);
     try {
-      const res = await fetch(`/api/markets/${id}/`, {
+      const res = await fetch(`${API_URL}/api/markets/${id}/`, {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -266,7 +266,7 @@ export default function MarketDetailPage() {
     if (!newProductId) { toast.error("Select a product"); return; }
     setSavingProduct(true);
     try {
-      const res = await fetch(`/api/markets/${id}/products/`, {
+      const res = await fetch(`${API_URL}/api/markets/${id}/products/`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -291,7 +291,7 @@ export default function MarketDetailPage() {
 
   const handleRemoveProduct = async (productPk: number) => {
     try {
-      const res = await fetch(`/api/markets/${id}/products/${productPk}/`, {
+      const res = await fetch(`${API_URL}/api/markets/${id}/products/${productPk}/`, {
         method: "DELETE",
         credentials: "include",
         headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },
@@ -306,7 +306,7 @@ export default function MarketDetailPage() {
 
   const handleUpdateUnits = async (productPk: number, units: number) => {
     try {
-      await fetch(`/api/markets/${id}/products/${productPk}/`, {
+      await fetch(`/${API_URL}api/markets/${id}/products/${productPk}/`, {
         method: "PATCH",
         credentials: "include",
         headers: {
