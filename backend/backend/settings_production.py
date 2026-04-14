@@ -9,10 +9,12 @@ DEBUG = False
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS",
-    ".railway.app,localhost,127.0.0.1"
-).split(",")
+ALLOWED_HOSTS = [
+    ".railway.app",
+    "makersuite-production.up.railway.app",
+    "localhost",
+    "127.0.0.1",
+])
 
 # -----------------------------
 # DATABASE
@@ -29,9 +31,13 @@ DATABASES = {
 # CORS / CSRF
 # -----------------------------
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
-CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    "https://makersuite-production.up.railway.app",
+]
+
 
 # -----------------------------
 # COOKIES
@@ -52,10 +58,17 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # IMPORTANT: ensure base middleware exists first
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-] + MIDDLEWARE[1:]
 
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
 # -----------------------------
 # CLOUDINARY
 # -----------------------------
