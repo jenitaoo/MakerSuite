@@ -69,8 +69,8 @@ export default function EditProductListing() {
     setForm({
       title: product.title,
       description: product.description ?? "",
-      price: product.internal_price,
-      quantity: product.internal_quantity,
+      price: String(product.internal_price ?? ""),
+      quantity: String(product.internal_quantity ?? ""),
       sku: product.sku ?? "",
       tags: etsyListing?.etsy_tags?.length ? etsyListing.etsy_tags : (raw?.tags ?? []),
       materials: etsyListing?.etsy_materials?.length ? etsyListing.etsy_materials : (raw?.materials ?? []),

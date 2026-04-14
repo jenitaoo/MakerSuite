@@ -226,6 +226,8 @@ export async function logSale(
     tag_ids: number[];
     source: string;
     notes?: string;
+      unit_prices?: { unit: number; price: string }[];
+    sale_price?: string;
   }
 ) {
   const res = await fetch(`${BASE}/projects/${id}/log-sale/`, {

@@ -45,6 +45,7 @@ export type MakeLog = {
   deducted_materials: boolean;
   duration_minutes: number | null;
   created_at: string;
+  material_overrides?: Record<number, number>;
 };
 
 export type SaleTag = {
@@ -63,8 +64,8 @@ export type SaleLog = {
   notes: string | null;
   tags: SaleTag[];
   source: "etsy" | "manual";
-  unit_prices: { unit: number; price: string }[];
-  sale_price: string | null;
+  unit_prices?: { unit: number; price: string }[];
+  sale_price?: string | null;
   created_at: string;
 };
 
