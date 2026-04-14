@@ -5,6 +5,7 @@ import ProductTable from "./ProductTable";
 import { getCookie } from "../../services/api.ts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "../../types/product";
+import { API_URL } from "../../services/api";
 
 type ApiPage<T> = {
   count: number;
@@ -67,7 +68,7 @@ export default function ProductListingsPage() {
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      const shopRes = await fetch("/api/etsy/shop/", {
+      const shopRes = await fetch(`${API_URL}/api/etsy/shop/`, {
         credentials: "include",
         headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
       });

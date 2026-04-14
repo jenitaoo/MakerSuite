@@ -9,6 +9,7 @@ import { ImagePlus, X } from "lucide-react";
 import { getCookie } from "../../services/api";
 import { createProject, uploadProjectImage } from "../../services/inventoryApi";
 import { TagsInput } from "@/components/ui/tags-input";
+import { API_URL } from "../../services/api";
 
 type Product = { id: number; title: string };
 type Props = { onClose: () => void; onCreated: () => void };
@@ -25,7 +26,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/product-list/?page_size=100", {
+  fetch(`${API_URL}/api/product-list/?page_size=100`, {
       credentials: "include",
       headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
     })

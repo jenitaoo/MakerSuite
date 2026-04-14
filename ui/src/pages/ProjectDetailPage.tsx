@@ -19,7 +19,7 @@ import LogMakeModal from "../components/inventory/LogMakeModal";
 import ProjectMaterialsModal from "../components/inventory/ProjectMaterialsModal";
 import EditProjectModal from "../components/inventory/EditProjectModal";
 import { AuthContext } from "../context/AuthContext";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 
 // ── Shared primitives matching MarketDetailPage ───────────────────────────────
 
@@ -106,7 +106,7 @@ export default function ProjectDetailPage() {
     try {
       const formData = new FormData();
       formData.append("hourly_rate", hourlyRate);
-      const res = await fetch("/api/auth/profile/", {
+      const res = await fetch(`${API_URL}/api/auth/profile/`, {
         method: "PATCH",
         credentials: "include",
         headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },

@@ -10,7 +10,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { getCookie } from "../../services/api";
+import { getCookie, API_URL } from "../../services/api";
+
 
 type Props = {
   onClose: () => void;
@@ -31,7 +32,7 @@ export default function AddMarketModal({ onClose, onCreated }: Props) {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/markets/", {
+      const res = await fetch(`${API_URL}markets/`, {
         method: "POST",
         credentials: "include",
         headers: {

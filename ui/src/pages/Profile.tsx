@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { AuthContext } from "../context/AuthContext";
 import { authService } from "../services/auth";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ const Profile = () => {
   const [rateSuccess, setRateSuccess] = useState("");
 
   useEffect(() => {
-    fetch("/api/etsy/status/", {
+    fetch(`${API_URL}/api/etsy/status/`, {
       credentials: "include",
       headers: { Accept: "application/json" },
     })
@@ -154,7 +154,7 @@ const Profile = () => {
     if (!confirmed) return;
     setDisconnecting(true);
     try {
-      const res = await fetch("/api/etsy/disconnect/", {
+      const res = await fetch(`${API_URL}/etsy/disconnect/`, {
         method: "POST",
         credentials: "include",
         headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },

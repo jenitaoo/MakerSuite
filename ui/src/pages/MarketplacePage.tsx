@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ProductTable from "../components/products/ProductTable";
-import { getCookie } from "../../src/services/api.ts";
+import { getCookie, API_URL } from "../../src/services/api.ts";
 import { Product } from "../../src/types/product";
 import {
   Store,
@@ -285,7 +285,7 @@ export default function MarketplacePage() {
 
   const loadMarkets = () => {
     setLoadingMarkets(true);
-    fetch("/api/markets/", {
+    fetch(`${API_URL}/api/markets/`, {
       credentials: "include",
       headers: {
         Accept: "application/json",
@@ -337,7 +337,7 @@ export default function MarketplacePage() {
   const handleRefresh = async () => {
     setLoadingProducts(true);
     try {
-      const shopRes = await fetch("/api/etsy/shop/", {
+      const shopRes = await fetch(`${API_URL}/api/etsy/shop/`, {
         credentials: "include",
         headers: {
           Accept: "application/json",

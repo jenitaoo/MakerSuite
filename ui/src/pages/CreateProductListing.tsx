@@ -2,7 +2,7 @@ import { useNavigate, useBlocker } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -101,7 +101,7 @@ export default function CreateProductListing() {
       productData.append("internal_quantity", String(values.internal_quantity));
       if (values.sku) productData.append("sku", values.sku);
 
-      const res = await fetch("/api/products/", {
+      const res = await fetch(`${API_URL}/api/products/`, {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },

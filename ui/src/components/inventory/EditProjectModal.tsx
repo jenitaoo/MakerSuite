@@ -10,6 +10,7 @@ import { updateProject, uploadProjectImage, deleteProjectImage } from "../../ser
 import { getCookie } from "../../services/api";
 import { Project, ProjectImage } from "../../types/inventory";
 import { TagsInput } from "@/components/ui/tags-input";
+import { API_URL } from "../../services/api";
 
 type Product = { id: number; title: string };
 type Props = { project: Project; onClose: () => void; onSaved: () => void };
@@ -33,7 +34,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
 
 
   useEffect(() => {
-    fetch("/api/product-list/?page_size=100", {
+    fetch(`${API_URL}/api/product-list/?page_size=100`, {
       credentials: "include",
       headers: { Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
     })

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getCookie } from "../services/api";
+import { getCookie, API_URL } from "../services/api";
 import { getProjects, getMaterials } from "../services/inventoryApi";
 import { Project, RawMaterial } from "../types/inventory";
 import {
@@ -197,9 +197,9 @@ export default function InsightsPage() {
     Promise.all([
       getProjects(),
       getMaterials(),
-      fetch("/api/product-list/?page_size=200", { credentials: "include", headers })
+      fetch(`${API_URL}/api/product-list/?page_size=200`, { credentials: "include", headers })
         .then((r) => r.json()).then((d) => d.results ?? d),
-      fetch("/api/markets/", { credentials: "include", headers })
+      fetch(`${API_URL}/api/markets/`, { credentials: "include", headers })
         .then((r) => r.json()).then((d) => d.results ?? d),
     ])
       .then(async ([projectData, materialData, productData, marketData]) => {

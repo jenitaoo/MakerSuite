@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCookie } from "../../services/api";
+import { getCookie, API_URL } from "../../services/api";
 import { getTags, createTag } from "../../services/inventoryApi";
 import { Product } from "../../types/product";
 import { SaleTag } from "../../types/inventory";
@@ -308,7 +308,7 @@ function SaleDetailsForm({
 
     // Only fetch markets if not already locked to one
     if (!marketId) {
-      fetch("/api/markets/", {
+      fetch(`${API_URL}/api/markets/`, {
         credentials: "include",
         headers: {
           Accept: "application/json",
