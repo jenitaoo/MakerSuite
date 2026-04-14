@@ -12,11 +12,13 @@ django-allauth==65.4.1
 django-cors-headers==4.7.0
 djangorestframework==3.14.0
 djangorestframework_simplejwt==5.5.0
+gunicorn==25.3.0
 idna==3.11
 isort==8.0.0
 markdown-it-py==4.0.0
 mccabe==0.7.0
 mdurl==0.1.2
+packaging==26.0
 pillow==12.2.0
 platformdirs==4.9.2
 psycopg2-binary==2.9.9
