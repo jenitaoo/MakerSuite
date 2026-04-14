@@ -197,6 +197,8 @@ export async function logMake(
     date_made?: string;
     deduct_materials?: boolean;
     notes?: string;
+    material_overrides?: { material_id: number; quantity_used: any }[] | undefined;
+    duration_minutes?: number;
   }
 ) {
   const res = await fetch(`${BASE}/projects/${id}/log-make/`, {
@@ -226,7 +228,7 @@ export async function logSale(
     tag_ids: number[];
     source: string;
     notes?: string;
-      unit_prices?: { unit: number; price: string }[];
+    unit_prices?: { unit: number; price: string }[];
     sale_price?: string;
   }
 ) {
