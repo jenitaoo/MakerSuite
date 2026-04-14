@@ -148,15 +148,10 @@ REST_FRAMEWORK = {
 }
 
 # CORS
+FRONTEND_URL = https://makersuite-one.vercel.app
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
 
 # Cookies for cross-site requests (React → Django)
 # Don’t force a domain; let Django use host-only cookies
