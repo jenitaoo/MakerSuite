@@ -74,7 +74,7 @@ function fmtDate(dateStr: string) {
 
 function WavySeparator() {
   return (
-    <div className="relative w-full overflow-x-hidden my-0" aria-hidden="true">
+    <div className="wavy-line-insights relative w-full overflow-x-hidden my-0" aria-hidden="true">
       <div
         className="wavy-line opacity-40 absolute left-1/2"
         style={{ width: "100vw", transform: "translateX(-50%)" }}
@@ -627,6 +627,7 @@ export default function InsightsPage() {
           </div>
         </section>
 
+        <WavySeparator/>
 
         {/* ══════════════════════════════════════════════════════════════════
             PERFORMANCE
