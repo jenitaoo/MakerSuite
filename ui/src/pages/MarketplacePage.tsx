@@ -356,7 +356,7 @@ export default function MarketplacePage() {
                 <button
                 onClick={() => {
                     toast.dismiss(t.id);
-                    window.location.href = `/api/etsy/login?return_to=${encodeURIComponent(
+                    window.location.href = `${API_URL}/api/etsy/login?return_to=${encodeURIComponent(
                     window.location.pathname
                     )}`;
                 }}
