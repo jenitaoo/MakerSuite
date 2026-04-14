@@ -42,29 +42,28 @@ SESSION_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SAMESITE = "None"
 
 # -----------------------------
-# STATIC FILES
+# STATIC FILES (ROBUST SETUP)
 # -----------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
+# safer WhiteNoise setup (recommended way)
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# -----------------------------
-# MIDDLEWARE (correct + safe)
-# -----------------------------
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+# IMPORTANT: ensure base middleware exists first
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+] + MIDDLEWARE[1:]
 
 # -----------------------------
-# APPS
+# CLOUDINARY
 # -----------------------------
 INSTALLED_APPS += [
     "cloudinary",
     "cloudinary_storage",
 ]
 
-# -----------------------------
-# CLOUDINARY
-# -----------------------------
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 CLOUDINARY_STORAGE = {
