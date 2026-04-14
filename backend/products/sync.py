@@ -61,7 +61,7 @@ class SyncManager:
 
             # Get last sync timestamp to avoid re-processing old receipts
             last_sync = listing.last_synced
-            since_ts = int(last_sync.timestamp()) if last_sync else 0
+            since_ts = 0 # set to 0 to fetch all receipts inc historical
 
             try:
                 receipts = adapter.fetch_receipts(listing.shop_id, since_ts)
