@@ -5,7 +5,5 @@
 *.pyd
 *.so
 *.pyc
-*__init__.py
 *.cpython-311.pyc
-backend/etsy/migrations/0002_etsytoken_etsy_user_id.py
 node_modules/
