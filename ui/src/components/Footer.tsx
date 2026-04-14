@@ -88,8 +88,8 @@ export default function Footer() {
       {/* ── Bottom bar ── */}
       <div className="border-t border-white/10 px-4 sm:px-8 lg:px-16 py-4">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-white/90 text-xs">
-          <span>MakerSuite · Built by Jenny Huynh · TU Dublin FYP 2025/26</span>
-          <span>BSc Computer Science · TU856</span>
+          <span>MakerSuite · Built by Jenny Thao Huynh · TU Dublin FYP 2025/26</span>
+          <span>BSc Computer Science · TU856 · C22448184</span>
         </div>
       </div>
 

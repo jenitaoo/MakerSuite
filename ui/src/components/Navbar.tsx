@@ -81,7 +81,7 @@ const Navbar = () => {
         <div className="hidden lg:flex items-center gap-4">
           {isLoggedIn ? (
             <Link to="/profile">
-              <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all">
+              <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-primary transition-all">
                 <AvatarImage src={auth?.user?.photo ?? undefined} alt={auth?.user?.username} />
                 <AvatarFallback className="text-xs font-semibold bg-muted">
                   {getInitials()}

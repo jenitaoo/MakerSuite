@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import ProjectsSection from "../components/inventory/ProjectsSection";
 import MaterialsSection from "../components/inventory/MaterialsSection";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
-  AlertTriangle, Package, Clock,
-  Layers, LayoutGrid, ChevronDown, ClipboardList,
+  ChevronDown, ClipboardList,
   ToolCase,
 } from "lucide-react";
 import { getMaterials, getProjects } from "../services/inventoryApi";
@@ -17,7 +15,6 @@ const STUDIO = "#8496af";
 
 // ─── Side nav config ──────────────────────────────────────────────────────────
 const NAV_SECTIONS = [
-  { id: "at-a-glance",   label: "At a Glance",   icon: LayoutGrid   },
   { id: "your-projects",  label: "Projects",      icon: ClipboardList },
   { id: "your-materials", label: "Materials",     icon: ToolCase     },
 ] as const;
@@ -31,26 +28,6 @@ function WavySeparator() {
         style={{ width: "100vw", transform: "translateX(-50%)" }}
       />
       <div className="wavy-line-studio invisible" />
-    </div>
-  );
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({
-  label, value, icon: Icon, sub,
-}: {
-  label: string; value: string | number; icon: React.ElementType; sub?: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg border border-border p-5 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-tight">
-          {label}
-        </span>
-        <Icon className="w-4 h-4 text-neutral-500" aria-hidden="true" />
-      </div>
-      <div className="text-3xl font-bold text-neutral-900">{value}</div>
-      {sub && <div className="text-sm text-neutral-600">{sub}</div>}
     </div>
   );
 }
@@ -93,17 +70,6 @@ export default function InventoryPage() {
 
   const scrollTo = (id: string) =>
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  // ── Derived stats ─────────────────────────────────────────────────────────
-  const linkedProjects = projects.filter((p) => p.product !== null).length;
-  const projectsWithTime = projects.filter((p) => p.avg_duration_minutes != null);
-  const avgMakeTime = projectsWithTime.length > 0
-    ? Math.round(projectsWithTime.reduce((s, p) => s + (p.avg_duration_minutes ?? 0), 0) / projectsWithTime.length)
-    : null;
-  const fmt = (m: number) => {
-    const h = Math.floor(m / 60), min = m % 60;
-    return h > 0 ? `${h}h ${min}m` : `${min}m`;
-  };
 
   return (
     <div className="relative flex overflow-x-hidden">
@@ -159,7 +125,7 @@ export default function InventoryPage() {
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-bold text-white">Studio</h1>
                   <p className="mt-3 text-white/90 text-base leading-relaxed">
-                    Everything you need to make things — track inventory for your projects and materials, link them to products in your Marketplace and log everything you make.
+                  Your Studio is where you plan everything you make. Create projects for each product, define what goes into them, and track production automatically. When you log a make, your stock updates instantly in your Marketplace so everything stays in sync.
                   </p>
                 </div>
 
@@ -168,9 +134,8 @@ export default function InventoryPage() {
                 {/* What's Here — hidden on mobile */}
                 <div className="hidden sm:block space-y-3 sm:space-y-4">
                   <h2 className="text-lg sm:text-xl font-bold text-white text-center">What's Here?</h2>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-6">
                     {[
-                      { icon: LayoutGrid,   label: "At a Glance",    sub: "Stats and low stock alerts",         id: "at-a-glance"    },
                       { icon: ClipboardList,      label: "Your Projects",  sub: "Recipes, makes and linked products", id: "your-projects"  },
                       { icon: ToolCase, label: "Your Materials", sub: "Raw materials and stock levels",     id: "your-materials" },
                     ].map(({ icon: Icon, label, sub, id }) => (
@@ -192,8 +157,8 @@ export default function InventoryPage() {
 
                 <div className="flex justify-center pt-2">
                   <button
-                    onClick={() => scrollTo("at-a-glance")}
-                    aria-label="Scroll to At a Glance section"
+                    onClick={() => scrollTo("your-projects")}
+                    aria-label="Scroll to Your Projects section"
                     className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors animate-bounce"
                   >
                     <ChevronDown className="w-5 h-5" aria-hidden="true" />
@@ -203,56 +168,6 @@ export default function InventoryPage() {
             </div>
           </div>
         </section>
-
-        {/* ═══ AT A GLANCE ═════════════════════════════════════════════════ */}
-        <section
-          id="at-a-glance"
-          ref={(el) => { sectionRefs.current["at-a-glance"] = el; }}
-          className="space-y-4 pt-8 sm:pt-12 scroll-mt-20"
-          aria-label="At a Glance"
-        >
-          <div className="mb-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">At a Glance</h2>
-            <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-              An overview of your studio — projects, materials and make times. Low stock alerts are below.
-            </p>
-          </div>
-
-          {lowStockMaterials.length > 0 && (
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3" role="alert">
-              <AlertTriangle className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" aria-hidden="true" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-700">
-                  {lowStockMaterials.length} material{lowStockMaterials.length !== 1 ? "s" : ""} running low
-                </p>
-                <p className="text-sm text-amber-700 mt-0.5 truncate">
-                  {lowStockMaterials.map((m) => m.name).join(", ")}
-                </p>
-              </div>
-              <Button
-                size="sm" variant="outline"
-                className="border-amber-400 text-amber-700 hover:bg-amber-100 shrink-0 font-semibold"
-                onClick={() => scrollTo("your-materials")}
-              >
-                View Materials
-              </Button>
-            </div>
-          )}
-
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 space-y-4">
-              <p className="text-sm font-semibold uppercase tracking-widest text-neutral-700 pt-1">Quick Stats</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard label="Total Projects" value={projects.length} icon={Package} sub={projects.length === 0 ? "No projects yet" : undefined} />
-                <StatCard label="Linked to a Product" value={linkedProjects} icon={Layers} sub={projects.length > 0 ? `${projects.length - linkedProjects} not yet linked` : undefined} />
-                <StatCard label="Avg. Make Time" value={avgMakeTime ? fmt(avgMakeTime) : "—"} icon={Clock} sub={avgMakeTime ? "across all projects" : "Log makes to track time"} />
-                <StatCard label="Low Stock Materials" value={lowStockMaterials.length} icon={AlertTriangle} sub={lowStockMaterials.length === 0 ? "All materials stocked" : "Need restocking"} />
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <WavySeparator />
 
         {/* ═══ YOUR PROJECTS ═══════════════════════════════════════════════ */}
         <section
@@ -264,7 +179,7 @@ export default function InventoryPage() {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Projects</h2>
             <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-              Each project is a recipe — materials, make time, notes, and a linked product. When you log a make, units are automatically added to the stock of the linked product in your Marketplace.
+              Each project is a recipe for something you make. Add materials, make time, and notes, then link it to a product in your Marketplace. Every time you log a make, your project and it's linked product's stock is updated automatically so you never have to manage inventory manually.
             </p>
           </div>
 
@@ -287,7 +202,7 @@ export default function InventoryPage() {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Materials</h2>
             <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-              Raw materials used across your projects. Set low stock thresholds to get alerts.
+              All the raw materials used in your projects, from yarn to packaging. Track stock levels automatically as you make products and set low-stock alerts so you always know when to restock.
             </p>
           </div>
 
