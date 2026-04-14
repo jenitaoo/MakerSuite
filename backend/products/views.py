@@ -104,6 +104,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         product.internal_quantity = max(0, current_qty - units_sold)
         product.save(update_fields=["internal_quantity"])
 
+        # Decrement on Etsy too if linked, logic handled in function
+        _sync_quantity_to_etsy(request.user, product, product.internal_quantity)
+
         # Log to InventoryLog for audit trail
         InventoryLog.objects.create(
             owner=request.user.userprofile,
@@ -351,6 +354,29 @@ def _push_images_to_etsy(adapter, product, listing, etsy_image_count: int):
         finally:
             img.image.close()
 
+def _sync_quantity_to_etsy(user, product, new_quantity: int):
+    """
+    Silently push updated quantity to Etsy after a sale is logged.
+    Never raises — Etsy sync failure should not block the sale from logging.
+    """
+    try:
+        etsy_token = user.etsy_token
+    except Exception:
+        return  # No Etsy connected — skip silently
+
+    listing = ExternalProductListing.objects.filter(
+        product=product,
+        platform="Etsy",
+    ).first()
+
+    if not listing:
+        return  # Product not listed on Etsy — skip silently
+
+    try:
+        adapter = EtsyAdapter(etsy_token)
+        adapter.update_quantity(listing, new_quantity)
+    except Exception:
+        return  # Etsy sync failed — log sale still succeeds
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
     serializer_class = ExternalProductListingSerializer
@@ -475,5 +501,7 @@ class MarketViewSet(viewsets.ModelViewSet):
             )
             product.internal_quantity = max(0, current_qty - units_sold)
             product.save(update_fields=["internal_quantity"])
+            # Push updated quantity to Etsy if product has a linked listing
+            _sync_quantity_to_etsy(request.user, product, product.internal_quantity)
 
         return Response(SaleLogSerializer(sale).data, status=status.HTTP_201_CREATED)

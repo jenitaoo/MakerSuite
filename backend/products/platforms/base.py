@@ -18,5 +18,8 @@ class BasePlatformAdapter:
     def update_listing(self, listing, product):
         raise NotImplementedError
 
+    def fetch_receipts(self, shop_id, since_timestamp=0):
+        raise NotImplementedError
+
     def delete_listing(self, listing):
         raise NotImplementedError

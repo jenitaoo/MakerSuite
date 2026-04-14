@@ -183,6 +183,7 @@ class SaleLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     unit_prices = models.JSONField(default=list, blank=True)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    external_id = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return f"{self.product.title} — {self.units_sold} sold on {self.sale_date}"
