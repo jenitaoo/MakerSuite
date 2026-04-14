@@ -75,7 +75,7 @@ export default function ProductListingsPage() {
 
       if (shopRes.status === 401 || shopRes.status === 403) {
         toast.error("Your Etsy session has expired — reconnecting...", { duration: Infinity });
-        window.location.href = `/api/etsy/login?return_to=${encodeURIComponent(window.location.pathname)}`;
+        window.location.href = `${API_URL}/api/etsy/login?return_to=${encodeURIComponent(window.location.pathname)}`;
         return;
       }
 
@@ -94,7 +94,7 @@ export default function ProductListingsPage() {
         })
           .then(async (res) => {
             if (res.status === 401 || res.status === 403) {
-              window.location.href = `/api/etsy/login?return_to=${encodeURIComponent(window.location.pathname)}`;
+              window.location.href = `${API_URL}/api/etsy/login?return_to=${encodeURIComponent(window.location.pathname)}`;
               throw new Error("etsy_token_expired");
             }
             if (!res.ok) throw new Error("Import failed");
