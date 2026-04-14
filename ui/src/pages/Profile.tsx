@@ -331,12 +331,12 @@ const Profile = () => {
               ) : etsyNeedsReauth ? (
                 <>
                   <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Expired</Badge>
-                  <Button variant="outline" size="sm" onClick={() => window.location.href = "/api/etsy/login/"}>
+                  <Button variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
                     Reconnect
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => window.location.href = "/api/etsy/login/"}>
+                <Button variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
                   Connect Etsy
                 </Button>
               )}
