@@ -14,7 +14,7 @@ ALLOWED_HOSTS = [
     "makersuite-production.up.railway.app",
     "localhost",
     "127.0.0.1",
-])
+]
 
 # -----------------------------
 # DATABASE
