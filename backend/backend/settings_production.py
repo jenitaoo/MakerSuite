@@ -34,24 +34,26 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    FRONTEND_URL,
-    "https://makersuite-one.vercel.app",
+    "https://app.withlovejeni.com",
+    "https://makersuite-one.vercel.app",  # keep as fallback during transition
 ]
 CSRF_TRUSTED_ORIGINS = [
-    FRONTEND_URL,
-    "https://makersuite-production.up.railway.app",
+    "https://app.withlovejeni.com",
+    "https://api.withlovejeni.com",
+    "https://makersuite-one.vercel.app",  # keep as fallback
 ]
 
 
 # -----------------------------
 # COOKIES
 # -----------------------------
+SESSION_COOKIE_DOMAIN = ".withlovejeni.com"
+CSRF_COOKIE_DOMAIN = ".withlovejeni.com"
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_DOMAIN = None
-CSRF_COOKIE_DOMAIN = None
+
 
 # -----------------------------
 # STATIC FILES (ROBUST SETUP)
