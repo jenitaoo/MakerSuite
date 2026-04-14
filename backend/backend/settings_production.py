@@ -31,8 +31,12 @@ DATABASES = {
 # CORS / CSRF
 # -----------------------------
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    "https://makersuite-one.vercel.app",
+]
 CSRF_TRUSTED_ORIGINS = [
     FRONTEND_URL,
     "https://makersuite-production.up.railway.app",
