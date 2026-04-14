@@ -3,6 +3,7 @@ astroid==4.0.4
 bandit==1.9.3
 certifi==2026.1.4
 charset-normalizer==3.4.4
+cloudinary==1.44.1
 colorama==0.4.6
 dill==0.4.1
 dj-database-url==3.1.2
@@ -31,11 +32,11 @@ PyYAML==6.0.3
 requests==2.32.3
 requests-toolbelt==1.0.0
 rich==14.3.3
+six==1.17.0
 sqlparse==0.5.5
 stevedore==5.7.0
 tomlkit==0.14.0
 tzdata==2025.3
 urllib3==2.6.3
 whitenoise==6.6.0
-cloudinary==1.40.0
 django-cloudinary-storage==0.3.0
