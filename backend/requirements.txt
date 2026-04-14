@@ -10,6 +10,7 @@ dj-database-url==3.1.2
 dj-rest-auth==7.0.1
 Django==4.2.16
 django-allauth==65.4.1
+django-cloudinary-storage==0.3.0
 django-cors-headers==4.7.0
 djangorestframework==3.14.0
 djangorestframework_simplejwt==5.5.0
@@ -38,5 +39,3 @@ stevedore==5.7.0
 tomlkit==0.14.0
 tzdata==2025.3
 urllib3==2.6.3
-whitenoise==6.7.0
-django-cloudinary-storage==0.3.0
