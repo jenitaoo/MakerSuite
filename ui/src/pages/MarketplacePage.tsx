@@ -490,7 +490,7 @@ export default function MarketplacePage() {
                     Marketplace
                   </h1>
                   <p className="mt-3 text-white/90 text-base leading-relaxed">
-                    Everything you need to sell your products — in person, online, or both.
+                    Your Marketplace brings together everything you sell. Connect your online stores to unlock product syncing, then manage markets, track sales, and keep your business organised across every sales platform.
                   </p>
                 </div>
 
@@ -506,13 +506,13 @@ export default function MarketplacePage() {
                       {
                         icon: Store,
                         label: "Your Markets",
-                        sub: "Plan markets, track applications and log in-person sales",
+                        sub: "Plan and manage craft markets from application to final sales. Log in-person sales and keep a full record of every event you attend.",
                         id: "your-markets",
                       },
                       {
                         icon: Package,
                         label: "Your Products",
-                        sub: "All your products — Etsy, Shopify or MakerSuite only",
+                        sub: "All your products in one place — synced from Etsy, Shopify, or created directly in MakerSuite.",
                         id: "your-products",
                       },
                     ].map(({ icon: Icon, label, sub, id }) => (
@@ -564,7 +564,7 @@ export default function MarketplacePage() {
             <div className="mb-4">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Markets</h2>
                 <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-                    Plan and track in-person craft markets — from application to final sales.
+                    This is where you plan every craft market you attend. Start by adding a market, then track your application status, organise your setup, and log sales on the day. MakerSuite keeps a full history so you can see how each event performs.
                 </p>
             </div>
           </div>
@@ -686,7 +686,7 @@ export default function MarketplacePage() {
                 Your Products
               </h2>
               <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-                View and manage your products across all sales channels.
+                This is where you manage everything you sell. Add or import products from your connected stores, then keep stock, listings, and sales synced in one place. Each product is linked to your Studio so inventory updates automatically when you make or sell items.
               </p>
             </div>
           </div>

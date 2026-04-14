@@ -7,6 +7,8 @@ import Studio_Bunny from "../assets/misc/Studio_Bunny_Illust.png";
 import Market_Bunny from "../assets/misc/Market_Bunny_Illust.png";
 import Insights_Bunny from "../assets/misc/Insights_Bunny_Illust.png";
 import Makersuite_Logo from "../assets/logos/MakerSuite_Logo_White_Filled.png";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 // ─── Wavy separator (pink) ────────────────────────────────────────────────────
 function WavySeparator() {
@@ -86,6 +88,8 @@ function Step({
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+  const isLoggedIn = !!auth?.user;
 
   return (
     <div className="overflow-x-hidden">
@@ -119,23 +123,27 @@ export default function LandingPage() {
                 MakerSuite is a centralised workspace designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Button
-                size="lg"
-                className="bg-white text-[#C17B6F] hover:bg-white/90 font-semibold gap-2"
-                onClick={() => navigate("/signup")}
-              >
-                Sign up to get started<ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/40 text-white hover:bg-white/10 font-semibold"
-                onClick={() => navigate("/login")}
-              >
-                Log in
-              </Button>
-            </div>
+            {!isLoggedIn && (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <Button
+                  size="lg"
+                  className="bg-white text-[#C17B6F] hover:bg-white/90 font-semibold gap-2"
+                  onClick={() => navigate("/signup")}
+                >
+                  Sign up to get started
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white/40 text-white hover:bg-white/10 font-semibold"
+                  onClick={() => navigate("/login")}
+                >
+                  Log in
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -188,57 +196,53 @@ export default function LandingPage() {
 
       <WavySeparator />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          HOW IT WORKS
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="px-4 sm:px-8 lg:px-16 py-12 sm:py-16"
-        aria-label="How it works"
-      >
-        <div className="max-w-2xl mx-auto space-y-8">
-          <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">
-              How it works
-            </h2>
-            <p className="text-white/75 mt-2 text-sm sm:text-base">
-              Set up once, then MakerSuite does the maths for you.
-            </p>
-          </div>
+    {/* ══════════════════════════════════════════════════════════════════
+        HOW IT WORKS
+    ══════════════════════════════════════════════════════════════════ */}
+    <section
+      className="px-4 sm:px-8 lg:px-16 py-12 sm:py-16"
+      aria-label="How it works"
+    >
+      <div className="max-w-2xl mx-auto space-y-8">
 
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 space-y-6">
-            <Step
-              number={1}
-              title="Set up your Studio"
-              description="Create projects for each thing you make and add the raw materials they use. MakerSuite tracks your recipe, make time and material costs."
-            />
-            <div className="border-l-2 border-neutral-200 ml-4 pl-4 text-neutral-400 text-xs">
-              ↓ When you log a make…
-            </div>
-            <Step
-              number={2}
-              title="Log a make, stock updates automatically"
-              description="Link a project to a product listing. Every time you log a make, the product's stock count increases and materials are deducted from your inventory."
-            />
-            <div className="border-l-2 border-neutral-200 ml-4 pl-4 text-neutral-400 text-xs">
-
-              ↓ When you log a sale…
-            </div>
-            <Step
-              number={3}
-              title="Sell anywhere, track everything in one place"
-              description="Log sales from markets, Etsy, word of mouth — anywhere. Stock decreases automatically and your Insights page updates with profit, sell-through and more."
-            />
-            <div className="border-l-2 border-neutral-200 ml-4 pl-4 text-neutral-400 text-xs">
-              ↓ Connect your platforms…
-            </div>
-            <Step
-              number={4}
-              title="Sync with Etsy"
-              description="Connect your Etsy shop to import listings, sync stock and push new products directly from MakerSuite. Shopify support coming soon."
-            />
-          </div>
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">
+            How it works
+          </h2>
+          <p className="text-white/75 mt-2 text-sm sm:text-base">
+            Focus on making and selling — MakerSuite handles the tracking, maths, and insights.
+          </p>
         </div>
-      </section>
+
+        <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 space-y-6">
+
+          <Step
+            number={1}
+            title="Set up your Studio"
+            description="Create projects for each thing you make (e.g. a plush) and track the raw materials they use (e.g. yarn, stuffing). MakerSuite tracks labour, material costs, and updates inventory automatically."
+          />
+
+          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+            <span>↓</span>
+          </div>
+
+          <Step
+            number={2}
+            title="Set up your Marketplace"
+            description="Manage every product you sell in one place. Connect your online stores (e.g. Etsy, Shopify) and log the markets you sell at. MakerSuite gives you a single workspace to track sales, manage listings, and updates stock levels automatically."
+          />
+          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+            <span>↓</span>
+          </div>
+
+          <Step
+            number={3}
+            title="Grow with Insights"
+            description="Get a clear view of your business. MakerSuite turns your Studio and Marketplace activity into insights so you can track performance, spot issues early, and stay in control of your growth."
+          />
+        </div>
+      </div>
+    </section>
     </div>
   );
 }

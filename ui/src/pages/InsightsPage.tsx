@@ -11,6 +11,7 @@ import {
   Euro, Star, AlertTriangle, Hammer, Store,
   ArrowRight, CheckCircle2, Clock, BarChart3, Layers,
 } from "lucide-react";
+import Insights_Bunny from "../assets/misc/Insights_Bunny_Illust.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,18 @@ function fmtDate(dateStr: string) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+function WavySeparator() {
+  return (
+    <div className="relative w-full overflow-x-hidden my-0" aria-hidden="true">
+      <div
+        className="wavy-line opacity-40 absolute left-1/2"
+        style={{ width: "100vw", transform: "translateX(-50%)" }}
+      />
+      <div className="wavy-line invisible" />
+    </div>
+  );
+}
 
 function StatCard({
   label, value, icon: Icon, sub, highlight,
@@ -368,486 +381,511 @@ export default function InsightsPage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10">
-
-      {/* ── Page header ── */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-white">Insights</h1>
-        <p className="text-white/80 mt-1 text-sm sm:text-base">
-          Everything you need to know about your making and selling, all in one place. These insights are generated from everything you've logged in the Studio and the Marketplace so you can focus on growing your business!
-        </p>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════════════════
-          ACTION ITEMS
-      ══════════════════════════════════════════════════════════════════ */}
-      <section aria-label="Action Items">
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-2xl font-bold text-white">Action Items</h2>
-          {totalActionItems > 0 && (
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
-              {totalActionItems}
-            </span>
-          )}
-        </div>
-
-        {totalActionItems === 0 ? (
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-neutral-700">You're all caught up!</p>
-                <p className="text-xs text-neutral-500 mt-0.5">No products or materials need restocking, and all your pricing looks healthy.</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {/* Stock — products */}
-            {outOfStockProducts.map((p) => (
-              <ActionItem
-                key={`oos-${p.id}`}
-                icon={AlertTriangle}
-                color="red"
-                message={`${p.title} is out of stock`}
-                detail="Customers can't buy this product until you restock."
-                actionLabel="View Product"
-                onAction={() => navigate(`/products/${p.id}/edit`)}
-              />
-            ))}
-            {lowStockProducts.map((p) => (
-              <ActionItem
-                key={`ls-${p.id}`}
-                icon={AlertTriangle}
-                color="amber"
-                message={`${p.title} is running low`}
-                detail={`${p.internal_quantity} unit${p.internal_quantity !== 1 ? "s" : ""} remaining — log a make to restock.`}
-                actionLabel="Log Make"
-                onAction={() => navigate("/studio")}
-              />
-            ))}
-
-            {/* Stock — materials */}
-            {zeroStockMaterials.map((m) => (
-              <ActionItem
-                key={`zm-${m.id}`}
-                icon={ToolCase}
-                color="red"
-                message={`${m.name} is out of stock`}
-                detail="You have none of this material left. Restock before your next make."
-                actionLabel="Go to Studio"
-                onAction={() => navigate("/studio")}
-              />
-            ))}
-            {lowStockMaterials.map((m) => (
-              <ActionItem
-                key={`lm-${m.id}`}
-                icon={ToolCase}
-                color="amber"
-                message={`${m.name} is running low`}
-                detail={`${m.quantity} ${m.unit_type} remaining (threshold: ${m.low_stock_threshold ?? "not set"}).`}
-                actionLabel="Go to Studio"
-                onAction={() => navigate("/studio")}
-              />
-            ))}
-
-            {/* Stock coverage — selling faster than making */}
-            {lowCoverageProjects.map((p: any) => (
-              <ActionItem
-                key={`cov-${p.id}`}
-                icon={Layers}
-                color="amber"
-                message={`${p.name} has less than a month of stock left`}
-                detail={`${p.in_stock} unit${p.in_stock !== 1 ? "s" : ""} in stock at your current sales rate. Consider logging a make soon.`}
-                actionLabel="Log Make"
-                onAction={() => navigate("/studio")}
-              />
-            ))}
-
-            {/* Pricing — COGS */}
-            {cogsFlagged.map((p: any) => (
-              <ActionItem
-                key={`cogs-${p.id}`}
-                icon={Euro}
-                color="amber"
-                message={`${p.name} may be underpriced`}
-                detail={`Material cost (€${parseFloat(p.material_cost_per_unit).toFixed(2)}) is ≥80% of sale price (€${parseFloat(p.product_price).toFixed(2)}). Consider raising your price.`}
-                actionLabel="Review Project"
-                onAction={() => navigate(`/studio/projects/${p.id}`)}
-              />
-            ))}
-
-            {/* Pricing — labour coverage */}
-            {labourFlagged.filter((p: any) => !cogsFlagged.some((c: any) => c.id === p.id)).map((p: any) => {
-              const labourCost = (p.avg_duration_minutes / 60) * MINIMUM_WAGE;
-              const margin = parseFloat(p.product_price) - parseFloat(p.material_cost_per_unit);
-              return (
-                <ActionItem
-                  key={`labour-${p.id}`}
-                  icon={Clock}
-                  color="amber"
-                  message={`${p.name} doesn't cover your labour at minimum wage`}
-                  detail={`After materials, you have €${margin.toFixed(2)} left per unit — but ${formatDuration(p.avg_duration_minutes)} of work costs €${labourCost.toFixed(2)} at €${MINIMUM_WAGE}/hr.`}
-                  actionLabel="Review Pricing"
-                  onAction={() => navigate(`/studio/projects/${p.id}`)}
-                />
-              );
-            })}
-
-            {/* Idle projects */}
-            {idleProjects.map((p: any) => (
-              <ActionItem
-                key={`idle-${p.id}`}
-                icon={Hammer}
-                color="amber"
-                message={`${p.name} hasn't been made in over 30 days`}
-                detail={p.in_stock === 0 ? "You're out of stock — time for a new batch?" : `${p.in_stock} unit${p.in_stock !== 1 ? "s" : ""} still in stock.`}
-                actionLabel="View Project"
-                onAction={() => navigate(`/studio/projects/${p.id}`)}
-              />
-            ))}
+    <div>
+      {/* ══ HERO — edge to edge, outside max-width container ══ */}
+        <section
+          className="scalloped-intro bg-[#907680] max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10"
+          aria-label="Insights Hero"
+        >
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+          <div className="hidden sm:flex w-full lg:w-1/5 shrink-0 items-center justify-center">
+            <img
+              src={Insights_Bunny}
+              alt="Illustration of a bunny reviewing insights"
+              className="w-1/2 lg:w-full max-h-40 sm:max-h-none object-contain lg:scale-125"
+            />
           </div>
-        )}
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════════════
-          OVERVIEW
-      ══════════════════════════════════════════════════════════════════ */}
-      <section aria-label="Overview">
-        <h2 className="text-2xl font-bold text-white mb-3">Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          {/* Studio */}
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Hammer className="w-4 h-4 text-[#7B8F6F]" aria-hidden="true" />
-                <SectionLabel>Studio</SectionLabel>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Projects" value={projects.length} icon={Package} />
-                <StatCard label="Units Made" value={totalUnitsMade} icon={Hammer} />
-                <StatCard
-                  label="Avg Make Time"
-                  value={formatDuration(avgMakeTime)}
-                  icon={Clock}
-                  sub={!avgMakeTime ? "Log makes with duration" : "per unit"}
-                />
-                <StatCard
-                  label="Materials"
-                  value={materials.length}
-                  icon={ToolCase}
-                  sub={lowStockMaterials.length > 0 ? `${lowStockMaterials.length} running low` : "All stocked"}
-                />
-              </div>
-              <Button
-                variant="outline" size="sm"
-                className="w-full gap-1.5 text-xs"
-                onClick={() => navigate("/studio")}
-              >
-                Go to Studio <ArrowRight className="w-3 h-3" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Marketplace */}
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-[#C17B6F]" aria-hidden="true" />
-                <SectionLabel>Marketplace</SectionLabel>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Products" value={products.length} icon={Package} />
-                <StatCard
-                  label="On Etsy"
-                  value={onEtsy}
-                  icon={Store}
-                  sub={`${products.length - onEtsy} not listed`}
-                />
-                <StatCard
-                  label="Best Seller"
-                  value={bestSeller?.title ?? "—"}
-                  icon={Star}
-                  sub={bestSeller ? `${unitsByProduct[bestSeller.id]} units all time` : "Log sales to track"}
-                  highlight={!!bestSeller}
-                />
-                <StatCard
-                  label="Total Revenue"
-                  value={saleLogs.reduce((s, l) => s + (l.sale_price ? parseFloat(l.sale_price) : 0), 0) > 0
-                    ? `€${saleLogs.reduce((s, l) => s + (l.sale_price ? parseFloat(l.sale_price) : 0), 0).toFixed(2)}`
-                    : "—"}
-                  icon={Euro}
-                  sub="all time"
-                  highlight={saleLogs.length > 0}
-                />
-              </div>
-              <Button
-                variant="outline" size="sm"
-                className="w-full gap-1.5 text-xs"
-                onClick={() => navigate("/marketplace")}
-              >
-                Go to Marketplace <ArrowRight className="w-3 h-3" />
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="flex-1 space-y-6 sm:space-y-8 text-center lg:text-left">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white">Insights</h1>
+              <p className="mt-3 text-white/90 text-base leading-relaxed">
+                Get a clear view of your business and see what needs to be done. MakerSuite turns your Studio and Marketplace activity into insights so you can track performance, spot issues early, and stay in control of your growth.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          PERFORMANCE
-      ══════════════════════════════════════════════════════════════════ */}
-      <section aria-label="Performance">
-        <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-          <h2 className="text-2xl font-bold text-white">Performance</h2>
-          <TimeToggle value={timeFilter} onChange={setTimeFilter} />
-        </div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10">
 
-        <div className="space-y-4">
+        {/* ══════════════════════════════════════════════════════════════════
+            ACTION ITEMS
+        ══════════════════════════════════════════════════════════════════ */}
+        <section aria-label="Action Items">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Action Items</h2>
+            {totalActionItems > 0 && (
+              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
+                {totalActionItems}
+              </span>
+            )}
+          </div>
 
-          {/* Sales + Production side by side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Sales */}
+          {totalActionItems === 0 ? (
             <Card className="bg-white border-neutral-200">
-              <CardContent className="p-6 space-y-4">
-                <SectionLabel>Sales</SectionLabel>
-                <div className="grid grid-cols-2 gap-3">
-                  <StatCard label="Units Sold" value={unitsInWindow || "—"} icon={ShoppingBag} />
-                  <StatCard
-                    label="Revenue"
-                    value={revenueInWindow > 0 ? `€${revenueInWindow.toFixed(2)}` : "—"}
-                    icon={Euro}
-                    highlight={revenueInWindow > 0}
-                  />
-                  <StatCard
-                    label="Avg Sale Value"
-                    value={avgSaleValue > 0 ? `€${avgSaleValue.toFixed(2)}` : "—"}
-                    icon={TrendingUp}
-                    sub="per transaction"
-                  />
-                  <StatCard
-                    label="Transactions"
-                    value={filteredSales.length || "—"}
-                    icon={BarChart3}
-                  />
+              <CardContent className="p-6 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-neutral-700">You're all caught up ╰(*°▽°*)╯ !</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">No urgent actions right now — everything looks healthy across your products, materials, and pricing.</p>
                 </div>
               </CardContent>
             </Card>
+          ) : (
+            <div className="space-y-2">
+              {/* Stock — products */}
+              {outOfStockProducts.map((p) => (
+                <ActionItem
+                  key={`oos-${p.id}`}
+                  icon={AlertTriangle}
+                  color="red"
+                  message={`${p.title} is out of stock`}
+                  detail="This product is currently unavailable to customers. Restock to start selling again."
+                  actionLabel="View Product"
+                  onAction={() => navigate(`/products/${p.id}/edit`)}
+                />
+              ))}
+              {lowStockProducts.map((p) => (
+                <ActionItem
+                  key={`ls-${p.id}`}
+                  icon={AlertTriangle}
+                  color="amber"
+                  message={`${p.title} is running low`}
+                  detail={`${p.internal_quantity} unit${p.internal_quantity !== 1 ? "s" : ""} remaining — log a make to restock.`}
+                  actionLabel="Log Make"
+                  onAction={() => navigate("/studio")}
+                />
+              ))}
 
-            {/* Production */}
+              {/* Stock — materials */}
+              {zeroStockMaterials.map((m) => (
+                <ActionItem
+                  key={`zm-${m.id}`}
+                  icon={ToolCase}
+                  color="red"
+                  message={`${m.name} is out of stock`}
+                  detail="You have none of this material left. Restock before your next make."
+                  actionLabel="Go to Studio"
+                  onAction={() => navigate("/studio")}
+                />
+              ))}
+              {lowStockMaterials.map((m) => (
+                <ActionItem
+                  key={`lm-${m.id}`}
+                  icon={ToolCase}
+                  color="amber"
+                  message={`${m.name} is running low`}
+                  detail={`${m.quantity} ${m.unit_type} left — below your set threshold. You may need to restock before your next make.`}
+                  actionLabel="Go to Studio"
+                  onAction={() => navigate("/studio")}
+                />
+              ))}
+
+              {/* Stock coverage — selling faster than making */}
+              {lowCoverageProjects.map((p: any) => (
+                <ActionItem
+                  key={`cov-${p.id}`}
+                  icon={Layers}
+                  color="amber"
+                  message={`${p.name} has less than a month of stock left`}
+                  detail={`${p.in_stock} unit${p.in_stock !== 1 ? "s" : ""} in stock at your current sales rate. Consider logging a make soon.`}
+                  actionLabel="Log Make"
+                  onAction={() => navigate("/studio")}
+                />
+              ))}
+
+              {/* Pricing — COGS */}
+              {cogsFlagged.map((p: any) => (
+                <ActionItem
+                  key={`cogs-${p.id}`}
+                  icon={Euro}
+                  color="amber"
+                  message={`${p.name} may be underpriced`}
+                  detail={`Material cost (€${parseFloat(p.material_cost_per_unit).toFixed(2)}) is ≥80% of sale price (€${parseFloat(p.product_price).toFixed(2)}). Consider raising your price.`}
+                  actionLabel="Review Project"
+                  onAction={() => navigate(`/studio/projects/${p.id}`)}
+                />
+              ))}
+
+              {/* Pricing — labour coverage */}
+              {labourFlagged.filter((p: any) => !cogsFlagged.some((c: any) => c.id === p.id)).map((p: any) => {
+                const labourCost = (p.avg_duration_minutes / 60) * MINIMUM_WAGE;
+                const margin = parseFloat(p.product_price) - parseFloat(p.material_cost_per_unit);
+                return (
+                  <ActionItem
+                    key={`labour-${p.id}`}
+                    icon={Clock}
+                    color="amber"
+                    message={`${p.name} doesn't cover your labour at minimum wage`}
+                    detail={`After materials, you have €${margin.toFixed(2)} left per unit — but ${formatDuration(p.avg_duration_minutes)} of work costs €${labourCost.toFixed(2)} at €${MINIMUM_WAGE}/hr.`}
+                    actionLabel="Review Pricing"
+                    onAction={() => navigate(`/studio/projects/${p.id}`)}
+                  />
+                );
+              })}
+
+              {/* Idle projects */}
+              {idleProjects.map((p: any) => (
+                <ActionItem
+                  key={`idle-${p.id}`}
+                  icon={Hammer}
+                  color="amber"
+                  message={`${p.name} hasn't been made in over 30 days`}
+                  detail={p.in_stock === 0 ? "You're out of stock — time for a new batch?" : `${p.in_stock} unit${p.in_stock !== 1 ? "s" : ""} still in stock.`}
+                  actionLabel="View Project"
+                  onAction={() => navigate(`/studio/projects/${p.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            OVERVIEW
+        ══════════════════════════════════════════════════════════════════ */}
+        <section aria-label="Overview">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Overview</h2>
+          <p className="text-sm text-white mt-1 mb-4 leading-relaxed">
+            A snapshot of your Studio and Marketplace. See what you’re making, what you’re selling, and how your business is structured right now — all in one place.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Studio */}
             <Card className="bg-white border-neutral-200">
               <CardContent className="p-6 space-y-4">
-                <SectionLabel>Production</SectionLabel>
+                <div className="flex items-center gap-2">
+                  <Hammer className="w-4 h-4 text-[#7B8F6F]" aria-hidden="true" />
+                  <SectionLabel>Studio</SectionLabel>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <StatCard
-                    label="Units Made"
-                    value={makesInWindow || "—"}
-                    icon={Hammer}
-                  />
+                  <StatCard label="Projects" value={projects.length} icon={Package} />
+                  <StatCard label="Units Made" value={totalUnitsMade} icon={Hammer} />
                   <StatCard
                     label="Avg Make Time"
                     value={formatDuration(avgMakeTime)}
                     icon={Clock}
-                    sub="per unit"
+                    sub={!avgMakeTime ? "Log makes with duration" : "per unit"}
                   />
                   <StatCard
-                    label="Avg Sell-Through"
-                    value={avgSellThrough !== null ? `${avgSellThrough}%` : "—"}
-                    icon={TrendingUp}
-                    sub={avgSellThrough !== null
-                      ? avgSellThrough >= 80 ? "Strong demand" : avgSellThrough >= 50 ? "Moderate" : "Consider making less"
-                      : "Log sales to track"}
-                    highlight={avgSellThrough !== null && avgSellThrough >= 80}
-                  />
-                  <StatCard
-                    label="COGS Warnings"
-                    value={cogsFlagged.length === 0 ? "✓" : cogsFlagged.length}
-                    icon={AlertTriangle}
-                    sub={cogsFlagged.length === 0 ? "Pricing looks healthy" : "Review pricing"}
+                    label="Materials"
+                    value={materials.length}
+                    icon={ToolCase}
+                    sub={lowStockMaterials.length > 0 ? `${lowStockMaterials.length} running low` : "All stocked"}
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Per-project production breakdown */}
-          {projectInsights.filter((p) => p.units_made > 0).length > 0 && (
-            <Card className="bg-white border-neutral-200">
-              <CardContent className="p-6">
-                <SectionLabel>Project Breakdown</SectionLabel>
-                <div className="rounded-md border overflow-hidden overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 border-b border-neutral-200">
-                      <tr>
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Project</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Made</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sold</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sell-Through</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Stock Left</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Coverage</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {projectInsights
-                        .filter((p: any) => p.units_made > 0)
-                        .sort((a: any, b: any) => b.units_made - a.units_made)
-                        .map((p: any) => {
-                          const coverageLow = p.stockCoverageMonths !== null && p.stockCoverageMonths < 1;
-                          return (
-                            <tr
-                              key={p.id}
-                              className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
-                              onClick={() => navigate(`/studio/projects/${p.id}`)}
-                            >
-                              <td className="px-4 py-2.5 font-medium text-neutral-700">{p.name}</td>
-                              <td className="px-4 py-2.5 text-right text-neutral-700">{p.units_made}</td>
-                              <td className="px-4 py-2.5 text-right text-neutral-700">{p.units_sold}</td>
-                              <td className="px-4 py-2.5 text-right">
-                                {p.sellThrough !== null ? (
-                                  <span className={p.sellThrough >= 80 ? "text-green-600 font-medium" : p.sellThrough >= 50 ? "text-amber-600" : "text-neutral-500"}>
-                                    {p.sellThrough}%
-                                  </span>
-                                ) : <span className="text-neutral-400">—</span>}
-                              </td>
-                              <td className="px-4 py-2.5 text-right text-neutral-700">{p.in_stock}</td>
-                              <td className="px-4 py-2.5 text-right">
-                                {p.stockCoverageMonths !== null ? (
-                                  <span className={coverageLow ? "text-red-600 font-medium" : "text-neutral-700"}>
-                                    {p.stockCoverageMonths < 1 ? "<1 mo" : `${p.stockCoverageMonths} mo`}
-                                  </span>
-                                ) : <span className="text-neutral-400">—</span>}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-neutral-400 mt-2">
-                  Sell-Through = units sold ÷ units made. Coverage = stock remaining at current monthly sales rate.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Product performance table */}
-          {Object.keys(unitsByProductInWindow).length > 0 && (
-            <Card className="bg-white border-neutral-200">
-              <CardContent className="p-6">
-                <SectionLabel>Product Performance</SectionLabel>
-                <div className="rounded-md border overflow-hidden overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 border-b border-neutral-200">
-                      <tr>
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Product</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Units Sold</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Revenue</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Est. Profit</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(unitsByProductInWindow)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([pid, units]) => {
-                          const product = products.find((p) => p.id === Number(pid));
-                          const revenue = revenueByProduct[Number(pid)] ?? 0;
-                          const profit = profitByProduct[Number(pid)];
-                          const isLoss = profit !== null && profit < 0;
-                          return (
-                            <tr
-                              key={pid}
-                              className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
-                              onClick={() => navigate(`/products/${pid}/edit`)}
-                            >
-                              <td className="px-4 py-2.5 font-medium text-neutral-700">
-                                {product?.title ?? `Product #${pid}`}
-                              </td>
-                              <td className="px-4 py-2.5 text-right text-neutral-700">{units}</td>
-                              <td className="px-4 py-2.5 text-right text-neutral-700">
-                                {revenue > 0 ? `€${revenue.toFixed(2)}` : "—"}
-                              </td>
-                              <td className={`px-4 py-2.5 text-right font-medium ${
-                                profit === null ? "text-neutral-400" :
-                                isLoss ? "text-red-600" : "text-green-600"
-                              }`}>
-                                {profit === null
-                                  ? <span className="text-xs font-normal text-neutral-400">no cost data</span>
-                                  : isLoss
-                                  ? `−€${Math.abs(profit).toFixed(2)}`
-                                  : `€${profit.toFixed(2)}`}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-neutral-400 mt-2">
-                  Est. Profit = Revenue − (Material Cost × Units Sold). Requires recipe costs set in Studio.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {filteredSales.length === 0 && (
-            <Card className="bg-white border-neutral-200">
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-25" />
-                <p className="text-sm">No sales logged in this period.</p>
-                <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => navigate("/marketplace")}>
-                  Log a Sale <ArrowRight className="w-3.5 h-3.5" />
+                <Button
+                  variant="outline" size="sm"
+                  className="w-full gap-1.5 text-xs"
+                  onClick={() => navigate("/studio")}
+                >
+                  Go to Studio <ArrowRight className="w-3 h-3" />
                 </Button>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          MARKET PERFORMANCE
-      ══════════════════════════════════════════════════════════════════ */}
-      {pastMarkets.length > 0 && (
-        <section aria-label="Market Performance">
-          <h2 className="text-lg font-bold text-white mb-3">Market Performance</h2>
-          <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Total Markets" value={markets.length} icon={Store} />
-                <StatCard label="Past Markets" value={pastMarkets.length} icon={BarChart3} />
-                <StatCard label="Upcoming" value={markets.filter((m) => m.is_upcoming).length} icon={TrendingUp} />
-              </div>
-              <SectionLabel>Past Markets</SectionLabel>
-              <div className="rounded-md border overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-neutral-50 border-b border-neutral-200">
-                    <tr>
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Market</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Date</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Products Brought</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pastMarkets.map((m) => (
-                      <tr
-                        key={m.id}
-                        className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
-                        onClick={() => navigate(`/marketplace/markets/${m.id}`)}
-                      >
-                        <td className="px-4 py-2.5 font-medium text-neutral-700">{m.name}</td>
-                        <td className="px-4 py-2.5 text-right text-neutral-500">{fmtDate(m.date)}</td>
-                        <td className="px-4 py-2.5 text-right text-neutral-700">{m.market_products?.length ?? 0}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-neutral-400">Click any row to open the market detail.</p>
-            </CardContent>
-          </Card>
+            {/* Marketplace */}
+            <Card className="bg-white border-neutral-200">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Store className="w-4 h-4 text-[#C17B6F]" aria-hidden="true" />
+                  <SectionLabel>Marketplace</SectionLabel>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatCard label="Products" value={products.length} icon={Package} />
+                  <StatCard
+                    label="On Etsy"
+                    value={onEtsy}
+                    icon={Store}
+                    sub={`${products.length - onEtsy} not listed`}
+                  />
+                  <StatCard
+                    label="Best Seller"
+                    value={bestSeller?.title ?? "—"}
+                    icon={Star}
+                    sub={bestSeller ? `${unitsByProduct[bestSeller.id]} units all time` : "Log sales to track"}
+                    highlight={!!bestSeller}
+                  />
+                  <StatCard
+                    label="Total Revenue"
+                    value={saleLogs.reduce((s, l) => s + (l.sale_price ? parseFloat(l.sale_price) : 0), 0) > 0
+                      ? `€${saleLogs.reduce((s, l) => s + (l.sale_price ? parseFloat(l.sale_price) : 0), 0).toFixed(2)}`
+                      : "—"}
+                    icon={Euro}
+                    sub="all time"
+                    highlight={saleLogs.length > 0}
+                  />
+                </div>
+                <Button
+                  variant="outline" size="sm"
+                  className="w-full gap-1.5 text-xs"
+                  onClick={() => navigate("/marketplace")}
+                >
+                  Go to Marketplace <ArrowRight className="w-3 h-3" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </section>
-      )}
 
+
+        {/* ══════════════════════════════════════════════════════════════════
+            PERFORMANCE
+        ══════════════════════════════════════════════════════════════════ */}
+        <section aria-label="Performance">
+          <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Performance</h2>
+            <p className="text-sm text-white mt-1 mb-4 leading-relaxed">
+              Understand how your business is performing over time. Track sales, production, and efficiency so you can see what’s working, what’s slowing you down, and where to focus next.
+            </p>
+            <TimeToggle value={timeFilter} onChange={setTimeFilter} />
+          </div>
+
+          <div className="space-y-4">
+
+            {/* Sales + Production side by side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Sales */}
+              <Card className="bg-white border-neutral-200">
+                <CardContent className="p-6 space-y-4">
+                  <SectionLabel>Sales</SectionLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard label="Units Sold" value={unitsInWindow || "—"} icon={ShoppingBag} />
+                    <StatCard
+                      label="Revenue"
+                      value={revenueInWindow > 0 ? `€${revenueInWindow.toFixed(2)}` : "—"}
+                      icon={Euro}
+                      highlight={revenueInWindow > 0}
+                    />
+                    <StatCard
+                      label="Avg Sale Value"
+                      value={avgSaleValue > 0 ? `€${avgSaleValue.toFixed(2)}` : "—"}
+                      icon={TrendingUp}
+                      sub="per transaction"
+                    />
+                    <StatCard
+                      label="Transactions"
+                      value={filteredSales.length || "—"}
+                      icon={BarChart3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Production */}
+              <Card className="bg-white border-neutral-200">
+                <CardContent className="p-6 space-y-4">
+                  <SectionLabel>Production</SectionLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard
+                      label="Units Made"
+                      value={makesInWindow || "—"}
+                      icon={Hammer}
+                    />
+                    <StatCard
+                      label="Avg Make Time"
+                      value={formatDuration(avgMakeTime)}
+                      icon={Clock}
+                      sub="per unit"
+                    />
+                    <StatCard
+                      label="Avg Sell-Through"
+                      value={avgSellThrough !== null ? `${avgSellThrough}%` : "—"}
+                      icon={TrendingUp}
+                      sub={avgSellThrough !== null
+                        ? avgSellThrough >= 80 ? "Strong demand" : avgSellThrough >= 50 ? "Moderate" : "Consider making less"
+                        : "Log sales to track"}
+                      highlight={avgSellThrough !== null && avgSellThrough >= 80}
+                    />
+                    <StatCard
+                      label="COGS Warnings"
+                      value={cogsFlagged.length === 0 ? "✓" : cogsFlagged.length}
+                      icon={AlertTriangle}
+                      sub={cogsFlagged.length === 0 ? "Pricing looks healthy" : "Review pricing"}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Per-project production breakdown */}
+            {projectInsights.filter((p) => p.units_made > 0).length > 0 && (
+              <Card className="bg-white border-neutral-200">
+                <CardContent className="p-6">
+                  <SectionLabel>Project Breakdown</SectionLabel>
+                  <div className="rounded-md border overflow-hidden overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Project</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Made</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sold</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sell-Through</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Stock Left</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Coverage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectInsights
+                          .filter((p: any) => p.units_made > 0)
+                          .sort((a: any, b: any) => b.units_made - a.units_made)
+                          .map((p: any) => {
+                            const coverageLow = p.stockCoverageMonths !== null && p.stockCoverageMonths < 1;
+                            return (
+                              <tr
+                                key={p.id}
+                                className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
+                                onClick={() => navigate(`/studio/projects/${p.id}`)}
+                              >
+                                <td className="px-4 py-2.5 font-medium text-neutral-700">{p.name}</td>
+                                <td className="px-4 py-2.5 text-right text-neutral-700">{p.units_made}</td>
+                                <td className="px-4 py-2.5 text-right text-neutral-700">{p.units_sold}</td>
+                                <td className="px-4 py-2.5 text-right">
+                                  {p.sellThrough !== null ? (
+                                    <span className={p.sellThrough >= 80 ? "text-green-600 font-medium" : p.sellThrough >= 50 ? "text-amber-600" : "text-neutral-500"}>
+                                      {p.sellThrough}%
+                                    </span>
+                                  ) : <span className="text-neutral-400">—</span>}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-neutral-700">{p.in_stock}</td>
+                                <td className="px-4 py-2.5 text-right">
+                                  {p.stockCoverageMonths !== null ? (
+                                    <span className={coverageLow ? "text-red-600 font-medium" : "text-neutral-700"}>
+                                      {p.stockCoverageMonths < 1 ? "<1 mo" : `${p.stockCoverageMonths} mo`}
+                                    </span>
+                                  ) : <span className="text-neutral-400">—</span>}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Sell-Through = units sold ÷ units made. Coverage = stock remaining at current monthly sales rate.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Product performance table */}
+            {Object.keys(unitsByProductInWindow).length > 0 && (
+              <Card className="bg-white border-neutral-200">
+                <CardContent className="p-6">
+                  <SectionLabel>Product Performance</SectionLabel>
+                  <div className="rounded-md border overflow-hidden overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Product</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Units Sold</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Revenue</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Est. Profit</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(unitsByProductInWindow)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([pid, units]) => {
+                            const product = products.find((p) => p.id === Number(pid));
+                            const revenue = revenueByProduct[Number(pid)] ?? 0;
+                            const profit = profitByProduct[Number(pid)];
+                            const isLoss = profit !== null && profit < 0;
+                            return (
+                              <tr
+                                key={pid}
+                                className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
+                                onClick={() => navigate(`/products/${pid}/edit`)}
+                              >
+                                <td className="px-4 py-2.5 font-medium text-neutral-700">
+                                  {product?.title ?? `Product #${pid}`}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-neutral-700">{units}</td>
+                                <td className="px-4 py-2.5 text-right text-neutral-700">
+                                  {revenue > 0 ? `€${revenue.toFixed(2)}` : "—"}
+                                </td>
+                                <td className={`px-4 py-2.5 text-right font-medium ${
+                                  profit === null ? "text-neutral-400" :
+                                  isLoss ? "text-red-600" : "text-green-600"
+                                }`}>
+                                  {profit === null
+                                    ? <span className="text-xs font-normal text-neutral-400">no cost data</span>
+                                    : isLoss
+                                    ? `−€${Math.abs(profit).toFixed(2)}`
+                                    : `€${profit.toFixed(2)}`}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Est. Profit = Revenue − (Material Cost × Units Sold). Requires recipe costs set in Studio.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {filteredSales.length === 0 && (
+              <Card className="bg-white border-neutral-200">
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-25" />
+                  <p className="text-sm">No sales logged in this period.</p>
+                  <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => navigate("/marketplace")}>
+                    Log a Sale <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            MARKET PERFORMANCE
+        ══════════════════════════════════════════════════════════════════ */}
+        {pastMarkets.length > 0 && (
+          <section aria-label="Market Performance">
+            <h2 className="text-lg font-bold text-white mb-3">Market Performance</h2>
+            <Card className="bg-white border-neutral-200">
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <StatCard label="Total Markets" value={markets.length} icon={Store} />
+                  <StatCard label="Past Markets" value={pastMarkets.length} icon={BarChart3} />
+                  <StatCard label="Upcoming" value={markets.filter((m) => m.is_upcoming).length} icon={TrendingUp} />
+                </div>
+                <SectionLabel>Past Markets</SectionLabel>
+                <div className="rounded-md border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-50 border-b border-neutral-200">
+                      <tr>
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Market</th>
+                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Date</th>
+                        <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Products Brought</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pastMarkets.map((m) => (
+                        <tr
+                          key={m.id}
+                          className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
+                          onClick={() => navigate(`/marketplace/markets/${m.id}`)}
+                        >
+                          <td className="px-4 py-2.5 font-medium text-neutral-700">{m.name}</td>
+                          <td className="px-4 py-2.5 text-right text-neutral-500">{fmtDate(m.date)}</td>
+                          <td className="px-4 py-2.5 text-right text-neutral-700">{m.market_products?.length ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-neutral-400">Click any row to open the market detail.</p>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+      </div>
     </div>
   );
 }
