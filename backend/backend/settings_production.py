@@ -11,6 +11,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 ALLOWED_HOSTS = [
     ".railway.app",
+    ".withlovejeni.com",
+    "api.withlovejeni.com",
     "makersuite-production.up.railway.app",
     "localhost",
     "127.0.0.1",
