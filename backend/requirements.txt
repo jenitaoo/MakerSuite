@@ -36,3 +36,6 @@ stevedore==5.7.0
 tomlkit==0.14.0
 tzdata==2025.3
 urllib3==2.6.3
+whitenoise==6.6.0
+cloudinary==1.40.0
+django-cloudinary-storage==0.3.0
