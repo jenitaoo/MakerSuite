@@ -22,6 +22,7 @@ export type ProductDetail = {
   platforms: string[];
   created_at: string;
   updated_at: string;
+  linked_project_id?: number | null;
 };
 
 export type EtsyRaw = {

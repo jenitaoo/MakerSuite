@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
-  Hammer, Store, BarChart3, ArrowRight, ExternalLink,
+  Hammer, Store, BarChart3, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Studio_Bunny from "../assets/misc/Studio_Bunny_Illust.png";

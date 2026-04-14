@@ -18,7 +18,7 @@ type FormValues = {
   title: string;
   description: string;
   internal_price: string;
-  internal_quantity: number;
+  internal_quantity: string; // ← change number to string
   sku: string;
   tags: string;
   materials: string;

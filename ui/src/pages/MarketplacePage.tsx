@@ -28,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import LogSaleModal from "../components/products/LogSaleModal";
-import { Star, Euro } from "lucide-react";
 import Market_Bunny_Illustration from "../assets/misc/Market_Bunny_Illust.png";
 import AddMarketModal from "../components/products/AddMarketModal";
 import DeleteMarketModal from "../components/products/DeleteMarketModal";
@@ -82,33 +81,6 @@ function WavySeparator() {
         style={{ width: "100vw", transform: "translateX(-50%)" }}
       />
       <div className="wavy-line invisible" />
-    </div>
-  );
-}
-
-// ─── StatCard ─────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  sub,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  sub?: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg border border-border p-5 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-tight">
-          {label}
-        </span>
-        <Icon className="w-4 h-4 text-neutral-500" aria-hidden="true" />
-      </div>
-      <div className="text-3xl font-bold text-neutral-900">{value}</div>
-      {sub && <div className="text-sm text-neutral-600">{sub}</div>}
     </div>
   );
 }

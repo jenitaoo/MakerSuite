@@ -51,7 +51,6 @@ export default function EditProductListing() {
   const [form, setForm] = useState<FormState | null>(null);
   const [tagsInput, setTagsInput] = useState("");
   const [materialsInput, setMaterialsInput] = useState("");
-  const [uploadingEtsy, setUploadingEtsy] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [newImages, setNewImages] = useState<NewImagePreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
