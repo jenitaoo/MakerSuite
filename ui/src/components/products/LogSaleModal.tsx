@@ -379,8 +379,8 @@ function SaleDetailsForm({
       };
 
       const url = resolvedMarketId
-        ? `/api/markets/${resolvedMarketId}/sales/`
-        : `/api/products/${product.id}/log-sale/`;
+        ? `${API_URL}/api/markets/${resolvedMarketId}/sales/`
+        : `${API_URL}/api/products/${product.id}/log-sale/`;
 
       const res = await fetch(url, {
         method: "POST",
