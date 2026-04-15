@@ -42,6 +42,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         - If product has a linked project, the project's in_stock is
           automatically updated via Project.units_sold (derived from product sale logs)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"log_sale called for product {pk} with data: {request.data}")
         product = self.get_object()
 
         units_sold = request.data.get("units_sold")
