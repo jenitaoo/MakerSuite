@@ -85,7 +85,7 @@ export default function InventoryPage() {
               aria-label={`Navigate to ${label}`}
               aria-current={active ? "location" : undefined}
               className={`group flex items-center gap-2 py-2 px-2 rounded-lg transition-all text-left
-                hover:bg-[#7B8F6F] ${active ? "bg-[#7B8F6F]/40 text-white" : "text-white/40 hover:text-white"}`}
+                hover:bg-[#5f718a] ${active ? "bg-[#7B8F6F]/40 text-white" : "text-white/40 hover:text-white"}`}
             >
               <div className={`w-1 h-6 rounded-full transition-all shrink-0 ${
                 active ? "bg-white" : "bg-white/20 group-hover:bg-white/40"
