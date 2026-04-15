@@ -360,9 +360,13 @@ def _sync_quantity_to_etsy(user, product, new_quantity: int):
     Silently push updated quantity to Etsy after a sale is logged.
     Never raises — Etsy sync failure should not block the sale from logging.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
         etsy_token = user.etsy_token
-    except Exception:
+    except Exception as e:
+        logger.warning(f"No Etsy token for user {user.id}: {e}")
         return  # No Etsy connected — skip silently
 
     listing = ExternalProductListing.objects.filter(
@@ -371,12 +375,15 @@ def _sync_quantity_to_etsy(user, product, new_quantity: int):
     ).first()
 
     if not listing:
+        logger.info(f"Product {product.id} not listed on Etsy, skipping sync")
         return  # Product not listed on Etsy — skip silently
 
     try:
         adapter = EtsyAdapter(etsy_token)
         adapter.update_quantity(listing, new_quantity)
-    except Exception:
+        logger.info(f"Successfully synced product {product.id} to Etsy with quantity {new_quantity}")
+    except Exception as e:
+        logger.error(f"Failed to sync product {product.id} quantity to Etsy: {e}", exc_info=True)
         return  # Etsy sync failed — log sale still succeeds
 
 class ExternalProductListingViewSet(viewsets.ModelViewSet):
