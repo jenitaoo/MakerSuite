@@ -32,7 +32,7 @@ export default function AddMarketModal({ onClose, onCreated }: Props) {
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}markets/`, {
+      const res = await fetch(`${API_URL}/api/markets/`, {
         method: "POST",
         credentials: "include",
         headers: {
