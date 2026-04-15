@@ -173,7 +173,7 @@ ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET")
 # Redirect URI must match EXACTLY what you registered in Etsy Developer Portal
 ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI")
 # Space-separated scopes (Etsy requires URL-encoded later)
-ETSY_SCOPES = os.getenv("ETSY_SCOPES", "address_r email_r shops_r shops_w listings_r listings_w")
+ETSY_SCOPES = os.getenv("ETSY_SCOPES", "address_r email_r shops_r shops_w listings_r listings_w receipts_r")
 ETSY_DEBUG = os.getenv("ETSY_DEBUG", "false").lower() == "true"
 
 MEDIA_URL = '/media/'
