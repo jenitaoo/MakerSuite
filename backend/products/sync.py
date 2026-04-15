@@ -15,8 +15,11 @@ class SyncManager:
         try:
             etsy_token = user.etsy_token
             self.adapters["etsy"] = EtsyAdapter(etsy_token)
-        except Exception:
+        except AttributeError:
             pass  # No Etsy token, skip Etsy adapter silently
+        except Exception as e:
+            print(f"ERROR initializing Etsy adapter: {e}")
+            raise
 
     def sync_product(self, product):
         listings = ExternalProductListing.objects.filter(product=product)
