@@ -64,13 +64,72 @@ function formatDuration(mins: number | null | undefined) {
   return `${h}h ${m}m`;
 }
 
-function fmtDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-IE", {
-    day: "numeric", month: "short", year: "numeric",
-  });
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  sub,
+  highlight,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  sub?: string;
+  highlight?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
+      title={typeof value === "string" ? `${label}: ${value}` : label}
+      className={`rounded-lg border p-5 flex flex-col gap-2 transition
+        ${highlight ? "bg-[#907680]/8 border-[#907680]/30" : "bg-white border-neutral-200"}
+        ${
+          onClick
+            ? "cursor-pointer transition-all duration-200 hover:bg-neutral-50 hover:shadow-md active:scale-[0.99]"
+            : ""
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-tight">
+          {label}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <Icon
+            className={`w-4 h-4 ${
+              highlight ? "text-[#907680]" : "text-neutral-400"
+            }`}
+          />
+
+          {/* constant click affordance */}
+          {onClick && (
+            <ArrowRight className="w-4 h-4 text-neutral-400" />
+          )}
+        </div>
+      </div>
+
+      <div
+        className={`font-bold ${
+          highlight ? "text-[#907680]" : "text-neutral-900"
+        } text-lg sm:text-xl leading-tight line-clamp-2`}
+      >
+        {value}
+      </div>
+
+      {sub && <div className="text-sm text-neutral-500">{sub}</div>}
+    </div>
+  );
+}
 
 function WavySeparator() {
   return (
@@ -80,29 +139,6 @@ function WavySeparator() {
         style={{ width: "100vw", transform: "translateX(-50%)" }}
       />
       <div className="wavy-line invisible" />
-    </div>
-  );
-}
-
-function StatCard({
-  label, value, icon: Icon, sub, highlight,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  sub?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className={`rounded-lg border p-5 flex flex-col gap-2 ${highlight ? "bg-[#907680]/8 border-[#907680]/30" : "bg-white border-neutral-200"}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-tight">
-          {label}
-        </span>
-        <Icon className={`w-4 h-4 ${highlight ? "text-[#907680]" : "text-neutral-400"}`} aria-hidden="true" />
-      </div>
-      <div className={`text-3xl font-bold ${highlight ? "text-[#907680]" : "text-neutral-900"}`}>{value}</div>
-      {sub && <div className="text-sm text-neutral-500">{sub}</div>}
     </div>
   );
 }
@@ -604,6 +640,11 @@ export default function InsightsPage() {
                     icon={Star}
                     sub={bestSeller ? `${unitsByProduct[bestSeller.id]} units all time` : "Log sales to track"}
                     highlight={!!bestSeller}
+                    onClick={
+                      bestSeller
+                        ? () => navigate(`/products/${bestSeller.id}/edit`)
+                        : undefined
+                    }
                   />
                   <StatCard
                     label="Total Revenue"

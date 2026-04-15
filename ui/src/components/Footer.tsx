@@ -62,7 +62,7 @@ export default function Footer() {
                 My Socials &amp; Stores
               </a>
               <a
-                href="YOUR_FEEDBACK_FORM_LINK_HERE"
+                href="https://forms.gle/MUPiE52FsT8yFuXw7"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
@@ -71,7 +71,7 @@ export default function Footer() {
                 Leave Feedback
               </a>
               <a
-                href="YOUR_UAT_FORM_LINK_HERE"
+                href="https://forms.gle/WFPhXqVxSTmbrWhMA"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
