@@ -34,6 +34,9 @@ def clean(self):
     if self.low_stock_threshold is not None and self.low_stock_threshold < 0:
         raise ValidationError("Low stock threshold cannot be negative.")
 
+    if self.custom_fields is None:
+        self.custom_fields = {}
+
 def validate_unit_type(value):
     if not re.match(r"^[a-z]+$", value):
         raise ValidationError(
@@ -81,7 +84,7 @@ class RawMaterial(models.Model):
     notes = models.TextField(blank=True, null=True)
     photo = models.ImageField(upload_to="material_photos/", null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)
-    custom_fields = models.JSONField(default=dict)
+    custom_fields = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
