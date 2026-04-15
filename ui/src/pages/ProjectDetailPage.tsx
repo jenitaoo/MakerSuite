@@ -260,6 +260,36 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
+    {/* ── Linked Product ── */}
+    {project.product && (
+      <div className="space-y-2">
+        <SectionHeader title="Linked Product" />
+        <Card className="bg-white border-neutral-200">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2 flex-1">
+                <p className="text-sm text-muted-foreground uppercase tracking-wide">Product Title</p>
+                <p className="text-lg text-neutral-900">{project.product_title}</p>
+              </div>
+              <div className="space-y-2 text-right">
+                <p className="text-sm text-muted-foreground uppercase tracking-wide">Price</p>
+                <p className="text-lg font-regu text-neutral-900">
+                  {project.product_price ? `€${parseFloat(project.product_price).toFixed(2)}` : "Not set"}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/products/${project.product}/edit`)}
+              >
+                View Product →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+
       {/* ── Suggested Pricing ── */}
       <div className="space-y-2">
         <SectionHeader
