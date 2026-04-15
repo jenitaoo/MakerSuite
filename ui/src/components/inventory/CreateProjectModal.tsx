@@ -99,7 +99,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>Name *</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Miffy Plushie, Light Tea Rose Rings" />
           </div>
 
