@@ -157,23 +157,6 @@ class EtsyAdapter(BasePlatformAdapter):
         response.raise_for_status()
         return response.json()
 
-    def update_quantity(self, listing, new_quantity: int):
-        """
-        Push updated quantity to Etsy after a sale is logged in MakerSuite.
-        Uses the core listing PATCH endpoint — lightweight, no inventory payload needed.
-        Fails silently if listing has no shop_id (shouldn't happen but defensive).
-        """
-        if not listing.shop_id or not listing.platform_listing_id:
-            return None
-        url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}"
-        response = requests.patch(url, headers=self._headers(), json={"quantity": new_quantity})
-        response.raise_for_status()
-        # Update raw so the local cache reflects new quantity
-        if listing.raw:
-            listing.raw["quantity"] = new_quantity
-            listing.save(update_fields=["raw"])
-        return response.json()
-
     def upload_image(self, listing, image_file, rank=1):
         url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images"
 
