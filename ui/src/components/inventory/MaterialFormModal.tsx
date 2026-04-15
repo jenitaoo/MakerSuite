@@ -9,6 +9,7 @@ import { TagsInput } from "@/components/ui/tags-input";
 import { ImagePlus, X } from "lucide-react";
 import { createMaterial, updateMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Props = {
   material?: RawMaterial;
@@ -189,7 +190,20 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
               />
             </div>
             <div className="space-y-2">
-              <Label>Cost per Unit (€)</Label>
+              <div className="flex items-center gap-2 mt-4">
+                <Label>Cost per Unit (€)</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="h-4 w-4 rounded-full bg-neutral-300 text-white flex items-center justify-center text-xs cursor-help">
+                      ?
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p>Cost per single unit of measurement.</p>
+                    <p className="text-xs mt-1">Example: If 50g cost €3.50, then cost per gram = €3.50 ÷ 50 = €0.07</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input type="number" min="0" step="0.01" value={form.cost_per_unit} onChange={(e) => update({ cost_per_unit: e.target.value })} placeholder="0.00" />
             </div>
           </div>
