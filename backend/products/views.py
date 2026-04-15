@@ -72,7 +72,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
         # Import here to avoid circular imports
-        from products.models import SaleTag, SaleLog, InventoryLog
+        from products.models import SaleTag, SaleLog
+        from inventory.models import InventoryLog
 
         # Ensure Etsy tag exists if source is etsy
         if source == "etsy":
