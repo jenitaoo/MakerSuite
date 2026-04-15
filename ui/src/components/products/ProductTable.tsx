@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Pencil, Trash2, History, RefreshCw } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Trash2, History, RefreshCw, EllipsisVertical } from "lucide-react";
 import { Product } from "../../types/product";
 import DeleteProductModal from "./DeleteProductModal";
 import LogSaleModal from "./LogSaleModal";
@@ -179,10 +179,10 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEdit(product)}>
-                  <Pencil className="h-3.5 w-3.5" />
+                  <EllipsisVertical className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top"><p>Edit Product</p></TooltipContent>
+              <TooltipContent side="top"><p>More Actions</p></TooltipContent>
             </Tooltip>
 
             <Tooltip>
