@@ -215,7 +215,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     def sync(self, request, pk=None):
         product = self.get_object()
         manager = SyncManager(request.user.userprofile)
-        manager.sync_product(product)
+        manager.sync_product(product) # sync product details to etsy
+        manager.sync_receipts_for_product # pull receipts from etsy
         return Response({"status": "synced"})
 
     @action(detail=True, methods=["post"], url_path="push-to-etsy", parser_classes=[JSONParser])
