@@ -148,7 +148,6 @@ export default function ProjectsSection() {
           <span className="block leading-tight">Avg</span>
           <span className="block leading-tight">Make</span>
           <span className="block leading-tight">Time</span>
-          <span className="block leading-tight">(Mins)</span>
           {column.getIsSorted() === "asc" ? <ArrowUp className="h-3 w-3" /> :
             column.getIsSorted() === "desc" ? <ArrowDown className="h-3 w-3" /> :
             <ArrowUpDown className="h-3 w-3 opacity-40" />}
