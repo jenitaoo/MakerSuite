@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, X, Search, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Pencil, Trash2 } from "lucide-react";
+import { Check, X, Search, ArrowUpDown, ArrowUp, ArrowDown, History, Trash2, EllipsisVertical, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMaterials, deleteMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
@@ -99,11 +99,11 @@ export default function MaterialsSection() {
             src={m.photo_url}
             alt=""
             aria-hidden="true"
-            className="h-14 w-14 rounded-md object-cover border border-neutral-200"
+            className="h-14 w-14 rounded-md object-cover border border-neutral-200 flex-shrink-0"
           />
         ) : (
           <div
-            className="h-14 w-14 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center"
+            className="h-14 w-14 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0"
             aria-hidden="true"
           >
             <span className="text-neutral-300 text-lg">✦</span>
@@ -115,44 +115,62 @@ export default function MaterialsSection() {
     {
       accessorKey: "name",
       header: ({ column }) => <SortHeader column={column} label="Name" />,
-      cell: ({ row }) => <span className="font-medium text-neutral-700">{row.getValue("name")}</span>,
+      cell: ({ row }) => (
+        <div style={{ width: "200px", maxWidth: "200px" }}>
+          <span className="font-medium text-neutral-700 break-words line-clamp-2 block">
+            {row.getValue("name")}
+          </span>
+        </div>
+      ),
     },
     {
       accessorKey: "sku",
       header: ({ column }) => <SortHeader column={column} label="SKU" />,
+      size: 100,
+      minSize: 80,
+      maxSize: 100,
       cell: ({ row }) => {
         const sku = row.getValue("sku") as string | null;
         return sku
-          ? <span className="text-neutral-600 text-sm font-mono">{sku}</span>
+          ? <span className="text-neutral-600 text-sm font-mono truncate">{sku}</span>
           : <span className="text-neutral-400">—</span>;
       },
     },
     {
       accessorKey: "quantity",
       header: ({ column }) => <SortHeader column={column} label="In Stock" />,
+      size: 80,
+      minSize: 70,
+      maxSize: 80,
       cell: ({ row }) => {
         const m = row.original;
-        return <span className="text-neutral-700">{m.quantity}</span>;
+        return <span className="text-neutral-700 whitespace-nowrap">{m.quantity}</span>;
       },
     },
     {
       accessorKey: "unit_type",
       header: ({ column }) => <SortHeader column={column} label="Unit Type" />,
+      size: 90,
+      minSize: 70,
+      maxSize: 90,
+      cell: ({ row }) => <span className="text-neutral-700 truncate">{row.getValue("unit_type")}</span>,
     },
     {
       accessorKey: "is_low_stock",
       header: () => <span className="font-medium text-xs uppercase tracking-wide">Status</span>,
+      size: 110,
+      minSize: 110,
       cell: ({ row }) => {
         const m = row.original;
         const qty = parseFloat(m.quantity);
         if (qty === 0) return (
-          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of Stock</Badge>
+          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50 whitespace-nowrap">Out of Stock</Badge>
         );
         if (m.is_low_stock) return (
-          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Low Stock</Badge>
+          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 whitespace-nowrap">Low Stock</Badge>
         );
         return (
-          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">OK</Badge>
+          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50 whitespace-nowrap">OK</Badge>
         );
       },
       filterFn: (row, _, filterValue) => {
@@ -167,29 +185,43 @@ export default function MaterialsSection() {
     {
       accessorKey: "brand",
       header: ({ column }) => <SortHeader column={column} label="Brand" />,
-      cell: ({ row }) => row.getValue("brand") ?? "—",
+      size: 100,
+      minSize: 80,
+      maxSize: 100,
+      cell: ({ row }) => <span className="text-neutral-700 truncate">{row.getValue("brand") ?? "—"}</span>,
     },
     {
       accessorKey: "source",
       header: ({ column }) => <SortHeader column={column} label="Source" />,
-      cell: ({ row }) => row.getValue("source") ?? "—",
+      size: 100,
+      minSize: 80,
+      maxSize: 100,
+      cell: ({ row }) => <span className="text-neutral-700 truncate">{row.getValue("source") ?? "—"}</span>,
     },
     {
       accessorKey: "tags",
       header: ({ column }) => <SortHeader column={column} label="Tags" />,
+      size: 120,
+      minSize: 100,
+      maxSize: 150,
       cell: ({ row }) => {
         const tags: string[] = row.getValue("tags") ?? [];
         if (!tags.length) return <span className="text-muted-foreground">—</span>;
         return (
           <div className="flex flex-wrap gap-1">
-            {tags.map((tag) => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+            {tags.slice(0, 2).map((tag) => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+            {tags.length > 2 && <Badge variant="secondary" className="text-xs">+{tags.length - 2}</Badge>}
           </div>
         );
       },
     },
     {
       id: "actions",
-      header: () => <span className="font-medium text-xs uppercase tracking-wide">Actions</span>,
+      header: () => <span className="sr-only">Actions</span>,
+      enableSorting: false,
+      size: 48,
+      minSize: 48,
+      maxSize: 48,
       cell: ({ row }) => {
         const material = row.original;
         return (
@@ -213,18 +245,10 @@ export default function MaterialsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailTarget(material)}>
-                  <Eye className="h-3.5 w-3.5" />
+                  <EllipsisVertical className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top"><p>Details</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditTarget(material)}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top"><p>Edit</p></TooltipContent>
+              <TooltipContent side="top"><p>More Actions</p></TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -349,13 +373,19 @@ export default function MaterialsSection() {
       </div>
 
       {/* ── Table ── */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg: any) => (
               <TableRow key={hg.id}>
                 {hg.headers.map((header: any) => (
-                  <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                    className="text-nowrap"
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
@@ -373,7 +403,13 @@ export default function MaterialsSection() {
               table.getRowModel().rows.map((row: any) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell: any) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: cell.column.columnDef.size }}
+                      className="text-nowrap"
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
