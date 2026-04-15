@@ -144,7 +144,7 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             <Input
               value={form.name}
               onChange={(e) => update({ name: e.target.value })}
-              placeholder="e.g. Seed Beads"
+              placeholder="e.g. Brown Yarn"
             />
           </div>
 
