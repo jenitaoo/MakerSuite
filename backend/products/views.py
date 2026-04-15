@@ -381,9 +381,13 @@ def _sync_quantity_to_etsy(user, product, new_quantity: int):
         logger.info(f"Product {product.id} not listed on Etsy, skipping sync")
         return  # Product not listed on Etsy — skip silently
 
+    if not listing.shop_id or not listing.platform_listing_id:
+        logger.warning(f"Product {product.id} listing incomplete (missing shop_id or platform_listing_id), skipping sync")
+        return  # Listing not fully synced yet
+
     try:
         adapter = EtsyAdapter(etsy_token)
-        adapter.update_quantity(listing, new_quantity)
+        adapter.update_inventory(listing, product)
         logger.info(f"Successfully synced product {product.id} to Etsy with quantity {new_quantity}")
     except Exception as e:
         logger.error(f"Failed to sync product {product.id} quantity to Etsy: {e}", exc_info=True)

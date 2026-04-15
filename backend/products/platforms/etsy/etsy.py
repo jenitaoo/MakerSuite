@@ -140,6 +140,8 @@ class EtsyAdapter(BasePlatformAdapter):
         return {"core": core, "inventory": inventory}
 
     def _update_core_listing(self, listing, product):
+        if not listing.shop_id or not listing.platform_listing_id:
+            raise ValueError("Listing missing shop_id or platform_listing_id")
         url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}"
         payload = self._build_update_payload(listing, product)
         response = requests.patch(url, headers=self._headers(), json=payload)
@@ -147,6 +149,8 @@ class EtsyAdapter(BasePlatformAdapter):
         return response.json()
 
     def update_inventory(self, listing, product):
+        if not listing.shop_id or not listing.platform_listing_id:
+            raise ValueError("Listing missing shop_id or platform_listing_id")
         url = f"{self.BASE_URL}/listings/{listing.platform_listing_id}/inventory"
         payload = self._build_inventory_payload(product, listing)
         response = requests.put(url, headers=self._headers(), json=payload)
