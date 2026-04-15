@@ -326,11 +326,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project.product = product
         project.save(update_fields=["product"])
 
-        qty = product.internal_quantity or 0
+        # Override product quantity with project's current stock
+        old_product_qty = product.internal_quantity or 0
+        project_qty = project.in_stock
+        product.internal_quantity = project_qty
+        product.save(update_fields=["internal_quantity"])
+
         MakeLog.objects.create(
             project=project,
-            units_made=qty,
-            notes=f"Auto-initialized from linked product: {product.title} ({qty} units)",
+            units_made=project_qty,
+            notes=f"Linked to product: {product.title}. Project stock ({project_qty} units) overrode product stock ({old_product_qty} units).",
             deducted_materials=False,
         )
 
