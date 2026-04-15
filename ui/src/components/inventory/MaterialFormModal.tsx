@@ -138,16 +138,29 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => update({ name: e.target.value })}
-                placeholder="e.g. Seed Beads"
-              />
-            </div>
+          {/* Name - full width */}
+          <div className="space-y-2">
+            <Label>Name *</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => update({ name: e.target.value })}
+              placeholder="e.g. Seed Beads"
+            />
+          </div>
 
+          {/* Unit Type + Initial Quantity */}
+          <div className="grid grid-cols-2 gap-4">
+            {!isEdit && (
+              <div className="space-y-2">
+                <Label>Initial Quantity</Label>
+                <Input
+                  type="number" min="0" step="0.01"
+                  value={form.quantity} placeholder="0"
+                  onChange={(e) => update({ quantity: e.target.value })}
+                  onFocus={(e) => e.target.select()}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Unit Type *</Label>
               <Input
@@ -158,7 +171,6 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
                 }}
                 placeholder="e.g. grams, pieces"
               />
-
               {!isValidUnit && form.unit_type.length > 0 && (
                 <p className="text-red-500 text-sm">
                   Only lowercase letters allowed (no spaces or numbers)
@@ -166,18 +178,6 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
               )}
             </div>
           </div>
-
-          {!isEdit && (
-            <div className="space-y-2">
-              <Label>Initial Quantity</Label>
-              <Input
-                type="number" min="0" step="0.01"
-                value={form.quantity} placeholder="0"
-                onChange={(e) => update({ quantity: e.target.value })}
-                onFocus={(e) => e.target.select()}
-              />
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -211,22 +211,22 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Brand</Label>
-              <Input value={form.brand} onChange={(e) => update({ brand: e.target.value })} placeholder="Optional" />
+              <Input value={form.brand} onChange={(e) => update({ brand: e.target.value })} placeholder="e.g. Drops" />
             </div>
             <div className="space-y-2">
               <Label>Source</Label>
-              <Input value={form.source} onChange={(e) => update({ source: e.target.value })} placeholder="e.g. Amazon" />
+              <Input value={form.source} onChange={(e) => update({ source: e.target.value })} placeholder="e.g. Woolly Castle's website" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Supplier</Label>
-              <Input value={form.supplier} onChange={(e) => update({ supplier: e.target.value })} placeholder="Optional" />
+              <Input value={form.supplier} onChange={(e) => update({ supplier: e.target.value })} placeholder="e.g. Woolly Castle" />
             </div>
             <div className="space-y-2">
               <Label>SKU</Label>
-              <Input value={form.sku} onChange={(e) => update({ sku: e.target.value })} placeholder="Optional" />
+              <Input value={form.sku} onChange={(e) => update({ sku: e.target.value })} placeholder="e.g. DROPS-Brushed-Alpaca-Silk" />
             </div>
           </div>
 
@@ -236,14 +236,14 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
               value={form.tags}
               onChange={(tags) => update({ tags })}
               suggestions={existingTags}
-              placeholder="e.g. yarn, bead, paint"
+              placeholder="e.g. crochet, embroidery, ceramics, jewellery"
             />
             <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
           </div>
 
           <div className="space-y-2">
             <Label>Notes</Label>
-            <Textarea rows={3} value={form.notes} onChange={(e) => update({ notes: e.target.value })} placeholder="Optional notes..." />
+            <Textarea rows={3} value={form.notes} onChange={(e) => update({ notes: e.target.value })} placeholder="e.g. Where do you keep it? Is it in good condition?" />
           </div>
         </div>
 
