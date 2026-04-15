@@ -55,7 +55,7 @@ class SyncManager:
         """
         listings = ExternalProductListing.objects.filter(
             product=product,
-            platform__in=self.adapters.keys()
+            platform="Etsy"
         )
         print(f"DEBUG: Found {listings.count()} listings for product {product.id}")
 
