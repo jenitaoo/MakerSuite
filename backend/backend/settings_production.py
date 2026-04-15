@@ -33,7 +33,7 @@ DATABASES = {
 # CORS / CSRF
 # -----------------------------
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-CORS_URLS_REGEX = r"^/api/.*$"
+CORS_URLS_REGEX = r"^/.*$" # Apply CORS to all endpoints
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://app.withlovejeni.com",
