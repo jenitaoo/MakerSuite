@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { deleteMaterial } from "../../services/inventoryApi";
@@ -35,6 +35,9 @@ export default function DeleteMaterialModal({ material, onClose, onDeleted }: Pr
       <DialogContent className="max-w-md bg-[#fdf8f6]">
         <DialogHeader>
           <DialogTitle>Delete "{material.name}"?</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this item?
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2 text-sm text-muted-foreground">
           <p>
