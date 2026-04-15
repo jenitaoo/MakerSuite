@@ -154,7 +154,7 @@ const Profile = () => {
     if (!confirmed) return;
     setDisconnecting(true);
     try {
-      const res = await fetch(`${API_URL}/etsy/disconnect/`, {
+      const res = await fetch(`${API_URL}/api/etsy/disconnect/`, {
         method: "POST",
         credentials: "include",
         headers: { "X-CSRFToken": getCookie("csrftoken") ?? "" },
