@@ -14,7 +14,31 @@ from django.core.files.base import ContentFile
 from django.db import models
 from authentication.models import UserProfile
 from products.models import Product
+import re
+from django.core.exceptions import ValidationError
 
+def clean(self):
+    super().clean()
+
+    if self.unit_type:
+        self.unit_type = self.unit_type.lower().strip()
+
+        if not re.match(r"^[a-z]+$", self.unit_type):
+            raise ValidationError(
+                "Unit type must contain only lowercase letters with no spaces, numbers or special characters."
+            )
+
+    if self.quantity is not None and self.quantity < 0:
+        raise ValidationError("Quantity cannot be negative.")
+
+    if self.low_stock_threshold is not None and self.low_stock_threshold < 0:
+        raise ValidationError("Low stock threshold cannot be negative.")
+
+def validate_unit_type(value):
+    if not re.match(r"^[a-z]+$", value):
+        raise ValidationError(
+            "Unit type must contain only lowercase letters with no spaces, numbers or special characters."
+        )
 
 def _resize_to_jpeg(field, max_px=1200):
     """
@@ -43,7 +67,10 @@ def _resize_to_jpeg(field, max_px=1200):
 class RawMaterial(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    unit_type = models.CharField(max_length=50)
+    unit_type = models.CharField(
+        max_length=50,
+        validators=[validate_unit_type]
+    )
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=None, null=True, blank=True)
     low_stock_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=None, null=True, blank=True)
     cost_per_unit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -65,6 +92,7 @@ class RawMaterial(models.Model):
         # Only process on first save (new upload), not on every model.save()
         if self.photo and not self.pk:
             _resize_to_jpeg(self.photo)
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @property

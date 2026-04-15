@@ -17,6 +17,7 @@ type Props = {
   onSaved: () => void;
 };
 
+
 export default function MaterialFormModal({ material, existingTags = [], onClose, onSaved }: Props) {
   const isEdit = !!material;
   const [form, setForm] = useState({
@@ -33,6 +34,7 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
     tags: material?.tags ?? [] as string[],
   });
   const [saving, setSaving] = useState(false);
+  const isValidUnit = /^[a-z]+$/.test(form.unit_type);
 
   // Photo state
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -135,15 +137,32 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             />
           </div>
 
-          {/* ── Name + Unit Type ── */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Name *</Label>
-              <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="e.g. Seed Beads" />
+              <Input
+                value={form.name}
+                onChange={(e) => update({ name: e.target.value })}
+                placeholder="e.g. Seed Beads"
+              />
             </div>
+
             <div className="space-y-2">
               <Label>Unit Type *</Label>
-              <Input value={form.unit_type} onChange={(e) => update({ unit_type: e.target.value })} placeholder="e.g. grams, pieces" />
+              <Input
+                value={form.unit_type}
+                onChange={(e) => {
+                  let value = e.target.value.toLowerCase().replace(/[^a-z]/g, "");
+                  update({ unit_type: value });
+                }}
+                placeholder="e.g. grams, pieces"
+              />
+
+              {!isValidUnit && form.unit_type.length > 0 && (
+                <p className="text-red-500 text-sm">
+                  Only lowercase letters allowed (no spaces or numbers)
+                </p>
+              )}
             </div>
           </div>
 
