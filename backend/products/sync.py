@@ -53,24 +53,26 @@ class SyncManager:
             product=product,
             platform__in=self.adapters.keys()
         )
+        print(f"DEBUG: Found {listings.count()} listings for product {product.id}")
 
         for listing in listings:
+            print(f"DEBUG: Processing listing {listing.id} on {listing.platform}")
             adapter = self.adapters.get(listing.platform.lower())
             if not adapter:
+                print(f"DEBUG: No adapter for {listing.platform}")
                 continue
 
-            # Get last sync timestamp to avoid re-processing old receipts
-            last_sync = listing.last_synced
-            since_ts = 0 # set to 0 to fetch all receipts inc historical
+            since_ts = 0
 
             try:
                 receipts = adapter.fetch_receipts(listing.shop_id, since_ts)
-            except Exception:
-                continue  # Don't block sync if receipts fail
+                print(f"DEBUG: Fetched {len(receipts)} receipts from {listing.platform}")
+            except Exception as e:
+                print(f"DEBUG: Error fetching receipts: {e}")
+                continue
 
             self._process_receipts(receipts, product, listing, listing.platform)
 
-            # Update last_synced
             from django.utils import timezone
             listing.last_synced = timezone.now()
             listing.save(update_fields=["last_synced"])
@@ -84,6 +86,8 @@ class SyncManager:
         from django.utils.dateparse import parse_datetime
         import datetime
 
+        print(f"DEBUG: _process_receipts called with {len(receipts)} receipts, listing.platform_listing_id={listing.platform_listing_id}")
+
         for receipt in receipts:
             # Normalize across platforms
             if platform.lower() == "etsy":
@@ -91,26 +95,22 @@ class SyncManager:
                 created_ts = receipt.get("create_timestamp")
                 sale_date = datetime.date.fromtimestamp(created_ts) if created_ts else None
                 transactions = receipt.get("transactions", [])
+                print(f"DEBUG: Processing receipt {receipt_id} with {len(transactions)} transactions")
             elif platform.lower() == "shopify":
                 receipt_id = str(receipt.get("id"))
-                sale_date = receipt.get("created_at", "")[:10]  # "2026-04-14"
+                sale_date = receipt.get("created_at", "")[:10]
                 transactions = receipt.get("line_items", [])
             else:
                 continue
 
-            for transaction in transactions:
-                # Match transaction to this product via listing_id
-                if platform.lower() == "etsy":
-                    listing_id = str(transaction.get("listing_id"))
-                    units_sold = transaction.get("quantity", 1)
-                    price = transaction.get("price", {})
-                    sale_price = price.get("amount", 0) / price.get("divisor", 100) if price else None
-                    external_id = f"etsy_{receipt_id}_{listing_id}"
-                elif platform.lower() == "shopify":
-                    listing_id = str(transaction.get("product_id"))
-                    units_sold = transaction.get("quantity", 1)
-                    sale_price = float(transaction.get("price", 0))
-                    external_id = f"shopify_{receipt_id}_{listing_id}"
+        for transaction in transactions:
+            if platform.lower() == "etsy":
+                listing_id = str(transaction.get("listing_id"))
+                units_sold = transaction.get("quantity", 1)
+                price = transaction.get("price", {})
+                sale_price = price.get("amount", 0) / price.get("divisor", 100) if price else None
+                external_id = f"etsy_{receipt_id}_{listing_id}"
+                print(f"DEBUG: Transaction listing_id={listing_id} vs {listing.platform_listing_id}, match={listing_id == str(listing.platform_listing_id)}")
 
                 # Only process transactions for this product's listing
                 if listing_id != listing.platform_listing_id:
