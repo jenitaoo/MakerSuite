@@ -32,6 +32,7 @@ class RawMaterialSerializer(serializers.ModelSerializer):
             "notes",
             "tags",
             "custom_fields",
+            "photo",
             "created_at",
             "updated_at",
             "is_low_stock",
