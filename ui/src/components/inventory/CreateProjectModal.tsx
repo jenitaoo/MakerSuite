@@ -99,8 +99,8 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Miffy Plushie, Light Tea Rose Rings" />
+            <Label>Name*</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Miffy Plush" />
           </div>
 
           <div className="space-y-2">
@@ -120,13 +120,13 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
           <div className="space-y-2">
             <Label>Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, seasonal" />
+            <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, ceramics" />
             <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
           </div>
 
           <div className="space-y-2">
             <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes about this project..." />
+            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Steps taken, patterns used, tools used" />
           </div>
         </div>
 
