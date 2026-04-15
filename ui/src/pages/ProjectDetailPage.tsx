@@ -485,7 +485,12 @@ export default function ProjectDetailPage() {
         <LogMakeModal
           project={project}
           onClose={() => setShowLogMake(false)}
-          onLogged={() => { setShowLogMake(false); fetchAll(); }}
+          onLogged={() => {
+            setShowLogMake(false);
+            fetchAll();
+            // Trigger marketplace refresh
+            localStorage.setItem('refreshProducts', Date.now().toString());
+          }}
         />
       )}
       {showMaterials && (

@@ -329,6 +329,15 @@ export default function MarketplacePage() {
     return () => observers.forEach((o) => o.disconnect());
   }, []);
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      loadProducts();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [loadProducts]);
+
   const scrollTo = (id: string) =>
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
 
