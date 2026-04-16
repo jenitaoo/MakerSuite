@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,16 @@ import {
   TrendingUp, ToolCase, Package, ShoppingBag,
   Euro, Star, AlertTriangle, Hammer, Store,
   ArrowRight, CheckCircle2, Clock, BarChart3, Layers,
+  Info, CheckCircle, AlertCircle, XCircle
 } from "lucide-react";
 import Insights_Bunny from "../assets/misc/Insights_Bunny_Illust.png";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AuthContext } from "../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +72,24 @@ function formatDuration(mins: number | null | undefined) {
   return `${h}h ${m}m`;
 }
 
+function fmtDate(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-IE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getStockHealthStatus(months: number | null | undefined) {
+  if (months === null || months === undefined) return null;
+
+  if (months >= 2) return "green";
+  if (months >= 1) return "amber";
+  return "red";
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatCard({
@@ -81,47 +107,75 @@ function StatCard({
   highlight?: boolean;
   onClick?: () => void;
 }) {
+  const tooltipMap: Record<string, string> = {
+    Projects: "Total number of projects in your Studio.",
+    "Units Made": "Total units produced from all make logs across your projects.",
+    "Avg Make Time": "Average time to make one unit, based on logged production durations.",
+    Materials: "Total number of materials in your Studio.",
+    Products: "All products currently listed in your Marketplace.",
+    "On Etsy": "Products listed on Etsy.",
+    "Best Seller": "Highest selling product based on total units sold.",
+    "Total Revenue": "Total income from all recorded sales.",
+    "Units Sold": "Units sold in selected period.",
+    Revenue: "Revenue in selected time window.",
+    "Avg Sale Value": "Average revenue per transaction.",
+    Transactions: "Number of sales transactions.",
+    "Avg Sell-Through":
+      "Units sold ÷ units made. Tells you how much you're selling vs making - 70–90% strong, 50–70% average, <50% overproduction risk.",
+    "COGS Warnings": "Products where cost is close to or exceeds price.",
+  };
+
+  const tooltipText =
+    tooltipMap[label] ??
+    `${label}: ${typeof value === "string" ? value : String(value)}`;
+
   return (
     <div
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (!onClick) return;
-        if (e.key === "Enter" || e.key === " ") onClick();
-      }}
-      title={typeof value === "string" ? `${label}: ${value}` : label}
       className={`rounded-lg border p-5 flex flex-col gap-2 transition
-        ${highlight ? "bg-[#907680]/8 border-[#907680]/30" : "bg-white border-neutral-200"}
+        ${
+          highlight
+            ? "bg-[#907680]/8 border-[#907680]/30"
+            : "bg-white border-neutral-200"
+        }
         ${
           onClick
-            ? "cursor-pointer transition-all duration-200 hover:bg-neutral-50 hover:shadow-md active:scale-[0.99]"
+            ? "cursor-pointer hover:bg-neutral-50 hover:shadow-md"
             : ""
         }`}
+      onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-tight">
-          {label}
-        </span>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        {/* LEFT: label behaves like inline text */}
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <span className="text-sm font-semibold text-neutral-600 uppercase tracking-wide leading-none">
+            {label}
+          </span>
 
-        <div className="flex items-center gap-2">
-          <Icon
-            className={`w-4 h-4 ${
-              highlight ? "text-[#907680]" : "text-neutral-400"
-            }`}
-          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-neutral-400 hover:text-neutral-600 cursor-pointer translate-y-[1px]">
+                  <Info className="w-3.5 h-3.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[240px] bg-neutral-900 text-white border border-neutral-700">
+                <p className="text-white">{tooltipText}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
-          {/* constant click affordance */}
-          {onClick && (
-            <ArrowRight className="w-4 h-4 text-neutral-400" />
-          )}
+        {/* RIGHT: icon cluster stays independent */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Icon className="w-4 h-4 text-neutral-400" />
+          {onClick && <span className="text-neutral-400">→</span>}
         </div>
       </div>
 
       <div
-        className={`font-bold ${
-          highlight ? "text-[#907680]" : "text-neutral-900"
-        } text-lg sm:text-xl leading-tight line-clamp-2`}
+        className="font-bold text-lg text-neutral-900 line-clamp-2 break-words"
+        title={typeof value === "string" ? value : String(value)}
       >
         {value}
       </div>
@@ -271,145 +325,373 @@ export default function InsightsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Derived ───────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SALES BASE METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // Action items — stock
-  const outOfStockProducts = products.filter((p) => p.internal_quantity === 0);
-  const lowStockProducts = products.filter((p) => (p.internal_quantity ?? 0) > 0 && (p.internal_quantity ?? 0) <= 3);
-  const lowStockMaterials = materials.filter((m) => m.is_low_stock);
-  const zeroStockMaterials = materials.filter((m) => parseFloat(m.quantity ?? "0") === 0);
-
-  // Action items — pricing
-  const cogsFlagged = (projects as any[]).filter((p) => {
-    if (!p.material_cost_per_unit || !p.product_price) return false;
-    return parseFloat(p.material_cost_per_unit) >= parseFloat(p.product_price) * 0.8;
-  });
-
-  // Action items — labour cost coverage (pays under minimum wage)
-  const MINIMUM_WAGE = 14.15;
-  const labourFlagged = (projects as any[]).filter((p) => {
-    if (!p.avg_duration_minutes || !p.product_price || !p.material_cost_per_unit) return false;
-    const labourCost = (p.avg_duration_minutes / 60) * MINIMUM_WAGE;
-    const margin = parseFloat(p.product_price) - parseFloat(p.material_cost_per_unit);
-    return margin < labourCost;
-  });
-
-  // Action items — idle projects (no makes in last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const idleProjects = (projects as any[]).filter((p) => {
-    if (!p.make_logs || p.make_logs.length === 0) return false; // never made = new, not idle
-    const mostRecent = p.make_logs
-      .map((l: any) => l.date_made ? new Date(l.date_made) : new Date(l.created_at))
-      .sort((a: Date, b: Date) => b.getTime() - a.getTime())[0];
-    return mostRecent < thirtyDaysAgo;
-  });
-
-  const totalActionItems =
-    outOfStockProducts.length +
-    lowStockProducts.length +
-    lowStockMaterials.length +
-    zeroStockMaterials.length +
-    cogsFlagged.length +
-    labourFlagged.length +
-    idleProjects.length;
-
-  // Sales
   const filteredSales = saleLogs.filter((s) => inWindow(s.sale_date, timeFilter));
-  const unitsInWindow = filteredSales.reduce((sum, s) => sum + s.units_sold, 0);
-  const revenueInWindow = filteredSales.reduce((sum, s) =>
-    sum + (s.sale_price ? parseFloat(s.sale_price) : 0), 0
-  );
-  const avgSaleValue = filteredSales.length > 0 ? revenueInWindow / filteredSales.length : 0;
 
-  // All-time best seller
+  const unitsInWindow = filteredSales.reduce(
+    (sum, s) => sum + s.units_sold,
+    0
+  );
+
+  const revenueInWindow = filteredSales.reduce(
+    (sum, s) => sum + (s.sale_price ? parseFloat(s.sale_price) : 0),
+    0
+  );
+
+  const avgSaleValue =
+    filteredSales.length > 0 ? revenueInWindow / filteredSales.length : 0;
+
+  // All-time units per product
   const unitsByProduct: Record<number, number> = {};
   saleLogs.forEach((s) => {
     unitsByProduct[s.product] = (unitsByProduct[s.product] || 0) + s.units_sold;
   });
-  const bestSellerId = Object.entries(unitsByProduct).sort((a, b) => b[1] - a[1])[0]?.[0];
-  const bestSeller = products.find((p) => p.id === Number(bestSellerId));
 
-  // Per-product breakdown in window
-  const unitsByProductInWindow: Record<number, number> = {};
+  // Revenue per product (filtered window)
   const revenueByProduct: Record<number, number> = {};
   filteredSales.forEach((s) => {
-    unitsByProductInWindow[s.product] = (unitsByProductInWindow[s.product] || 0) + s.units_sold;
-    revenueByProduct[s.product] = (revenueByProduct[s.product] || 0) + (s.sale_price ? parseFloat(s.sale_price) : 0);
+    revenueByProduct[s.product] =
+      (revenueByProduct[s.product] || 0) +
+      (s.sale_price ? parseFloat(s.sale_price) : 0);
   });
 
-  // Profit per product (revenue − COGS × units sold)
-  const profitByProduct: Record<number, number | null> = {};
-  Object.keys(unitsByProductInWindow).forEach((pid) => {
-    const project = (projects as any[]).find((p) => p.product === Number(pid));
-    if (!project?.material_cost_per_unit) { profitByProduct[Number(pid)] = null; return; }
-    const cogs = parseFloat(project.material_cost_per_unit) * unitsByProductInWindow[Number(pid)];
-    profitByProduct[Number(pid)] = (revenueByProduct[Number(pid)] ?? 0) - cogs;
-  });
+  // Best seller
+  const bestSellerId = Object.entries(unitsByProduct)
+    .sort((a, b) => b[1] - a[1])[0]?.[0];
 
-  // Makes in window
-  const makesInWindow = (projects as any[]).reduce((sum: number, p: any) => {
+  const bestSeller = products.find((p) => p.id === Number(bestSellerId));
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PRODUCTION METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const makesInWindow = projects.reduce((sum: number, p: any) => {
     const logs = (p.make_logs ?? []).filter((l: any) =>
       l.date_made ? inWindow(l.date_made, timeFilter) : timeFilter === "all"
     );
-    return sum + logs.reduce((s: number, l: any) => s + l.units_made, 0);
+
+    return sum + logs.reduce((s: number, l: any) => s + (l.units_made ?? 0), 0);
   }, 0);
 
-  // Production stats
-  const totalUnitsMade = projects.reduce((s, p) => s + (p as any).units_made, 0);
-  const projectsWithTime = (projects as any[]).filter((p) => p.avg_duration_minutes != null);
-  const avgMakeTime = projectsWithTime.length > 0
-    ? Math.round(projectsWithTime.reduce((s: number, p: any) => s + p.avg_duration_minutes, 0) / projectsWithTime.length)
-    : null;
+  const totalUnitsMade = projects.reduce(
+    (s, p) => s + (p as any).units_made,
+    0
+  );
 
-  // Sell-through rate per project — units_sold / units_made
-  // Stock coverage — in_stock / avg monthly sales rate
+  const projectsWithTime = projects.filter(
+    (p: any) => p.avg_duration_minutes != null
+  );
+
+  const avgMakeTime =
+    projectsWithTime.length > 0
+      ? Math.round(
+          projectsWithTime.reduce(
+            (s: number, p: any) => s + p.avg_duration_minutes,
+            0
+          ) / projectsWithTime.length
+        )
+      : null;
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STOCK METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const outOfStockProducts = products.filter(
+    (p) => p.internal_quantity === 0
+  );
+
+  const lowStockProducts = products.filter(
+    (p) => (p.internal_quantity ?? 0) > 0 && (p.internal_quantity ?? 0) <= 3
+  );
+
+  const lowStockMaterials = materials.filter(
+    (m) => m.is_low_stock
+  );
+
+  const zeroStockMaterials = materials.filter(
+    (m) => parseFloat(m.quantity ?? "0") === 0
+  );
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PRICING + PROFIT METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const cogsFlagged = projects.filter((p) => {
+    if (!p.material_cost_per_unit || !p.product_price) return false;
+
+    return (
+      parseFloat(p.material_cost_per_unit) >=
+      parseFloat(p.product_price) * 0.8
+    );
+  });
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LABOUR METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const auth = useContext(AuthContext);
+
+  const hourlyRate =
+    parseFloat(auth?.user?.hourly_rate ?? "14.15");
+
+  const labourFlagged = projects.filter((p) => {
+    if (
+      !p.avg_duration_minutes ||
+      !p.product_price ||
+      !p.material_cost_per_unit
+    )
+      return false;
+
+    const labourCost =
+      (p.avg_duration_minutes / 60) * hourlyRate;
+
+    const margin =
+      parseFloat(p.product_price) -
+      parseFloat(p.material_cost_per_unit);
+
+    return margin < labourCost;
+  });
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ACTIVITY / IDLE METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const idleProjects = projects.filter((p) => {
+    if (!p.make_logs?.length) return false;
+
+    const mostRecent = p.make_logs
+      .map((l: any) => new Date(l.date_made ?? l.created_at))
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+
+    return mostRecent < thirtyDaysAgo;
+  });
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DEMAND + SELL THROUGH METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
   const avgMonthlySalesByProduct: Record<number, number> = {};
+
   if (saleLogs.length > 0) {
-    // Find date range
     const dates = saleLogs.map((s) => new Date(s.sale_date).getTime());
+
     const earliest = new Date(Math.min(...dates));
     const now = new Date();
+
     const monthsSpan = Math.max(
       1,
-      (now.getFullYear() - earliest.getFullYear()) * 12 + (now.getMonth() - earliest.getMonth()) + 1
+      (now.getFullYear() - earliest.getFullYear()) * 12 +
+        (now.getMonth() - earliest.getMonth()) +
+        1
     );
+
     Object.entries(unitsByProduct).forEach(([pid, total]) => {
       avgMonthlySalesByProduct[Number(pid)] = total / monthsSpan;
     });
   }
 
-  // Per-project production insights
-  const projectInsights = (projects as any[]).map((p: any) => {
+  const projectInsights = projects.map((p: any) => {
     const soldAllTime = p.units_sold ?? 0;
     const madeAllTime = p.units_made ?? 0;
-    const sellThrough = madeAllTime > 0 ? Math.round((soldAllTime / madeAllTime) * 100) : null;
 
-    const linkedProductId = p.product;
-    const avgMonthly = linkedProductId ? avgMonthlySalesByProduct[linkedProductId] : null;
+    const sellThrough =
+      madeAllTime > 0
+        ? Math.round((soldAllTime / madeAllTime) * 100)
+        : null;
+
+    const avgMonthly =
+      p.product ? avgMonthlySalesByProduct[p.product] : null;
+
     const inStock = p.in_stock ?? 0;
-    const stockCoverageMonths = avgMonthly && avgMonthly > 0
-      ? +(inStock / avgMonthly).toFixed(1)
-      : null;
 
-    return { ...p, sellThrough, stockCoverageMonths };
+    const stockHealthMonths =
+      avgMonthly && avgMonthly > 0
+        ? +(inStock / avgMonthly).toFixed(1)
+        : null;
+
+    return {
+      ...p,
+      sellThrough,
+      stockHealthMonths,
+    };
   });
 
-  // Aggregate sell-through across all projects with data
-  const sellThroughProjects = projectInsights.filter((p) => p.sellThrough !== null);
-  const avgSellThrough = sellThroughProjects.length > 0
-    ? Math.round(sellThroughProjects.reduce((s, p) => s + p.sellThrough!, 0) / sellThroughProjects.length)
-    : null;
+  const avgSellThrough =
+    projectInsights.filter((p) => p.sellThrough !== null).length > 0
+      ? Math.round(
+          projectInsights
+            .filter((p) => p.sellThrough !== null)
+            .reduce((s, p) => s + (p.sellThrough ?? 0), 0) /
+            projectInsights.filter((p) => p.sellThrough !== null).length
+        )
+      : null;
 
-  // Projects with low stock coverage (< 1 month)
-  const lowCoverageProjects = projectInsights.filter(
-    (p) => p.stockCoverageMonths !== null && p.stockCoverageMonths < 1 && p.in_stock > 0
+  const lowStockHealthProjects = projectInsights.filter(
+    (p) =>
+      p.stockHealthMonths !== null &&
+      p.stockHealthMonths < 1 &&
+      p.in_stock > 0
   );
 
-  // Market data
-  const pastMarkets = markets.filter((m) => !m.is_upcoming);
-  const onEtsy = products.filter((p) => p.platforms?.includes("Etsy")).length;
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // MARKET METRICS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const pastMarkets = markets.filter((m) => !m.is_upcoming);
+
+  const onEtsy = products.filter((p) =>
+    p.platforms?.includes("Etsy")
+  ).length;
+
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ACTION ITEM GROUPINGS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const stockIssues = [
+    ...products
+      .filter((p) => p.internal_quantity === 0)
+      .map((p) => ({
+        type: "stock",
+        severity: "red",
+        id: `oos-${p.id}`,
+        data: p,
+      })),
+
+    ...products
+      .filter((p) => (p.internal_quantity ?? 0) > 0 && (p.internal_quantity ?? 0) <= 3)
+      .map((p) => ({
+        type: "stock",
+        severity: "amber",
+        id: `low-${p.id}`,
+        data: p,
+      })),
+  ];
+
+  const materialIssues = [
+    ...materials
+      .filter((m) => parseFloat(m.quantity ?? "0") === 0)
+      .map((m) => ({
+        type: "material",
+        severity: "red",
+        id: `mat0-${m.id}`,
+        data: m,
+      })),
+
+    ...materials
+      .filter((m) => m.is_low_stock)
+      .map((m) => ({
+        type: "material",
+        severity: "amber",
+        id: `matlow-${m.id}`,
+        data: m,
+      })),
+  ];
+
+  const pricingIssues = [
+    ...projects
+      .filter((p) => {
+        if (!p.material_cost_per_unit || !p.product_price) return false;
+        return (
+          parseFloat(p.material_cost_per_unit) >=
+          parseFloat(p.product_price) * 0.8
+        );
+      })
+      .map((p) => ({
+        type: "pricing",
+        severity: "amber",
+        id: `cogs-${p.id}`,
+        data: p,
+      })),
+  ];
+
+  const MINIMUM_WAGE = parseFloat(auth?.user?.hourly_rate ?? "14.15");
+  const labourIssues = [
+    ...projects
+      .filter((p) => {
+        if (!p.avg_duration_minutes || !p.product_price || !p.material_cost_per_unit) return false;
+
+        const labourCost = (p.avg_duration_minutes / 60) * MINIMUM_WAGE;
+        const margin =
+          parseFloat(p.product_price) - parseFloat(p.material_cost_per_unit);
+
+        return margin < labourCost;
+      })
+      .map((p) => ({
+        type: "labour",
+        severity: "amber",
+        id: `lab-${p.id}`,
+        data: p,
+      })),
+  ];
+
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const idleIssues = [
+    ...projects
+      .filter((p) => {
+        if (!p.make_logs?.length) return false;
+
+        const mostRecent = p.make_logs
+          .map((l) => new Date(l.date_made ?? l.created_at))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
+
+        return mostRecent < thirtyDaysAgo;
+      })
+      .map((p) => ({
+        type: "idle",
+        severity: "amber",
+        id: `idle-${p.id}`,
+        data: p,
+      })),
+  ];
+
+  const demandIssues = Object.entries(unitsByProduct)
+    .filter(([_, units]) => units === 0)
+    .map(([pid]) => ({
+      type: "demand",
+      severity: "red",
+      id: `demand-${pid}`,
+      data: products.find((p) => p.id === Number(pid)),
+    }));
+
+  const overstockIssues = projectInsights
+    .filter(
+      (p) =>
+        p.stockHealthMonths !== null &&
+        p.stockHealthMonths > 3 &&
+        p.sellThrough !== null &&
+        p.sellThrough < 60
+    )
+    .map((p) => ({
+      type: "overstock",
+      severity: "amber",
+      id: `over-${p.id}`,
+      data: p,
+    }));
+
+  const actionItems = [
+    ...stockIssues,
+    ...materialIssues,
+    ...pricingIssues,
+    ...labourIssues,
+    ...idleIssues,
+    ...demandIssues,
+    ...overstockIssues,
+  ];
+  // Rest
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <p className="text-white/70 text-sm">Loading insights…</p>
@@ -447,26 +729,37 @@ export default function InsightsPage() {
         {/* ══════════════════════════════════════════════════════════════════
             ACTION ITEMS
         ══════════════════════════════════════════════════════════════════ */}
-        <section aria-label="Action Items">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">Action Items</h2>
-            {totalActionItems > 0 && (
-              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
-                {totalActionItems}
-              </span>
-            )}
-          </div>
+      <section aria-label="Action Items">
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">
+            Action Items
+          </h2>
 
-          {totalActionItems === 0 ? (
-            <Card className="bg-white border-neutral-200">
-              <CardContent className="p-6 flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-neutral-700">You're all caught up ╰(*°▽°*)╯ !</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">No urgent actions right now — everything looks healthy across your products, materials, and pricing.</p>
-                </div>
-              </CardContent>
-            </Card>
+          {actionItems.length > 0 && (
+            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
+              {actionItems.length}
+            </span>
+          )}
+        </div>
+
+        <p className="text-sm text-white mt-1 mb-4 leading-relaxed">
+          All the tasks you need to take action on across your Studio and Marketplace to keep your inventory, production, and pricing healthy.
+        </p>
+
+        {actionItems.length === 0 ? (
+          <Card className="bg-white border-neutral-200">
+            <CardContent className="p-6 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-neutral-700">
+                  You're all caught up ╰(*°▽°*)╯ !
+                </p>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  No urgent actions right now — everything looks healthy across your products, materials, and pricing.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
           ) : (
             <div className="space-y-2">
               {/* Stock — products */}
@@ -518,17 +811,21 @@ export default function InsightsPage() {
               ))}
 
               {/* Stock coverage — selling faster than making */}
-              {lowCoverageProjects.map((p: any) => (
-                <ActionItem
-                  key={`cov-${p.id}`}
-                  icon={Layers}
-                  color="amber"
-                  message={`${p.name} has less than a month of stock left`}
-                  detail={`${p.in_stock} unit${p.in_stock !== 1 ? "s" : ""} in stock at your current sales rate. Consider logging a make soon.`}
-                  actionLabel="Log Make"
-                  onAction={() => navigate("/studio")}
-                />
-              ))}
+              {lowStockHealthProjects.map((p: any) => {
+                const status = getStockHealthStatus(p.stockHealthMonths);
+
+                return (
+                  <ActionItem
+                    key={`stockhealth-${p.id}`}
+                    icon={Layers}
+                    color={status === "red" ? "red" : "amber"}
+                    message={`${p.name} stock health is ${status === "red" ? "critical" : "at risk"}`}
+                    detail={`${p.in_stock} units remaining — approx. ${p.stockHealthMonths} month${p.stockHealthMonths === 1 ? "" : "s"} of demand left.`}
+                    actionLabel="Log Make"
+                    onAction={() => navigate("/studio")}
+                  />
+                );
+              })}
 
               {/* Pricing — COGS */}
               {cogsFlagged.map((p: any) => (
@@ -764,7 +1061,7 @@ export default function InsightsPage() {
                           <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sold</th>
                           <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Sell-Through</th>
                           <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Stock Left</th>
-                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Coverage</th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Stock Health</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -772,7 +1069,7 @@ export default function InsightsPage() {
                           .filter((p: any) => p.units_made > 0)
                           .sort((a: any, b: any) => b.units_made - a.units_made)
                           .map((p: any) => {
-                            const coverageLow = p.stockCoverageMonths !== null && p.stockCoverageMonths < 1;
+                            const stockHealthLow  = p.stockCoverageMonths !== null && p.stockCoverageMonths < 1;
                             return (
                               <tr
                                 key={p.id}
@@ -791,11 +1088,34 @@ export default function InsightsPage() {
                                 </td>
                                 <td className="px-4 py-2.5 text-right text-neutral-700">{p.in_stock}</td>
                                 <td className="px-4 py-2.5 text-right">
-                                  {p.stockCoverageMonths !== null ? (
-                                    <span className={coverageLow ? "text-red-600 font-medium" : "text-neutral-700"}>
-                                      {p.stockCoverageMonths < 1 ? "<1 mo" : `${p.stockCoverageMonths} mo`}
-                                    </span>
-                                  ) : <span className="text-neutral-400">—</span>}
+                                  {p.stockHealthMonths !== null ? (() => {
+                                    const status = getStockHealthStatus(p.stockHealthMonths);
+
+                                  const StatusIcon =
+                                    status === "green"
+                                      ? CheckCircle
+                                      : status === "amber"
+                                      ? AlertCircle
+                                      : XCircle;
+
+                                  const statusColor =
+                                    status === "green"
+                                      ? "text-green-600"
+                                      : status === "amber"
+                                      ? "text-amber-500"
+                                      : "text-red-600";
+
+                                    return (
+                                      <div className="flex items-center justify-end gap-2">
+                                        <StatusIcon className={`w-4 h-4 ${statusColor}`} />
+                                        <span className="text-neutral-700">
+                                          {p.stockHealthLabel}
+                                        </span>
+                                      </div>
+                                    );
+                                  })() : (
+                                    <span className="text-neutral-400">—</span>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -804,57 +1124,160 @@ export default function InsightsPage() {
                     </table>
                   </div>
                   <p className="text-xs text-neutral-400 mt-2">
-                    Sell-Through = units sold ÷ units made. Coverage = stock remaining at current monthly sales rate.
+                    Sell-Through tells you how much you're selling vs making — 70–90% strong demand, 50–70% balanced, under 50% may mean overproduction.
+                  </p>
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Stock Health shows if you need to restock based on your sales rate — 🟢 healthy stock, 🟠 running low, 🔴 restock soon to avoid selling out.
                   </p>
                 </CardContent>
               </Card>
             )}
 
-            {/* Product performance table */}
-            {Object.keys(unitsByProductInWindow).length > 0 && (
+            {/* Product Performance Insights Table */}
+            {projectInsights.filter((p) => (p.units_sold ?? 0) > 0).length > 0 && (
               <Card className="bg-white border-neutral-200">
                 <CardContent className="p-6">
-                  <SectionLabel>Product Performance</SectionLabel>
+                  <SectionLabel>Product Performance Insights</SectionLabel>
+
                   <div className="rounded-md border overflow-hidden overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm table-fixed">
                       <thead className="bg-neutral-50 border-b border-neutral-200">
                         <tr>
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Product</th>
-                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Units Sold</th>
-                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Revenue</th>
-                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">Est. Profit</th>
+                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                            Product
+                          </th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                            Sold
+                          </th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                            Sell-Through
+                          </th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                            Stock Health
+                          </th>
+                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                            Demand
+                          </th>
                         </tr>
                       </thead>
+
                       <tbody>
-                        {Object.entries(unitsByProductInWindow)
-                          .sort((a, b) => b[1] - a[1])
-                          .map(([pid, units]) => {
-                            const product = products.find((p) => p.id === Number(pid));
-                            const revenue = revenueByProduct[Number(pid)] ?? 0;
-                            const profit = profitByProduct[Number(pid)];
-                            const isLoss = profit !== null && profit < 0;
+                        {projectInsights
+                          .filter((p) => (p.units_sold ?? 0) > 0)
+                          .sort((a, b) => (b.units_sold ?? 0) - (a.units_sold ?? 0))
+                          .map((p) => {
+                            const sellThrough = p.sellThrough;
+                            const stockMonths = p.stockHealthMonths;
+
+                            const demandStatus =
+                              sellThrough === null
+                                ? "neutral"
+                                : sellThrough >= 80
+                                ? "green"
+                                : sellThrough >= 50
+                                ? "amber"
+                                : "red";
+
+                            const DemandIcon =
+                              demandStatus === "green"
+                                ? CheckCircle
+                                : demandStatus === "amber"
+                                ? AlertCircle
+                                : XCircle;
+
+                            const demandColor =
+                              demandStatus === "green"
+                                ? "text-green-600"
+                                : demandStatus === "amber"
+                                ? "text-amber-500"
+                                : "text-red-600";
+
+                            const stockStatus =
+                              stockMonths === null
+                                ? "neutral"
+                                : stockMonths >= 2
+                                ? "green"
+                                : stockMonths >= 1
+                                ? "amber"
+                                : "red";
+
+                            const StockIcon =
+                              stockStatus === "green"
+                                ? CheckCircle
+                                : stockStatus === "amber"
+                                ? AlertCircle
+                                : XCircle;
+
+                            const stockColor =
+                              stockStatus === "green"
+                                ? "text-green-600"
+                                : stockStatus === "amber"
+                                ? "text-amber-500"
+                                : "text-red-600";
+
                             return (
                               <tr
-                                key={pid}
+                                key={p.id}
                                 className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer"
-                                onClick={() => navigate(`/products/${pid}/edit`)}
+                                onClick={() => navigate(`/studio/projects/${p.id}`)}
                               >
+                                {/* Product */}
                                 <td className="px-4 py-2.5 font-medium text-neutral-700">
-                                  {product?.title ?? `Product #${pid}`}
+                                  {p.name}
                                 </td>
-                                <td className="px-4 py-2.5 text-right text-neutral-700">{units}</td>
+
+                                {/* Units Sold */}
                                 <td className="px-4 py-2.5 text-right text-neutral-700">
-                                  {revenue > 0 ? `€${revenue.toFixed(2)}` : "—"}
+                                  {p.units_sold ?? 0}
                                 </td>
-                                <td className={`px-4 py-2.5 text-right font-medium ${
-                                  profit === null ? "text-neutral-400" :
-                                  isLoss ? "text-red-600" : "text-green-600"
-                                }`}>
-                                  {profit === null
-                                    ? <span className="text-xs font-normal text-neutral-400">no cost data</span>
-                                    : isLoss
-                                    ? `−€${Math.abs(profit).toFixed(2)}`
-                                    : `€${profit.toFixed(2)}`}
+
+                                {/* Sell-through */}
+                                <td className="px-4 py-2.5 text-right">
+                                  {sellThrough !== null ? (
+                                    <span
+                                      className={
+                                        sellThrough >= 80
+                                          ? "text-green-600 font-medium"
+                                          : sellThrough >= 50
+                                          ? "text-amber-600"
+                                          : "text-red-600"
+                                      }
+                                    >
+                                      {sellThrough}%
+                                    </span>
+                                  ) : (
+                                    <span className="text-neutral-400">—</span>
+                                  )}
+                                </td>
+
+                                {/* Stock health */}
+                                <td className="px-4 py-2.5 text-right">
+                                  {stockMonths !== null ? (
+                                    <div className="flex items-center justify-end gap-2">
+                                      <StockIcon className={`w-4 h-4 ${stockColor}`} />
+                                      <span className="text-neutral-700">
+                                        {stockMonths} mo
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-neutral-400">—</span>
+                                  )}
+                                </td>
+
+                                {/* Demand */}
+                                <td className="px-4 py-2.5 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <DemandIcon className={`w-4 h-4 ${demandColor}`} />
+                                    <span className="text-xs text-neutral-600">
+                                      {demandStatus === "green"
+                                        ? "Strong"
+                                        : demandStatus === "amber"
+                                        ? "OK"
+                                        : demandStatus === "red"
+                                        ? "Low"
+                                        : "—"}
+                                    </span>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -862,8 +1285,9 @@ export default function InsightsPage() {
                       </tbody>
                     </table>
                   </div>
+
                   <p className="text-xs text-neutral-400 mt-2">
-                    Est. Profit = Revenue − (Material Cost × Units Sold). Requires recipe costs set in Studio.
+                    Demand = how well products are selling vs making. Stock Health = how long current stock will last at current demand.
                   </p>
                 </CardContent>
               </Card>
