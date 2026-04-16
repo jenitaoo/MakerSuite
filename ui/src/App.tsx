@@ -17,6 +17,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import MarketDetailPage from "./pages/MarketDetailPage";
 import InsightsPage from "./pages/InsightsPage";
 import Footer from "./components/Footer";
+import { Analytics } from "@vercel/analytics/react"
 
 function AppLayout() {
   const { pathname } = useLocation();
@@ -61,6 +62,7 @@ function AppLayout() {
           <Outlet />
         </main>
         <Footer />
+        <Analytics />
       </div>
     </TooltipProvider>
   );
