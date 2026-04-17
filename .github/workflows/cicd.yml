@@ -85,7 +85,6 @@ jobs:
   deploy-prod:
     if: github.ref == 'refs/heads/staging'
     needs: request-approval
-    environment: production
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
