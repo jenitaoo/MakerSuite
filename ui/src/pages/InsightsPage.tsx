@@ -44,9 +44,9 @@ import {
   getStockStatus,
   formatDate,
   TimeFilter,
-  SaleLog,
   type StockHealth,
 } from "../services/insightsCalculations";
+import { SaleLog } from "../types/inventory";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -417,7 +417,7 @@ export default function InsightsPage() {
     })),
     ...lowStockHealthProjects.map((p) => ({
       type: "coverage",
-      severity: (getStockHealthStatus(p.stockHealthMonths) === "red" ? "red" : "amber") as const,
+      severity: (getStockHealthStatus(p.stockHealthMonths) === "red" ? "red" : "amber"),
       id: `coverage-${p.id}`,
       data: p,
     })),
