@@ -51,20 +51,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy frontend to Vercel staging
-        run: |
-          npm install -g vercel
-          vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        run: vercel --prod
         working-directory: ./ui
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
 
       - name: Deploy backend to Railway staging
-        run: |
-          npx railway up --service makersuite-staging
+        run: npx railway up --service makersuite-staging
+        working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        working-directory: ./backend
 
   request-approval:
     if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
@@ -83,17 +81,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy frontend to Vercel production
-        run: |
-          npm install -g vercel
-          vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        run: vercel --prod
         working-directory: ./ui
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
 
       - name: Deploy backend to Railway production
-        run: |
-          npx railway up --service makersuite-prod
+        run: npx railway up --service makersuite-prod
+        working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        working-directory: ./backend
