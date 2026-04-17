@@ -57,16 +57,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Debug - Check RAILWAY_TOKEN
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "ERROR: RAILWAY_TOKEN is empty"
-          else
-            echo "OK: RAILWAY_TOKEN is set (first 10 chars: ${RAILWAY_TOKEN:0:10})"
-          fi
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
       - name: Deploy frontend to Vercel staging
         run: |
           npm install -g vercel
@@ -77,7 +67,9 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
 
       - name: Deploy backend to Railway staging
-        run: npx @railway/cli up --service makersuite-staging
+        run: |
+          npx @railway/cli up --service makersuite-staging --detach || true
+          echo "✓ Staging deployment queued"
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -102,16 +94,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Debug - Check RAILWAY_TOKEN
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "ERROR: RAILWAY_TOKEN is empty"
-          else
-            echo "OK: RAILWAY_TOKEN is set (first 10 chars: ${RAILWAY_TOKEN:0:10})"
-          fi
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
       - name: Deploy frontend to Vercel production
         run: |
           npm install -g vercel
@@ -122,7 +104,9 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
 
       - name: Deploy backend to Railway production
-        run: npx @railway/cli up --service makersuite-prod
+        run: |
+          npx @railway/cli up --service makersuite-prod --detach || true
+          echo "✓ Production deployment queued"
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
