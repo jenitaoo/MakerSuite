@@ -100,7 +100,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                 {existingImages.map((img) => (
                   <div key={img.id} className="relative h-20 w-20">
                     <img
-                      src={img.image_url}
+                      src={img.image_url || ""}
                       alt=""
                       className="h-full w-full object-cover rounded-md border border-neutral-200"
                     />

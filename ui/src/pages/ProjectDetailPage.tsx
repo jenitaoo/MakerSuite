@@ -205,7 +205,7 @@ export default function ProjectDetailPage() {
             {project.images.map((img) => (
               <div key={img.id} className="h-40 w-40 rounded-lg overflow-hidden border border-white/20 shrink-0">
                 <img
-                  src={img.image_url}
+                  src={img.image_url || ""}
                   alt={project.name}
                   className="w-full h-full object-cover"
                 />

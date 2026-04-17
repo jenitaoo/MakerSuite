@@ -84,7 +84,7 @@ export default function ProjectsSection() {
         const first = row.original.images?.[0];
         return first ? (
           <img
-            src={first.image_url}
+            src={first.image_url || ""}
             alt=""
             aria-hidden="true"
             className="h-14 w-14 rounded-md object-cover border border-neutral-200 flex-shrink-0"

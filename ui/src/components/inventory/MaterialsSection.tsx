@@ -30,7 +30,9 @@ export default function MaterialsSection() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
-  const outOfStockCount = materials.filter((m) => parseFloat(m.quantity) === 0).length;
+  const outOfStockCount = materials
+    .filter((m) => m.quantity !== null && parseFloat(m.quantity) === 0)
+    .length;
   const [deleteTarget, setDeleteTarget] = useState<RawMaterial | null>(null);
 
   // Modals
@@ -162,7 +164,7 @@ export default function MaterialsSection() {
       minSize: 110,
       cell: ({ row }) => {
         const m = row.original;
-        const qty = parseFloat(m.quantity);
+        const qty = parseFloat(m.quantity ?? '0');
         if (qty === 0) return (
           <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50 whitespace-nowrap">Out of Stock</Badge>
         );
@@ -175,7 +177,7 @@ export default function MaterialsSection() {
       },
       filterFn: (row, _, filterValue) => {
         const m = row.original as RawMaterial;
-        const qty = parseFloat(m.quantity);
+        const qty = parseFloat(m.quantity ?? '0');
         if (filterValue === "out") return qty === 0;
         if (filterValue === "low") return m.is_low_stock && qty > 0;
         if (filterValue === "ok") return !m.is_low_stock && qty > 0;
