@@ -57,6 +57,16 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Debug - Check RAILWAY_TOKEN
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "ERROR: RAILWAY_TOKEN is empty"
+          else
+            echo "OK: RAILWAY_TOKEN is set (first 10 chars: ${RAILWAY_TOKEN:0:10})"
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
       - name: Deploy frontend to Vercel staging
         run: |
           npm install -g vercel
@@ -91,6 +101,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Debug - Check RAILWAY_TOKEN
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "ERROR: RAILWAY_TOKEN is empty"
+          else
+            echo "OK: RAILWAY_TOKEN is set (first 10 chars: ${RAILWAY_TOKEN:0:10})"
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy frontend to Vercel production
         run: |
