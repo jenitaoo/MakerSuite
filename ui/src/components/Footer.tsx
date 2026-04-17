@@ -33,17 +33,8 @@ export default function Footer() {
               I'm Jenny, a maker and developer based in Dublin. I built MakerSuite as part of my studies and to help me run my small business, <span className="text-white font-medium">With Love, Jeni</span>, where I make handmade trinkets, jewellery and crochet bouquets (●'◡'●).
             </p>
             <p className="text-white/70 text-xs leading-relaxed">
-              If you like everything soft, floral and sweet, come find me using below link!
+              If you like everything soft, floral and sweet, come visit my <a href="https://withlovejeni.carrd.co/" target="_blank" rel="noopener noreferrer" className="text-white underline">socials &amp; stores</a>!
             </p>
-            <a
-              href="https://withlovejeni.carrd.co/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-white/80 transition-colors underline underline-offset-4"
-            >
-              <ExternalLink className="w-3 h-3" />
-              withlovejeni.carrd.co →
-            </a>
           </div>
 
           {/* Links */}
@@ -59,7 +50,7 @@ export default function Footer() {
                 className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <ExternalLink className="w-3 h-3" />
-                My Socials &amp; Stores
+                With Love Jeni's Links (Socials & Stores)
               </a>
               <a
                 href="https://forms.gle/MUPiE52FsT8yFuXw7"
