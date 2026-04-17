@@ -31,6 +31,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
       - run: npm ci --prefix ./ui
       - run: npm run test:ci --prefix ./ui || true
 
@@ -38,6 +40,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+          cache: 'pip'
       - run: pip install -r backend/requirements.txt
       - run: pytest backend/ --cov=backend || true
         env:
@@ -50,8 +53,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Deploy frontend to Vercel staging
-        run: vercel --prod
+        run: |
+          npm install -g vercel
+          vercel --prod
         working-directory: ./ui
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -80,8 +89,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Deploy frontend to Vercel production
-        run: vercel --prod
+        run: |
+          npm install -g vercel
+          vercel --prod
         working-directory: ./ui
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
