@@ -89,24 +89,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          ref: staging
 
-      - name: Deploy frontend to Vercel production
-        run: |
-          npm install -g vercel
-          vercel --prod
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
+      - name: Create Pull Request staging → main
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto/staging-to-main-${{ github.run_id }}
+          base: main
+          head: staging
+          title: "chore: deploy staging to production"
+          body: "Automated deployment from staging to production"
+          delete-branch: true
 
-      - name: Deploy backend to Railway production
+      - name: Auto-merge PR
         run: |
-          npx @railway/cli up --service makersuite-prod --detach || true
-          echo "✓ Production deployment queued"
-        working-directory: ./backend
+          gh pr merge --auto --merge -R ${{ github.repository }}
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
