@@ -67,7 +67,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
 
       - name: Deploy backend to Railway staging
-        run: npx railway up --service makersuite-staging
+        run: npx @railway/cli up --service makersuite-staging
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -102,7 +102,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
 
       - name: Deploy backend to Railway production
-        run: npx railway up --service makersuite-prod
+        run: npx @railway/cli up --service makersuite-prod
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
