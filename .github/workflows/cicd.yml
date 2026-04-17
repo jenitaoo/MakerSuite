@@ -30,7 +30,7 @@ jobs:
       # Frontend tests
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
       - run: npm ci --prefix ./ui
@@ -55,13 +55,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Deploy frontend to Vercel staging
         run: |
           npm install -g vercel
           vercel --prod
-        working-directory: ./ui
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -91,13 +90,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Deploy frontend to Vercel production
         run: |
           npm install -g vercel
           vercel --prod
-        working-directory: ./ui
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
