@@ -1,5 +1,5 @@
 import path from "path"
-import { defineConfig } from "vite"
+import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
 
 export default defineConfig({
@@ -13,7 +13,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://backend:8000',  // Docker service name, not localhost
+        target: 'http://backend:8000',
         changeOrigin: true,
         secure: false,
       },
@@ -28,5 +28,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src")
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['src/setupTests.ts'],
   },
 })

@@ -3,37 +3,37 @@ export type RawMaterial = {
   owner: number;
   name: string;
   unit_type: string;
-  quantity: string;
+  quantity: string | null;
   low_stock_threshold: string | null;
   cost_per_unit: string | null;
   source: string | null;
   brand: string | null;
   supplier: string | null;
-  tags?: string[];
   sku: string | null;
   notes: string | null;
-  photo?: string | null;
-  photo_url?: string | null;
+  tags: string[];
   custom_fields: Record<string, string>;
-  is_low_stock: boolean;
+  photo?: string | null; // write_only, may not be in response
+  photo_url: string | null; // SerializerMethodField, always present
+  is_low_stock: boolean; // ReadOnlyField
   created_at: string;
   updated_at: string;
 };
 
 export type ProjectImage = {
   id: number;
-  image_url: string;
   order: number;
+  image_url: string | null; // SerializerMethodField
 };
 
 export type ProjectMaterial = {
   id: number;
   material: number;
-  material_name: string;
-  material_unit_type: string;
   quantity_used: string | null;
-  material_cost_per_unit: string | null;
-  material_photo_url: string | null;
+  material_name: string; // ReadOnlyField (always present)
+  material_unit_type: string; // ReadOnlyField (always present)
+  material_cost_per_unit: string | null; // ReadOnlyField (can be null)
+  material_photo_url: string | null; // SerializerMethodField
 };
 
 export type MakeLog = {
@@ -45,7 +45,6 @@ export type MakeLog = {
   deducted_materials: boolean;
   duration_minutes: number | null;
   created_at: string;
-  material_overrides?: Record<number, number>;
 };
 
 export type SaleTag = {
@@ -61,11 +60,12 @@ export type SaleLog = {
   product: number;
   units_sold: number;
   sale_date: string;
+  sale_price: string | null;
   notes: string | null;
   tags: SaleTag[];
   source: "etsy" | "manual";
   unit_prices?: { unit: number; price: string }[];
-  sale_price?: string | null;
+  external_id?: string;
   created_at: string;
 };
 
@@ -74,15 +74,17 @@ export type Project = {
   owner: number;
   name: string;
   product: number | null;
-  product_title: string | null;
-  product_price: string | null;
-  units_made: number;
-  units_sold: number;
-  in_stock: number;
+  product_title: string | null; // SerializerMethodField
+  product_price: string | null; // SerializerMethodField
   notes: string | null;
   tags: string[];
-  avg_duration_minutes: number | null;
-  material_cost_per_unit: string | null;
+  // Computed fields (always present in response)
+  units_made: number; // ReadOnlyField
+  units_sold: number; // ReadOnlyField
+  in_stock: number; // ReadOnlyField
+  avg_duration_minutes: number | null; // ReadOnlyField
+  material_cost_per_unit: string | null; // SerializerMethodField
+  // Relationships (always present, might be empty arrays)
   images: ProjectImage[];
   project_materials: ProjectMaterial[];
   make_logs: MakeLog[];
@@ -94,9 +96,9 @@ export type InventoryLog = {
   id: number;
   owner: number;
   material: number | null;
-  material_name: string | null;
+  material_name: string | null; // SerializerMethodField
   project: number | null;
-  project_name: string | null;
+  project_name: string | null; // SerializerMethodField
   change_type: "restock" | "make" | "manual_add" | "manual_deduct" | "sale";
   quantity_change: string;
   notes: string | null;

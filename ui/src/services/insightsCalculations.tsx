@@ -223,7 +223,7 @@ export function isLabourWarning(
 // ─── Idle Projects ────────────────────────────────────────────────────────────
 
 export function isIdleProject(
-  makeLogs: Project["make_logs"],
+  makeLogs: Project["make_logs"] | null | undefined,
   dayThreshold: number = 30
 ): boolean {
   if (!makeLogs || makeLogs.length === 0) return false;
