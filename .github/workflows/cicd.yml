@@ -48,7 +48,7 @@ jobs:
       - name: Deploy to staging (Vercel)
         run: |
           npm install -g vercel
-          vercel --prod
+          vercel --prod --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
