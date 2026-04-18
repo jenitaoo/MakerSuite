@@ -72,20 +72,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install -y gh
-
       - name: Create PR staging → main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr create \
-            --base main \
-            --head staging \
-            --title "Release: staging → main" \
-            --body "Automated PR after staging validation and deployment"
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: staging
+          destination_branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Release: staging → main"
+          pr_body: "Automated PR after staging validation"
 
   deploy-production:
     if: github.ref == 'refs/heads/main'
