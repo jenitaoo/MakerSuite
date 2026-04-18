@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -68,19 +72,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create PR staging → main
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          head: staging
-          title: "Release: staging → main"
-          body: |
-            Automated PR after:
-            - Tests passed
-            - Staging deployment successful
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
 
-            This PR must be reviewed and merged manually before production deployment.
+      - name: Create PR staging → main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head staging \
+            --title "Release: staging → main" \
+            --body "Automated PR after staging validation and deployment"
 
   deploy-production:
     if: github.ref == 'refs/heads/main'
