@@ -37,8 +37,19 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Links */}
+          {/* Links and Notices*/}
           <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white">
+              Notice
+            </p>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-white/70">
+                MakerSuite is currently in active development and is free to use. However, there may be bugs, missing features, and occasional downtime.
+              </p>
+              <p className="text-xs text-white/70">
+                The term 'Etsy' is a trademark of Etsy, Inc. This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.
+              </p>
+            </div>
             <p className="text-xs font-semibold uppercase tracking-widest text-white">
               Links
             </p>
