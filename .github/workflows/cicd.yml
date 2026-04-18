@@ -60,27 +60,27 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-  approval:
+  create-pr:
     if: github.ref == 'refs/heads/staging'
     needs: deploy-staging
     runs-on: ubuntu-latest
-    environment: Production
-    steps:
-      - run: echo "Awaiting manual approval..."
-
-  create-pr:
-    if: github.ref == 'refs/heads/staging'
-    needs: approval
-    runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Create PR staging → main
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          branch: staging
+          head: staging
           title: "Release: staging → main"
+          body: |
+            Automated PR after:
+            - Tests passed
+            - Staging deployment successful
+
+            This PR must be reviewed and merged manually before production deployment.
 
   deploy-production:
     if: github.ref == 'refs/heads/main'
@@ -101,7 +101,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy backend (Railway)
-        run: npx @railway/cli up --service makersuite-prod --detach
+      - name: Deploy backend production (Railway)
+        run: npx @railway/cli up --service makersuite-production --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
