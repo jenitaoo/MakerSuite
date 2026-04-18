@@ -45,10 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to staging (Vercel)
+      - name: Deploy frontend (Vercel staging)
+        working-directory: ./ui
         run: |
           npm install -g vercel
-          vercel --prod --yes
+          npm install
+          npm run build
+          vercel deploy --prod --yes --token $VERCEL_TOKEN
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
@@ -88,8 +91,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy frontend (Vercel)
-        run: vercel --prod
+      - name: Deploy frontend (Vercel production)
+        working-directory: ./ui
+        run: |
+          npm install -g vercel
+          npm install
+          npm run build
+          vercel deploy --prod --yes --token $VERCEL_TOKEN
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
