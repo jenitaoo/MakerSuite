@@ -62,7 +62,7 @@ export default function Footer() {
                 Leave Feedback
               </a>
               <a
-                href="https://forms.gle/WFPhXqVxSTmbrWhMA"
+                href="https://forms.gle/coahZt6JwS3bUnW48"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
