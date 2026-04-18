@@ -1,14 +1,19 @@
 name: CI/CD Pipeline
 
 on:
-  pull_request:
-    branches: [staging, main]
   push:
     branches: [staging, main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
@@ -16,84 +21,86 @@ jobs:
           POSTGRES_DB: ${{ secrets.TEST_DB_NAME }}
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
 
-      # Frontend tests
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+
       - run: npm ci --prefix ./ui
       - run: npm run test:ci --prefix ./ui || true
 
-      # Backend tests
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+
       - run: pip install -r backend/requirements.txt
       - run: pytest backend/ --cov=backend || true
-        env:
-          DATABASE_URL: postgresql://${{ secrets.TEST_DB_USER }}:${{ secrets.TEST_DB_PASSWORD }}@localhost:5432/${{ secrets.TEST_DB_NAME }}
 
   deploy-staging:
-    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/staging'
     needs: test
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy frontend to Vercel staging
+      - name: Deploy frontend (Vercel staging)
+        working-directory: ./ui
         run: |
           npm install -g vercel
-          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
-        working-directory: ./ui
+          npm install
+          npm run build
+          vercel deploy --prod --yes --token $VERCEL_TOKEN
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy backend to Railway staging
-        run: |
-          npx railway up --service makersuite-staging
+      - name: Deploy backend staging (Railway)
+        run: npx @railway/cli up --service makersuite-staging --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        working-directory: ./backend
 
-  request-approval:
-    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+  create-pr:
+    if: github.ref == 'refs/heads/staging'
     needs: deploy-staging
     runs-on: ubuntu-latest
-    steps:
-      - name: Staging deployed - ready for production
-        run: echo "✓ Staging tests passed and deployed. Waiting for approval..."
 
-  deploy-prod:
-    if: github.ref == 'refs/heads/staging'
-    needs: request-approval
-    environment: production
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy frontend to Vercel production
+      - name: Create PR staging → main
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: staging
+          destination_branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Release: staging → main"
+          pr_body: "Automated PR after staging validation"
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: Production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy frontend (Vercel production)
+        working-directory: ./ui
         run: |
           npm install -g vercel
-          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
-        working-directory: ./ui
+          npm install
+          npm run build
+          vercel deploy --prod --yes --token $VERCEL_TOKEN
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROD_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy backend to Railway production
-        run: |
-          npx railway up --service makersuite-prod
+      - name: Deploy backend production (Railway)
+        run: npx @railway/cli up --service makersuite-production --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        working-directory: ./backend

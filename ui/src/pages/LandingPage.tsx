@@ -31,6 +31,7 @@ function PillarCard({
   description,
   illustration,
   illustrationAlt,
+  href,
 }: {
   icon: React.ElementType;
   colour: string;
@@ -38,10 +39,30 @@ function PillarCard({
   description: string;
   illustration: string;
   illustrationAlt: string;
+  href?: string;
 }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (href) navigate(href);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && href) {
+      handleClick();
+    }
+  };
+
   return (
     <div
-      className="rounded-2xl p-6 flex flex-col items-center text-center gap-4 border border-white/20"
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={href ? "button" : undefined}
+      tabIndex={href ? 0 : undefined}
+      aria-label={href ? `Navigate to ${label}` : undefined}
+      className={`rounded-2xl p-6 flex flex-col items-center text-center gap-4 border border-white/20 ${
+        href ? "cursor-pointer hover:border-white/40 transition-all hover:shadow-lg" : ""
+      }`}
       style={{ backgroundColor: colour }}
     >
       <div
@@ -166,30 +187,65 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <PillarCard
-              icon={Hammer}
-              colour="#8496af"
-              label="Studio"
-              description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
-              illustration={Studio_Bunny}
-              illustrationAlt="Illustration of a bunny crafting"
-            />
-            <PillarCard
-              icon={Store}
-              colour="#C17B6F"
-              label="Marketplace"
-              description="Manage product listings, in-person markets and sales. Sync with Etsy and keep stock up to date automatically."
-              illustration={Market_Bunny}
-              illustrationAlt="Illustration of a bunny at a market"
-            />
-            <PillarCard
-              icon={BarChart3}
-              colour="#907680"
-              label="Insights"
-              description="See your profit, sell-through rate and stock coverage. Know which products actually make you money."
-              illustration={Insights_Bunny}
-              illustrationAlt="Illustration of a bunny reviewing charts"
-            />
+            {isLoggedIn && (
+              <>
+                <PillarCard
+                  icon={Hammer}
+                  colour="#8496af"
+                  label="Studio"
+                  description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
+                  illustration={Studio_Bunny}
+                  illustrationAlt="Illustration of a bunny crafting"
+                  href="/studio"
+                />
+                <PillarCard
+                  icon={Store}
+                  colour="#C17B6F"
+                  label="Marketplace"
+                  description="Manage product listings, in-person markets and sales. Sync with Etsy and keep stock up to date automatically."
+                  illustration={Market_Bunny}
+                  illustrationAlt="Illustration of a bunny at a market"
+                  href="/marketplace"
+                />
+                <PillarCard
+                  icon={BarChart3}
+                  colour="#907680"
+                  label="Insights"
+                  description="See your profit, sell-through rate and stock coverage. Know which products actually make you money."
+                  illustration={Insights_Bunny}
+                  illustrationAlt="Illustration of a bunny reviewing charts"
+                  href="/insights"
+                />
+              </>
+            )}
+            {!isLoggedIn && (
+              <>
+                <PillarCard
+                  icon={Hammer}
+                  colour="#8496af"
+                  label="Studio"
+                  description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
+                  illustration={Studio_Bunny}
+                  illustrationAlt="Illustration of a bunny crafting"
+                />
+                <PillarCard
+                  icon={Store}
+                  colour="#C17B6F"
+                  label="Marketplace"
+                  description="Manage product listings, in-person markets and sales. Sync with Etsy and keep stock up to date automatically."
+                  illustration={Market_Bunny}
+                  illustrationAlt="Illustration of a bunny at a market"
+                />
+                <PillarCard
+                  icon={BarChart3}
+                  colour="#907680"
+                  label="Insights"
+                  description="See your profit, sell-through rate and stock coverage. Know which products actually make you money."
+                  illustration={Insights_Bunny}
+                  illustrationAlt="Illustration of a bunny reviewing charts"
+                />
+              </>
+            )}
           </div>
         </div>
       </section>
