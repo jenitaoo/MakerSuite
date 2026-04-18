@@ -85,27 +85,19 @@ jobs:
   deploy-prod:
     if: github.ref == 'refs/heads/staging'
     needs: request-approval
+    environment: production
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: staging
 
-      - name: Create Pull Request staging → main
-        id: cpr
-        uses: peter-evans/create-pull-request@v5
+      - uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: auto/staging-to-main-${{ github.run_id }}
-          base: main
-          head: staging
-          title: "chore: deploy staging to production"
-          body: "Automated deployment from staging to production"
-          delete-branch: true
+          node-version: '20'
 
-      - name: Auto-merge PR
-        if: steps.cpr.outputs.pull-request-number
+      - name: Ready for production
         run: |
-          gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "✓ Staging tests passed and deployed successfully"
+          echo "✓ Manual verification complete"
+          echo ""
+          echo "Next step: Create a Pull Request from staging → main"
+          echo "Once merged to main, production will auto-deploy via Railway"
