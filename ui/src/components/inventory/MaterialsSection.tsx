@@ -138,7 +138,7 @@ export default function MaterialsSection() {
         const sku = row.getValue("sku") as string | null;
         return sku
           ? <span className="text-neutral-600 text-sm font-mono truncate">{sku}</span>
-          : <span className="text-neutral-400">—</span>;
+          : <span className="text-neutral-600">—</span>;
       },
     },
     {
@@ -169,13 +169,13 @@ export default function MaterialsSection() {
         const m = row.original;
         const qty = parseFloat(m.quantity ?? '0');
         if (qty === 0) return (
-          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50 whitespace-nowrap">Out of Stock</Badge>
+          <Badge variant="outline" className="text-red-800 border-red-400 bg-red-100 whitespace-nowrap">Out of Stock</Badge>
         );
         if (m.is_low_stock) return (
           <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 whitespace-nowrap">Low Stock</Badge>
         );
         return (
-          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50 whitespace-nowrap">OK</Badge>
+          <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100 whitespace-nowrap">OK</Badge>
         );
       },
       filterFn: (row, _, filterValue) => {

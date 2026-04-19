@@ -178,7 +178,7 @@ export default function EditMaterialModal({
                aria-label="Upload photo"
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-md text-neutral-400"
+                className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-md text-neutral-600"
               >
                 <ImagePlus className="h-5 w-5 mb-1" />
                 Upload photo

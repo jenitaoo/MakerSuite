@@ -54,7 +54,7 @@ export default function MakeHistoryModal({ project, onClose }: Props) {
                   )}
                   {log.notes && <p className="text-xs text-muted-foreground">{log.notes}</p>}
                 </div>
-                <Badge variant="outline" className={log.deducted_materials ? "text-green-600 border-green-300 bg-green-50" : "text-gray-500 border-gray-200 bg-gray-50"}>
+                <Badge variant="outline" className={log.deducted_materials ? "text-green-800 border-green-400 bg-green-100" : "text-gray-500 border-gray-200 bg-gray-50"}>
                   {log.deducted_materials ? "Materials deducted" : "No deduction"}
                 </Badge>
               </div>

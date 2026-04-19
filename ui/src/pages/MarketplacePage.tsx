@@ -104,7 +104,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   },
   rejected: {
     label: "Rejected",
-    className: "border-red-200 bg-red-50 text-red-600",
+    className: "border-red-300 bg-red-100 text-red-600",
   },
 };
 

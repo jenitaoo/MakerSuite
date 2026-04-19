@@ -162,7 +162,7 @@ export default function MaterialsTable({
             Low Stock
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+          <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100">
             OK
           </Badge>
         ),

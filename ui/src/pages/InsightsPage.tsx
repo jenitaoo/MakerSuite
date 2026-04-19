@@ -129,7 +129,7 @@ function StatCard({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-neutral-400 hover:text-neutral-600 cursor-pointer translate-y-[1px]">
+                <span className="text-neutral-600 hover:text-neutral-600 cursor-pointer translate-y-[1px]">
                   <Info className="w-3.5 h-3.5" />
                 </span>
               </TooltipTrigger>
@@ -141,8 +141,8 @@ function StatCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Icon className="w-4 h-4 text-neutral-400" />
-          {onClick && <span className="text-neutral-400">→</span>}
+          <Icon className="w-4 h-4 text-neutral-600" />
+          {onClick && <span className="text-neutral-600">→</span>}
         </div>
       </div>
 
@@ -221,7 +221,7 @@ function ActionItem({
 }) {
   const colours = {
     red: {
-      wrap: "border-red-200 bg-red-50",
+      wrap: "border-red-300 bg-red-100",
       icon: "text-red-600",
       text: "text-red-700",
       btn: "border-red-300 text-red-700 hover:bg-red-100",
@@ -239,7 +239,7 @@ function ActionItem({
       <Icon className={`h-4 w-4 shrink-0 ${colours.icon}`} aria-hidden="true" />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${colours.text}`}>{message}</p>
-        {detail && <p className={`text-xs mt-0.5 truncate ${colours.text} opacity-80`}>{detail}</p>}
+        {detail && <p className={`text-xs mt-0.5 truncate ${colours.text}`}>{detail}</p>}
       </div>
       <Button
         aria-label={actionLabel}
@@ -836,7 +836,7 @@ export default function InsightsPage() {
                                     <span className={p.sellThrough >= 80 ? "text-green-600 font-medium" : p.sellThrough >= 50 ? "text-amber-600" : "text-neutral-500"}>
                                       {p.sellThrough}%
                                     </span>
-                                  ) : <span className="text-neutral-400">—</span>}
+                                  ) : <span className="text-neutral-600">—</span>}
                                 </td>
                                 <td className="px-4 py-2.5 text-right text-neutral-700">{p.in_stock}</td>
                                 <td className="px-4 py-2.5 text-right">
@@ -846,7 +846,7 @@ export default function InsightsPage() {
                                       <span className="text-neutral-700">{p.stockHealthMonths}mo</span>
                                     </div>
                                   ) : (
-                                    <span className="text-neutral-400">—</span>
+                                    <span className="text-neutral-600">—</span>
                                   )}
                                 </td>
                               </tr>
@@ -855,7 +855,7 @@ export default function InsightsPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-xs text-neutral-400 mt-2">
+                  <p className="text-xs text-neutral-600 mt-2">
                     Sell-Through = units sold ÷ units made. Stock Health = months of supply at current sales rate.
                   </p>
                 </CardContent>
@@ -912,7 +912,7 @@ export default function InsightsPage() {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-neutral-400">Click any row to open the market detail.</p>
+                <p className="text-xs text-neutral-600">Click any row to open the market detail.</p>
               </CardContent>
             </Card>
           </section>

@@ -108,7 +108,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         const sku = row.getValue("sku") as string | null;
         return sku
           ? <span className="text-neutral-600 text-sm font-mono">{sku}</span>
-          : <span className="text-neutral-400">—</span>;
+          : <span className="text-neutral-600">—</span>;
       },
     },
     {
@@ -121,7 +121,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
       header: ({ column }) => <SortHeader column={column} label="In Stock" />,
       cell: ({ row }) => {
         const qty = row.getValue("internal_quantity") as number;
-        if (qty === 0) return <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of stock</Badge>;
+        if (qty === 0) return <Badge variant="outline" className="text-red-800 border-red-400 bg-red-100">Out of stock</Badge>;
         if (qty <= 3) return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">{qty} — low</Badge>;
         return <span>{qty}</span>;
       },

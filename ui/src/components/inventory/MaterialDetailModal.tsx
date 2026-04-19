@@ -52,7 +52,7 @@ export default function MaterialDetailModal({ material, onClose, onSaved }: Prop
         <div className="py-2 space-y-4">
           {/* Summary row */}
           <div className="flex flex-wrap gap-2 items-center">
-            <Badge variant="outline" className={material.is_low_stock ? "text-amber-600 border-amber-300 bg-amber-50" : "text-green-600 border-green-300 bg-green-50"}>
+            <Badge variant="outline" className={material.is_low_stock ? "text-amber-600 border-amber-300 bg-amber-50" : "text-green-800 border-green-400 bg-green-100"}>
               {material.is_low_stock ? "Low Stock" : "OK"}
             </Badge>
             <span className="text-sm font-medium">{material.quantity} {material.unit_type} in stock</span>

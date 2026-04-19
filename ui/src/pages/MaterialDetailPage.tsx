@@ -102,7 +102,7 @@ export default function MaterialDetailPage() {
                     className="w-full h-full object-contain rounded-lg"
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center text-neutral-400 py-12">
+                    <div className="flex flex-col items-center justify-center text-neutral-600 py-12">
                     <ImageIcon className="w-6 h-6 mb-1" />
                     <span className="text-xs">No image</span>
                     </div>

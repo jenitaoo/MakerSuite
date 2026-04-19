@@ -225,7 +225,7 @@ function ProductTablePicker({
                       {qty === 0 ? (
                         <Badge
                           variant="outline"
-                          className="text-red-600 border-red-200 bg-red-50 text-xs"
+                          className="text-red-600 border-red-300 bg-red-100 text-xs"
                         >
                           Out of stock
                         </Badge>

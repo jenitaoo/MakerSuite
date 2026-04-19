@@ -90,7 +90,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                 </button>
               </div>
             ) : (
-              <button aria-label="Upload photo" type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors">
+              <button aria-label="Upload photo" type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-600 hover:text-neutral-500 transition-colors">
                 <ImagePlus className="h-6 w-6 mb-1" aria-hidden="true" />
                 <span className="text-xs">Click to upload</span>
               </button>

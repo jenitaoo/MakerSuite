@@ -205,7 +205,7 @@ export default function ProjectsSection() {
       maxSize: 65,
       cell: ({ row }) => {
         const mins = row.getValue("avg_duration_minutes") as number | null;
-        if (!mins) return <span className="text-neutral-400">—</span>;
+        if (!mins) return <span className="text-neutral-600">—</span>;
         const h = Math.floor(mins / 60);
         const m = Math.round(mins % 60);
         return <span className="text-neutral-700 whitespace-nowrap text-sm">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>;
@@ -235,7 +235,7 @@ export default function ProjectsSection() {
         const cost = row.getValue("material_cost_per_unit") as string | null;
         return cost
           ? <span className="text-neutral-700 whitespace-nowrap text-sm">€{parseFloat(cost).toFixed(2)}</span>
-          : <span className="text-neutral-400">—</span>;
+          : <span className="text-neutral-600">—</span>;
       },
     },
 
@@ -247,7 +247,7 @@ export default function ProjectsSection() {
       maxSize: 60,
       cell: ({ row }) => {
         const project = row.original;
-        if (!project.product) return <span className="text-neutral-400">—</span>;
+        if (!project.product) return <span className="text-neutral-600">—</span>;
         return (
           <Tooltip>
             <TooltipTrigger asChild>

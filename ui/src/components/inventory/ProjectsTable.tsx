@@ -66,13 +66,13 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
       cell: ({ row }) => {
         const inStock = row.getValue("in_stock") as number;
         if (inStock === 0) return (
-          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of stock</Badge>
+          <Badge variant="outline" className="text-red-800 border-red-400 bg-red-100">Out of stock</Badge>
         );
         if (inStock <= LOW_STOCK_THRESHOLD) return (
           <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">{inStock} — low</Badge>
         );
         return (
-          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">{inStock}</Badge>
+          <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100">{inStock}</Badge>
         );
       },
     },

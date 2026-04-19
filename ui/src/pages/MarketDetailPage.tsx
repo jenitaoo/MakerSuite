@@ -93,7 +93,7 @@ const STATUS_BADGE: Record<string, string> = {
   not_applied: "border-border text-muted-foreground",
   applied:     "border-blue-200 bg-blue-50 text-blue-700",
   accepted:    "border-green-200 bg-green-50 text-green-700",
-  rejected:    "border-red-200 bg-red-50 text-red-600",
+  rejected:    "border-red-300 bg-red-100 text-red-600",
 };
 
 // ─── SectionHeader — white text headings above each card ─────────────────────
@@ -670,7 +670,7 @@ export default function MarketDetailPage() {
                           <TableCell className="p-2 text-center text-sm">{sold}</TableCell>
                           <TableCell className="p-2 text-center">
                             {soldOut ? (
-                              <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 text-xs">
+                              <Badge variant="outline" className="text-red-600 border-red-300 bg-red-100 text-xs">
                                 Sold out
                               </Badge>
                             ) : (

@@ -280,7 +280,7 @@ export default function LandingPage() {
             description="Create projects for each thing you make (e.g. a plush) and track the raw materials they use (e.g. yarn, stuffing). MakerSuite tracks labour, material costs, and updates inventory automatically."
           />
 
-          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+          <div className="flex items-center gap-2 text-xs text-neutral-600 ml-2">
             <span>↓</span>
           </div>
 
@@ -289,7 +289,7 @@ export default function LandingPage() {
             title="Set up your Marketplace"
             description="Manage every product you sell in one place. Connect your online stores (e.g. Etsy, Shopify) and log the markets you sell at. MakerSuite gives you a single workspace to track sales, manage listings, and updates stock levels automatically."
           />
-          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+          <div className="flex items-center gap-2 text-xs text-neutral-600 ml-2">
             <span>↓</span>
           </div>
 

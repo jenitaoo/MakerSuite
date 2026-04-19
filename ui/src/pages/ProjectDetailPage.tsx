@@ -489,7 +489,7 @@ export default function ProjectDetailPage() {
                         <TableCell>{formatDuration(log.duration_minutes)}</TableCell>
                         <TableCell>
                           {log.deducted_materials
-                            ? <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">Yes</Badge>
+                            ? <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100">Yes</Badge>
                             : <Badge variant="outline" className="text-gray-500 border-gray-200 bg-gray-50">No</Badge>}
                         </TableCell>
                         <TableCell>{log.notes ?? "—"}</TableCell>
