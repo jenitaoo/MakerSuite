@@ -38,11 +38,13 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://app.withlovejeni.com",
     "https://makersuite-one.vercel.app",  # keep as fallback during transition
+    "https://makersuitestaging.vercel.app", # staging
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://app.withlovejeni.com",
     "https://api.withlovejeni.com",
     "https://makersuite-one.vercel.app",  # keep as fallback
+    "https://makersuitestaging.vercel.app", # staging
 ]
 
 
