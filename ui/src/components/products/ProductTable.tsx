@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { lazy, Suspense, useState, useMemo } from "react";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
   getFilteredRowModel, getPaginationRowModel, flexRender, ColumnDef, SortingState,
@@ -10,12 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpDown, ArrowUp, ArrowDown, Info, Filter, Trash2, History, RefreshCw, EllipsisVertical } from "lucide-react";
 import { Product } from "../../types/product";
-import DeleteProductModal from "./DeleteProductModal";
-import LogSaleModal from "./LogSaleModal";
-import SalesHistoryModal from "./SalesHistoryModal";
 import EtsyLogo from "../../assets/logos/Etsy_Logo.jpeg";
 import MakerSuiteLogo from "../../assets/logos/MakerSuite_Logo_White_Filled_Pink_Circle_Background.png";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Lazy load modals to speed up initial render
+const DeleteProductModal = lazy(() => import("./DeleteProductModal"));
+const LogSaleModal = lazy(() => import("./LogSaleModal"));
+const SalesHistoryModal = lazy(() => import("./SalesHistoryModal"));
 
 type ProductTableProps = {
   products: Product[];
@@ -298,27 +300,39 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
       </div>
 
       {saleTarget && (
-        <LogSaleModal
-          product={saleTarget}
-          onClose={() => setSaleTarget(null)}
-          onLogged={() => { setSaleTarget(null); onSaleLogged(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <LogSaleModal
+            product={saleTarget}
+            onClose={() => setSaleTarget(null)}
+            onLogged={() => {
+              setSaleTarget(null);
+              onSaleLogged();
+            }}
+          />
+        </Suspense>
       )}
 
       {historyTarget && (
-        <SalesHistoryModal
-          product={historyTarget}
-          onClose={() => setHistoryTarget(null)}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <SalesHistoryModal
+            product={historyTarget}
+            onClose={() => setHistoryTarget(null)}
+          />
+        </Suspense>
       )}
 
       {deleteTarget && (
-        <DeleteProductModal
-          product={deleteTarget}
-          hasEtsyListing={deleteTarget.platforms.includes("Etsy")}
-          onClose={() => setDeleteTarget(null)}
-          onDeleted={() => { setDeleteTarget(null); onDeleted(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <DeleteProductModal
+            product={deleteTarget}
+            hasEtsyListing={deleteTarget.platforms.includes("Etsy")}
+            onClose={() => setDeleteTarget(null)}
+            onDeleted={() => {
+              setDeleteTarget(null);
+              onDeleted();
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

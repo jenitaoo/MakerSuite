@@ -3,21 +3,23 @@ import { createBrowserRouter, RouterProvider, Navigate, Outlet, useLocation } fr
 import { Toaster, toast, ToastBar } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import LandingPage from "./pages/LandingPage";
-import MarketplacePage from "./pages/MarketplacePage";
-import CreateProductListing from "./pages/CreateProductListing";
-import EditProductListing from "./pages/EditProductListing";
 import "./App.css";
-import InventoryPage from "./pages/InventoryPage";
-import ProjectDetailPage from "./pages/ProjectDetailPage";
-import Profile from "./pages/Profile";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import MarketDetailPage from "./pages/MarketDetailPage";
-import InsightsPage from "./pages/InsightsPage";
 import Footer from "./components/Footer";
 import { Analytics } from "@vercel/analytics/react"
+import { lazy, Suspense } from "react";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
+const CreateProductListing = lazy(() => import("./pages/CreateProductListing"));
+const EditProductListing = lazy(() => import("./pages/EditProductListing"));
+const InventoryPage = lazy(() => import("./pages/InventoryPage"));
+const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
+const Profile = lazy(() => import("./pages/Profile"));
+const MarketDetailPage = lazy(() => import("./pages/MarketDetailPage"));
+const InsightsPage = lazy(() => import("./pages/InsightsPage"));
 
 function AppLayout() {
   const { pathname } = useLocation();
@@ -58,9 +60,11 @@ function AppLayout() {
           )}
         </Toaster>
         <Navbar />
-        <main className="main-content">
-          <Outlet />
-        </main>
+          <main className="main-content">
+            <Suspense fallback={<div className="p-4">Loading (๑•̀ㅂ•́)و✧ ...</div>}>
+              <Outlet />
+            </Suspense>
+          </main>
         <Footer />
         <Analytics />
       </div>

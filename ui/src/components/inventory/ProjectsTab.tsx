@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { getProjects, deleteProject, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
-import CreateProjectModal from "./CreateProjectModal";
-import LogMakeModal from "./LogMakeModal";
-import MakeHistoryModal from "./MakeHistoryModal";
-import ProjectMaterialsModal from "./ProjectMaterialsModal";
-import EditProjectModal from "./EditProjectModal";
-import ProjectsTable from "./ProjectsTable";
+
+// Lazy load modals and big components to speed up initial render
+const CreateProjectModal = lazy(() => import("./CreateProjectModal"));
+const LogMakeModal = lazy(() => import("./LogMakeModal"));
+const MakeHistoryModal = lazy(() => import("./MakeHistoryModal"));
+const ProjectMaterialsModal = lazy(() => import("./ProjectMaterialsModal"));
+const EditProjectModal = lazy(() => import("./EditProjectModal"));
+const ProjectsTable = lazy(() => import("./ProjectsTable"));
 
 export default function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -80,33 +82,45 @@ export default function ProjectsTab() {
         </div>
       </div>
 
-      <ProjectsTable
-        projects={projects}
-        onDelete={handleDelete}
-        onLogAction={handleLogAction}
-        onHistory={setHistoryTarget}
-        onMaterials={setMaterialsTarget}
-        onEdit={setEditTarget}
-      />
+      <Suspense fallback={<div className="p-4">Loading...</div>}>
+        <ProjectsTable
+          projects={projects}
+          onDelete={handleDelete}
+          onLogAction={handleLogAction}
+          onHistory={setHistoryTarget}
+          onMaterials={setMaterialsTarget}
+          onEdit={setEditTarget}
+        />
+      </Suspense>
 
       {showCreate && (
-        <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); fetchProjects(); }} />
+        </Suspense>
       )}
       {logTarget && (
-        <LogMakeModal
-          project={logTarget}
-          onClose={() => setLogTarget(null)}
-          onLogged={() => { setLogTarget(null); fetchProjects(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <LogMakeModal
+            project={logTarget}
+            onClose={() => setLogTarget(null)}
+            onLogged={() => { setLogTarget(null); fetchProjects(); }}
+          />
+        </Suspense>
       )}
       {historyTarget && (
-        <MakeHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <MakeHistoryModal project={historyTarget} onClose={() => setHistoryTarget(null)} />
+        </Suspense>
       )}
       {materialsTarget && (
-        <ProjectMaterialsModal project={materialsTarget} onClose={() => setMaterialsTarget(null)} onSaved={() => { setMaterialsTarget(null); fetchProjects(); }} />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <ProjectMaterialsModal project={materialsTarget} onClose={() => setMaterialsTarget(null)} onSaved={() => { setMaterialsTarget(null); fetchProjects(); }} />
+        </Suspense>
       )}
       {editTarget && (
-        <EditProjectModal project={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchProjects(); }} />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <EditProjectModal project={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchProjects(); }} />
+        </Suspense>
       )}
     </div>
   );

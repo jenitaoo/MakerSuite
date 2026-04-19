@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import ProductTable from "./ProductTable";
 import { getCookie } from "../../services/api.ts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "../../types/product";
 import { API_URL } from "../../services/api";
+
+// Lazy load the ProductTable to speed up initial render
+const ProductTable = lazy(() => import("./ProductTable"));
 
 type ApiPage<T> = {
   count: number;
@@ -129,14 +131,16 @@ export default function ProductListingsPage() {
           ) : error ? (
             <p className="text-sm text-destructive py-8 text-center">{error}</p>
           ) : (
-            <ProductTable
-              products={products}
-              onEdit={handleEdit}
-              onRefresh={handleRefresh}
-              onCreateNew={() => navigate("/products/new")}
-              onDeleted={loadProducts}
-              onSaleLogged={loadProducts}
-            />
+            <Suspense fallback={<div>Loading products...</div>}>
+              <ProductTable
+                products={products}
+                onEdit={handleEdit}
+                onRefresh={handleRefresh}
+                onCreateNew={() => navigate("/products/new")}
+                onDeleted={loadProducts}
+                onSaleLogged={loadProducts}
+              />
+            </Suspense>
           )}
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ProductTable from "../components/products/ProductTable";
@@ -27,10 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LogSaleModal from "../components/products/LogSaleModal";
 import Market_Bunny_Illustration from "../assets/misc/Market_Bunny_Illust.png";
-import AddMarketModal from "../components/products/AddMarketModal";
-import DeleteMarketModal from "../components/products/DeleteMarketModal";
+
+// Lazy load modals to speed up initial render
+const LogSaleModal = lazy(() => import("../components/products/LogSaleModal"));
+const AddMarketModal = lazy(() => import("../components/products/AddMarketModal"));
+const DeleteMarketModal = lazy(() => import("../components/products/DeleteMarketModal"));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -730,28 +732,46 @@ export default function MarketplacePage() {
       </div>
 
       {/* ── Modals ── */}
-    {(logSaleOpen || logSaleMarket) && (
-    <LogSaleModal
-        products={products}                    // triggers picker on step 1
-        marketId={logSaleMarket?.id}
-        marketName={logSaleMarket?.name}
-        onClose={() => { setLogSaleOpen(false); setLogSaleMarket(null); }}
-        onLogged={() => { setLogSaleOpen(false); setLogSaleMarket(null); loadProducts(); loadMarkets(); }}
-    />
-    )}
-    {deleteMarket && (
-      <DeleteMarketModal
-        market={deleteMarket}
-        onClose={() => setDeleteMarket(null)}
-        onDeleted={() => { setDeleteMarket(null); loadMarkets(); }}
-      />
-    )}
-    {addMarketOpen && (
-    <AddMarketModal
-        onClose={() => setAddMarketOpen(false)}
-        onCreated={() => { setAddMarketOpen(false); loadMarkets(); }}
-    />
-    )}
+      <Suspense fallback={<div className="p-4 text-sm">Loading...</div>}>
+        {logSaleOpen && (
+          <LogSaleModal
+            products={products}
+            marketId={logSaleMarket?.id}
+            marketName={logSaleMarket?.name}
+            onClose={() => {
+              setLogSaleOpen(false);
+              setLogSaleMarket(null);
+            }}
+            onLogged={() => {
+              setLogSaleOpen(false);
+              setLogSaleMarket(null);
+              loadProducts();
+              loadMarkets();
+            }}
+          />
+        )}
+
+        {deleteMarket && (
+          <DeleteMarketModal
+            market={deleteMarket}
+            onClose={() => setDeleteMarket(null)}
+            onDeleted={() => {
+              setDeleteMarket(null);
+              loadMarkets();
+            }}
+          />
+        )}
+
+        {addMarketOpen && (
+          <AddMarketModal
+            onClose={() => setAddMarketOpen(false)}
+            onCreated={() => {
+              setAddMarketOpen(false);
+              loadMarkets();
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

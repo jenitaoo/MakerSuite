@@ -1,21 +1,18 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
   getMaterials,
-  createMaterial,
-  updateMaterial,
   deleteMaterial,
-  restockMaterial,
-  deductMaterial,
-  getMaterialLogs,
 } from "../../services/inventoryApi";
-import { RawMaterial, InventoryLog } from "../../types/inventory";
-import MaterialsTable from "./MaterialsTable";
-import MaterialFormModal from "./MaterialFormModal";
-import RestockDeductModal from "./RestockDeductModal";
-import MaterialHistoryModal from "./MaterialHistoryModal";
-import MaterialDetailModal from "./MaterialDetailModal";
+import { RawMaterial } from "../../types/inventory";
+
+// Lazy load modals and big components to speed up initial render
+const MaterialFormModal = lazy(() => import("./MaterialFormModal"));
+const RestockDeductModal = lazy(() => import("./RestockDeductModal"));
+const MaterialHistoryModal = lazy(() => import("./MaterialHistoryModal"));
+const MaterialDetailModal = lazy(() => import("./MaterialDetailModal"));
+const MaterialsTable = lazy(() => import("./MaterialsTable"));
 
 export default function MaterialsTab() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
@@ -65,50 +62,62 @@ export default function MaterialsTab() {
         </div>
       </div>
 
-      <MaterialsTable
-          materials={[
-          ...materials.filter((m) => m.is_low_stock),
-          ...materials.filter((m) => !m.is_low_stock),
-        ]}
-        onEdit={setEditTarget}
-        onRestockDeduct={setLogTarget}
-        onHistory={setHistoryTarget}
-        onMoreDetails={setDetailTarget}
-        onDelete={handleDelete}
-      />
+      <Suspense fallback={<div className="p-4">Loading...</div>}>
+        <MaterialsTable
+            materials={[
+            ...materials.filter((m) => m.is_low_stock),
+            ...materials.filter((m) => !m.is_low_stock),
+          ]}
+          onEdit={setEditTarget}
+          onRestockDeduct={setLogTarget}
+          onHistory={setHistoryTarget}
+          onMoreDetails={setDetailTarget}
+          onDelete={handleDelete}
+        />
+      </Suspense>
 
       {showCreateModal && (
-        <MaterialFormModal
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <MaterialFormModal
+            onClose={() => setShowCreateModal(false)}
+            onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
+          />
+        </Suspense>
       )}
       {editTarget && (
-        <MaterialFormModal
-          material={editTarget}
-          onClose={() => setEditTarget(null)}
-          onSaved={() => { setEditTarget(null); fetchMaterials(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <MaterialFormModal
+            material={editTarget}
+            onClose={() => setEditTarget(null)}
+            onSaved={() => { setEditTarget(null); fetchMaterials(); }}
+          />
+        </Suspense>
       )}
       {logTarget && (
-        <RestockDeductModal
-          material={logTarget}
-          onClose={() => setLogTarget(null)}
-          onSaved={() => { setLogTarget(null); fetchMaterials(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <RestockDeductModal
+            material={logTarget}
+            onClose={() => setLogTarget(null)}
+            onSaved={() => { setLogTarget(null); fetchMaterials(); }}
+          />
+        </Suspense>
       )}
       {historyTarget && (
-        <MaterialHistoryModal
-          material={historyTarget}
-          onClose={() => setHistoryTarget(null)}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <MaterialHistoryModal
+            material={historyTarget}
+            onClose={() => setHistoryTarget(null)}
+          />
+        </Suspense>
       )}
       {detailTarget && (
-        <MaterialDetailModal
-          material={detailTarget}
-          onClose={() => setDetailTarget(null)}
-          onSaved={() => { setDetailTarget(null); fetchMaterials(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <MaterialDetailModal
+            material={detailTarget}
+            onClose={() => setDetailTarget(null)}
+            onSaved={() => { setDetailTarget(null); fetchMaterials(); }}
+          />
+        </Suspense>
       )}
     </div>
   );
