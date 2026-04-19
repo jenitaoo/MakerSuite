@@ -8,7 +8,7 @@ import {
 import { RawMaterial } from "../../types/inventory";
 
 // Lazy load modals and big components to speed up initial render
-const MaterialFormModal = lazy(() => import("./MaterialFormModal"));
+const CreateMaterialModal = lazy(() => import("./CreateMaterialModal"));
 const RestockDeductModal = lazy(() => import("./RestockDeductModal"));
 const MaterialHistoryModal = lazy(() => import("./MaterialHistoryModal"));
 const MaterialDetailModal = lazy(() => import("./MaterialDetailModal"));
@@ -78,7 +78,7 @@ export default function MaterialsTab() {
 
       {showCreateModal && (
         <Suspense fallback={<div className="p-4">Loading...</div>}>
-          <MaterialFormModal
+          <CreateMaterialModal
             onClose={() => setShowCreateModal(false)}
             onSaved={() => { setShowCreateModal(false); fetchMaterials(); }}
           />
@@ -86,7 +86,7 @@ export default function MaterialsTab() {
       )}
       {editTarget && (
         <Suspense fallback={<div className="p-4">Loading...</div>}>
-          <MaterialFormModal
+          <CreateMaterialModal
             material={editTarget}
             onClose={() => setEditTarget(null)}
             onSaved={() => { setEditTarget(null); fetchMaterials(); }}

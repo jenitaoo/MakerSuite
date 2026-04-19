@@ -34,9 +34,12 @@ export default function EditMaterialModal({
   const [form, setForm] = useState({
     name: material.name ?? "",
     unit_type: material.unit_type ?? "",
+
     quantity: String(material.quantity ?? ""),
     low_stock_threshold: String(material.low_stock_threshold ?? ""),
+
     cost_per_unit: String(material.cost_per_unit ?? ""),
+
     brand: material.brand ?? "",
     source: material.source ?? "",
     supplier: material.supplier ?? "",
@@ -53,6 +56,39 @@ export default function EditMaterialModal({
 
   const update = (patch: Partial<typeof form>) =>
     setForm((p) => ({ ...p, ...patch }));
+
+  // ─────────────────────────────────────────────
+  // SAFE INPUT HELPERS
+  // ─────────────────────────────────────────────
+
+  const handleNumberInput = (value: string, field: keyof typeof form) => {
+    if (value === "") return update({ [field]: "" });
+
+    // allow only numbers + one dot
+    if (!/^\d*\.?\d*$/.test(value)) return;
+
+    // prevent leading multiple dots
+    if (value.startsWith(".")) value = "0" + value;
+
+    update({ [field]: value });
+  };
+
+  const handleTwoDecimalInput = (value: string, field: keyof typeof form) => {
+    if (value === "") return update({ [field]: "" });
+
+    if (!/^\d*\.?\d*$/.test(value)) return;
+
+    if (value.startsWith(".")) value = "0" + value;
+
+    if (value.includes(".")) {
+      const [int, dec] = value.split(".");
+      value = `${int}.${dec.slice(0, 2)}`;
+    }
+
+    update({ [field]: value });
+  };
+
+  // ─────────────────────────────────────────────
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,7 +212,10 @@ export default function EditMaterialModal({
               <Label>Quantity</Label>
               <Input
                 value={form.quantity}
-                onChange={(e) => update({ quantity: e.target.value })}
+                inputMode="decimal"
+                onChange={(e) =>
+                  handleNumberInput(e.target.value, "quantity")
+                }
               />
             </div>
 
@@ -184,8 +223,9 @@ export default function EditMaterialModal({
               <Label>Low Stock</Label>
               <Input
                 value={form.low_stock_threshold}
+                inputMode="numeric"
                 onChange={(e) =>
-                  update({ low_stock_threshold: e.target.value })
+                  handleNumberInput(e.target.value, "low_stock_threshold")
                 }
               />
             </div>
@@ -195,8 +235,9 @@ export default function EditMaterialModal({
             <Label>Cost per unit</Label>
             <Input
               value={form.cost_per_unit}
+              inputMode="decimal"
               onChange={(e) =>
-                update({ cost_per_unit: e.target.value })
+                handleTwoDecimalInput(e.target.value, "cost_per_unit")
               }
             />
           </div>
