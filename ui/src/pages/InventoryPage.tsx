@@ -11,7 +11,7 @@ import { RawMaterial, Project } from "../types/inventory";
 import Studio_Bunny_Illustration from "../assets/misc/Studio_Bunny_Illust.png";
 
 // ─── Studio accent colour ─────────────────────────────────────────────────────
-const STUDIO = "#49496e";
+const STUDIO = "#465139";
 
 // ─── Side nav config ──────────────────────────────────────────────────────────
 const NAV_SECTIONS = [

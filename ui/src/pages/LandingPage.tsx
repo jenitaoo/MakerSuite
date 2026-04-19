@@ -193,7 +193,7 @@ export default function LandingPage() {
               <>
                 <PillarCard
                   icon={Hammer}
-                  colour="#49496e"
+                  colour="#465139"
                   label="Studio"
                   description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
                   illustration={Studio_Bunny}
@@ -224,7 +224,7 @@ export default function LandingPage() {
               <>
                 <PillarCard
                   icon={Hammer}
-                  colour="#49496e"
+                  colour="#465139"
                   label="Studio"
                   description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
                   illustration={Studio_Bunny}
