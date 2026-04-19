@@ -92,13 +92,13 @@ export default function MaterialDetailPage() {
 
         <Card className="bg-white overflow-hidden">
             <CardContent className="p-4">
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center h-[500px] w-full">
 
                 {material.photo_url ? (
                     <img
                     src={material.photo_url}
                     alt={material.name}
-                    className="max-w-full max-h-[500px] w-auto h-auto object-contain rounded-lg"
+                    className="w-full h-full object-contain rounded-lg"
                     />
                 ) : (
                     <div className="flex flex-col items-center justify-center text-neutral-400 py-12">
