@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
   getFilteredRowModel, getPaginationRowModel, flexRender,
@@ -24,41 +24,45 @@ import DeleteMaterialModal from "./DeleteMaterialModal";
 
 export default function MaterialsSection() {
   const navigate = useNavigate();
-  const [materials, setMaterials] = useState<RawMaterial[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // Fetch materials using React Query
+  const { data: materialsData = [], isLoading } = useQuery({
+    queryKey: ["materials"],
+    queryFn: getMaterials,
+  });
+
+  // Normalize data (handle array or paginated response)
+  const materials = useMemo(() => {
+    const list: RawMaterial[] = Array.isArray(materialsData) ? materialsData : materialsData.results ?? [];
+    // Low stock first
+    return [
+      ...list.filter((m) => m.is_low_stock),
+      ...list.filter((m) => !m.is_low_stock),
+    ];
+  }, [materialsData]);
+
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+
   const outOfStockCount = materials
     .filter((m) => m.quantity !== null && parseFloat(m.quantity) === 0)
     .length;
-  const [deleteTarget, setDeleteTarget] = useState<RawMaterial | null>(null);
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<RawMaterial | null>(null);
   const [logTarget, setLogTarget] = useState<RawMaterial | null>(null);
   const [historyTarget, setHistoryTarget] = useState<RawMaterial | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RawMaterial | null>(null);
 
-  const fetchMaterials = async () => {
-    try {
-      const data = await getMaterials();
-      const list: RawMaterial[] = Array.isArray(data) ? data : data.results ?? [];
-      // Low stock first
-      setMaterials([
-        ...list.filter((m) => m.is_low_stock),
-        ...list.filter((m) => !m.is_low_stock),
-      ]);
-    } catch {
-      toast.error("Failed to load materials");
-    } finally {
-      setLoading(false);
-    }
+  // Refetch helper - this is called whenever materials change
+  const refetchMaterials = () => {
+    queryClient.invalidateQueries({ queryKey: ["materials"] });
   };
-
-  useEffect(() => { fetchMaterials(); }, []);
 
   const handleDelete = (material: RawMaterial) => setDeleteTarget(material);
 
@@ -289,7 +293,7 @@ export default function MaterialsSection() {
 
   const lowStockCount = materials.filter((m) => m.is_low_stock).length;
 
-  if (loading) return <p className="text-sm text-muted-foreground text-center py-8">Loading materials…</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground text-center py-8">Loading materials…</p>;
 
   return (
     <div className="space-y-4">
@@ -468,13 +472,13 @@ export default function MaterialsSection() {
 
       {/* ── Modals ── */}
       {showCreate && (
-        <CreateMaterialModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); fetchMaterials(); }} />
+        <CreateMaterialModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); refetchMaterials(); }} />
       )}
       {editTarget && (
-        <CreateMaterialModal material={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchMaterials(); }} />
+        <CreateMaterialModal material={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); refetchMaterials(); }} />
       )}
       {logTarget && (
-        <RestockDeductModal material={logTarget} onClose={() => setLogTarget(null)} onSaved={() => { setLogTarget(null); fetchMaterials(); }} />
+        <RestockDeductModal material={logTarget} onClose={() => setLogTarget(null)} onSaved={() => { setLogTarget(null); refetchMaterials(); }} />
       )}
       {historyTarget && (
         <MaterialHistoryModal material={historyTarget} onClose={() => setHistoryTarget(null)} />
@@ -483,7 +487,7 @@ export default function MaterialsSection() {
         <DeleteMaterialModal
           material={deleteTarget}
           onClose={() => setDeleteTarget(null)}
-          onDeleted={() => { setDeleteTarget(null); fetchMaterials(); }}
+          onDeleted={() => { setDeleteTarget(null); refetchMaterials(); }}
         />
       )}
     </div>
