@@ -19,6 +19,16 @@ export async function getMaterials() {
   return res.json();
 }
 
+export async function getMaterial(id: number) {
+  const res = await fetch(`${BASE}/materials/${id}/`, {
+    credentials: "include",
+    headers: headers(),
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function createMaterial(data: Record<string, unknown>, photo?: File) {
   const formData = new FormData();
   Object.entries(data).forEach(([k, v]) => {

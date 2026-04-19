@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
@@ -23,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import DeleteMaterialModal from "./DeleteMaterialModal";
 
 export default function MaterialsSection() {
+  const navigate = useNavigate();
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -40,7 +42,6 @@ export default function MaterialsSection() {
   const [editTarget, setEditTarget] = useState<RawMaterial | null>(null);
   const [logTarget, setLogTarget] = useState<RawMaterial | null>(null);
   const [historyTarget, setHistoryTarget] = useState<RawMaterial | null>(null);
-  const [detailTarget, setDetailTarget] = useState<RawMaterial | null>(null);
 
   const fetchMaterials = async () => {
     try {
@@ -100,13 +101,11 @@ export default function MaterialsSection() {
           <img
             src={m.photo_url}
             alt=""
-            aria-hidden="true"
             className="h-14 w-14 rounded-md object-cover border border-neutral-200 flex-shrink-0"
           />
         ) : (
           <div
             className="h-14 w-14 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0"
-            aria-hidden="true"
           >
             <span className="text-neutral-300 text-lg">✦</span>
           </div>
@@ -246,7 +245,12 @@ export default function MaterialsSection() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailTarget(material)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => navigate(`/studio/materials/${material.id}`)}
+                >
                   <EllipsisVertical className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -441,9 +445,6 @@ export default function MaterialsSection() {
       )}
       {historyTarget && (
         <MaterialHistoryModal material={historyTarget} onClose={() => setHistoryTarget(null)} />
-      )}
-      {detailTarget && (
-        <MaterialDetailModal material={detailTarget} onClose={() => setDetailTarget(null)} onSaved={() => { setDetailTarget(null); fetchMaterials(); }} />
       )}
       {deleteTarget && (
         <DeleteMaterialModal

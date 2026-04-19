@@ -20,6 +20,7 @@ const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const MarketDetailPage = lazy(() => import("./pages/MarketDetailPage"));
 const InsightsPage = lazy(() => import("./pages/InsightsPage"));
+const MaterialDetailPage = lazy(() => import("./pages/MaterialDetailPage"));
 
 function AppLayout() {
   const { pathname } = useLocation();
@@ -85,6 +86,7 @@ const router = createBrowserRouter([
         children: [
           { path: "/studio", element: <InventoryPage /> },
           { path: "/studio/projects/:id", element: <ProjectDetailPage /> },
+          { path: "/studio/materials/:id", element: <MaterialDetailPage /> },
           { path: "/marketplace", element: <MarketplacePage /> },
           { path: "/products/new", element: <CreateProductListing /> },
           { path: "/products/:id/edit", element: <EditProductListing /> },
