@@ -27,7 +27,8 @@ export default function MaterialDetailPage() {
   const [showHistory, setShowHistory] = useState(false);
 
   // Helper to display a dash for empty values
-  const dash = (v: unknown) => v === null || v === undefined || v === "" ? "—" : v;
+  const dash = (v: unknown): string =>
+  v === null || v === undefined || v === "" ? "—" : String(v);
 
   const fetchMaterial = useCallback(async () => {
     try {
