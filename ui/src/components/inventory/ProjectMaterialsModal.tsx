@@ -108,6 +108,7 @@ export default function ProjectMaterialsModal({ project, onClose, onSaved }: Pro
                     </p>
                   </div>
                   <Button
+                    aria-label={`Remove material: ${pm.material_name}`}
                     variant="outline"
                     size="sm"
                     className="text-red-600 hover:bg-red-50 border-red-200 shrink-0"
@@ -129,6 +130,7 @@ export default function ProjectMaterialsModal({ project, onClose, onSaved }: Pro
                 {/* Combobox */}
                 <div className="relative">
                   <button
+                    aria-label="Select material to add"
                     type="button"
                     onClick={() => setOpen((v) => !v)}
                     className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -156,6 +158,7 @@ export default function ProjectMaterialsModal({ project, onClose, onSaved }: Pro
                         ) : (
                           filtered.map((m) => (
                             <button
+                              aria-label={`Select material: ${m.name}`}
                               key={m.id}
                               type="button"
                               onClick={() => { setSelectedId(m.id); setOpen(false); setSearch(""); }}
@@ -192,7 +195,7 @@ export default function ProjectMaterialsModal({ project, onClose, onSaved }: Pro
                   )}
                 </div>
 
-                <Button onClick={handleAdd} disabled={adding || !selectedId} size="sm">
+                <Button aria-label="Add material" onClick={handleAdd} disabled={adding || !selectedId} size="sm">
                   {adding ? "Adding..." : "Add Material"}
                 </Button>
               </div>
@@ -201,7 +204,9 @@ export default function ProjectMaterialsModal({ project, onClose, onSaved }: Pro
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button aria-label="Close" variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -130,6 +130,7 @@ function ProductTablePicker({
               </TableHead>
               <TableHead className="p-2">
                 <button
+                  aria-label="Sort by name"
                   className="flex items-center text-xs font-semibold uppercase tracking-wide hover:text-foreground"
                   onClick={() => toggleSort("title")}
                 >
@@ -142,6 +143,7 @@ function ProductTablePicker({
               </TableHead>
               <TableHead className="p-2 text-right">
                 <button
+                  aria-label="Sort by price"
                   className="flex items-center gap-0.5 text-xs font-semibold uppercase tracking-wide hover:text-foreground ml-auto"
                   onClick={() => toggleSort("internal_price")}
                 >
@@ -151,6 +153,7 @@ function ProductTablePicker({
               </TableHead>
               <TableHead className="p-2 text-right">
                 <button
+                  aria-label="Sort by stock"
                   className="flex items-center gap-0.5 text-xs font-semibold uppercase tracking-wide hover:text-foreground ml-auto"
                   onClick={() => toggleSort("internal_quantity")}
                 >
@@ -241,6 +244,7 @@ function ProductTablePicker({
                     {/* Select button */}
                     <TableCell className="p-2">
                       <Button
+                        aria-label={`Select product: ${p.title}`}
                         size="sm"
                         className="h-7 text-xs px-3"
                         disabled={disabled}
@@ -433,8 +437,8 @@ function SaleDetailsForm({
           </p>
         </div>
         {onBack && (
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground shrink-0" onClick={onBack}>
-            Change
+          <Button aria-label={`Change product: ${product.title}`} variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground shrink-0" onClick={onBack}>
+            Changes
           </Button>
         )}
       </div>
@@ -516,6 +520,7 @@ function SaleDetailsForm({
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((tag) => (
                 <button
+                  aria-label={`Toggle tag: ${tag.name}`}
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.id)}
@@ -538,7 +543,9 @@ function SaleDetailsForm({
               onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
               className="flex-1"
             />
-            <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>+ Add</Button>
+            <Button aria-label="Add tag" type="button" variant="outline" size="sm" onClick={handleAddTag}>
+              + Add
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             Label how this sale came in. Press Enter or + Add to create new ones.
@@ -552,8 +559,12 @@ function SaleDetailsForm({
       </div>
 
       <DialogFooter className="pt-2">
-        <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-        <Button onClick={handleSave} disabled={saving}>{saving ? "Logging..." : "Log Sale"}</Button>
+        <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>
+          Cancel
+        </Button>
+        <Button aria-label="Log sale" onClick={handleSave} disabled={saving}>
+          {saving ? "Logging..." : "Log Sale"}
+        </Button>
       </DialogFooter>
     </>
   );

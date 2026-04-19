@@ -135,6 +135,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
               </div>
             ) : (
               <button
+                aria-label="Upload photo"
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="flex flex-col items-center justify-center w-full h-20 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors"
@@ -183,8 +184,8 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button aria-label="Save" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

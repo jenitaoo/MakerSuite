@@ -165,6 +165,7 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {tags.map((tag) => (
                   <button
+                   aria-label="Tags"
                     key={tag.id}
                     type="button"
                     onClick={() => toggleTag(tag.id)}
@@ -187,7 +188,7 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
                 onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
                 className="flex-1"
               />
-              <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>
+              <Button aria-label="Add tag" type="button" variant="outline" size="sm" onClick={handleAddTag}>
                 + Add
               </Button>
             </div>
@@ -207,8 +208,8 @@ export default function LogMakeSaleModal({ project, onClose, onLogged }: Props) 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button aria-label="Log Sale" onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Log Sale"}
           </Button>
         </DialogFooter>

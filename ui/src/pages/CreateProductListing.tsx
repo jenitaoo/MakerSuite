@@ -145,6 +145,7 @@ export default function CreateProductListing() {
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
       <div>
         <button
+          aria-label="Go back to marketplace"
           type="button"
           className="text-white text-sm mb-2 hover:underline"
           onClick={() => navigate("/crosslist")}
@@ -190,6 +191,7 @@ export default function CreateProductListing() {
                           className="w-full aspect-square object-cover rounded-md border border-border"
                         />
                         <button
+                          aria-label={`Remove photo ${i + 1}`}
                           type="button"
                           onClick={() => handleRemoveImage(i)}
                           className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -341,7 +343,7 @@ export default function CreateProductListing() {
                     <FormItem>
                       <FormLabel>Who Made</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger aria-label="Who made the product"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="i_did">I did</SelectItem>
                           <SelectItem value="someone_else">Someone else</SelectItem>
@@ -359,7 +361,7 @@ export default function CreateProductListing() {
                     <FormItem>
                       <FormLabel>When Made</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger aria-label="When the product was made"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="made_to_order">Made to order</SelectItem>
                           <SelectItem value="2020_2025">2020–2025</SelectItem>
@@ -379,7 +381,7 @@ export default function CreateProductListing() {
                     <FormItem>
                       <FormLabel>Listing Type</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger aria-label="Listing type"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="physical">Physical</SelectItem>
                           <SelectItem value="digital">Digital</SelectItem>
@@ -420,10 +422,10 @@ export default function CreateProductListing() {
           </Card>
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button aria-label="Save product" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
-            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/marketplace")}>
+            <Button aria-label="Cancel" type="button" variant="outline" disabled={isSubmitting} onClick={() => navigate("/marketplace")}>
               Cancel
             </Button>
           </div>

@@ -107,6 +107,7 @@ export default function ProjectsSection() {
 
   const SortHeader = ({ column, label }: { column: any; label: string }) => (
     <button
+      aria-label={`Sort by ${label}`}
       className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black whitespace-nowrap"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
@@ -187,6 +188,7 @@ export default function ProjectsSection() {
       accessorKey: "avg_duration_minutes",
       header: ({ column }) => (
         <button
+          aria-label="Sort by average make time"
           className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -214,6 +216,7 @@ export default function ProjectsSection() {
       accessorKey: "material_cost_per_unit",
       header: ({ column }) => (
         <button
+          aria-label="Sort by material cost per unit"
           className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -249,11 +252,12 @@ export default function ProjectsSection() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                aria-label={`View product: ${project.product_title}`} 
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/products/${project.product}/edit`);
                 }}
-                className="text-[#C17B6F] hover:text-[#a5655a] transition-colors"
+                className="text-[#844839] hover:text-[#a5655a] transition-colors"
               >
                 <ExternalLink className="h-4 w-4" />
               </button>
@@ -305,6 +309,7 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`Log make for: ${project.name}`}
                   size="sm"
                   onClick={() => handleLogAction(project)}
                   className="h-7 px-2 text-xs whitespace-nowrap"
@@ -318,6 +323,7 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`Manage materials for: ${project.name}`}
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0"
@@ -332,6 +338,7 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`Manage materials for: ${project.name}`}
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0"
@@ -346,6 +353,7 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`View details for: ${project.name}`}
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0"
@@ -360,6 +368,7 @@ export default function ProjectsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`Delete project: ${project.name}`}
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -415,6 +424,7 @@ export default function ProjectsSection() {
 
           {/* STATUS FILTER */}
           <select
+            aria-label="Status Filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-8 w-full sm:w-auto rounded-md border border-input bg-transparent px-3 text-sm"
@@ -435,6 +445,7 @@ export default function ProjectsSection() {
             <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
+                  aria-label="Filter by tags"
                   variant={selectedTags.length > 0 ? "default" : "outline"}
                   size="sm"
                   className="h-8 w-full sm:w-auto text-xs gap-1.5"
@@ -473,6 +484,7 @@ export default function ProjectsSection() {
                 {selectedTags.length > 0 && (
                   <div className="border-t p-2">
                     <Button
+                      aria-label="Clear tag filters"
                       variant="ghost"
                       size="sm"
                       className="w-full h-7 text-xs text-muted-foreground"
@@ -511,6 +523,7 @@ export default function ProjectsSection() {
           </span>
 
           <Button
+            aria-label="Create new project"
             size="sm"
             onClick={() => setShowCreate(true)}
             className="w-full sm:w-auto"
@@ -574,8 +587,8 @@ export default function ProjectsSection() {
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+          <Button aria-label="Previous page" variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+          <Button aria-label="Next page" variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
         </div>
       </div>
 

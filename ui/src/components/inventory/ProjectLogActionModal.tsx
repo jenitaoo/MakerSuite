@@ -160,6 +160,7 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
           <div className="flex rounded-md border border-border overflow-hidden">
             {(["make", "sale"] as const).map((opt) => (
               <button
+                aria-label={opt === "make" ? "Log a make for this project" : "Log a sale for this project"}
                 key={opt}
                 type="button"
                 onClick={() => setMode(opt)}
@@ -345,6 +346,7 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                       <button
                         key={tag.id}
                         type="button"
+                        aria-label={`Filter by tag: ${tag.name}`}
                         onClick={() => toggleTag(tag.id)}
                         className={`px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
                           selectedTagIds.includes(tag.id)
@@ -365,7 +367,7 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
                     onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
                     className="flex-1"
                   />
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>+ Add</Button>
+                  <Button aria-label="Add tag" type="button" variant="outline" size="sm" onClick={handleAddTag}>+ Add</Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Click a tag to select it. Press Enter or + Add to create a new one.
@@ -381,8 +383,8 @@ export default function ProjectLogActionModal({ project, onClose, onLogged }: Pr
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button aria-label={mode === "make" ? "Log Make" : "Log Sale"} onClick={handleSubmit} disabled={saving}>
             {saving ? "Saving..." : mode === "make" ? "Log Make" : "Log Sale"}
           </Button>
         </DialogFooter>

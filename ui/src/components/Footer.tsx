@@ -16,10 +16,10 @@ export default function Footer() {
               alt="MakerSuite"
               className="h-10 object-contain"
             />
-            <p className="text-white/70 text-xs leading-relaxed">
+            <p className="text-white text-xs leading-relaxed">
               A centralised workspace designed for people who create and sell handmade products — track your making, manage your selling, understand your business.
             </p>
-            <p className="text-white/70 text-xs leading-relaxed">
+            <p className="text-white text-xs leading-relaxed">
               MakerSuite was designed around real pain points from real makers, gathered through personal experience and research.
             </p>
           </div>
@@ -29,10 +29,10 @@ export default function Footer() {
             <p className="text-xs font-semibold uppercase tracking-widest text-white">
               About the Maker
             </p>
-            <p className="text-white/70 text-xs leading-relaxed">
+            <p className="text-white text-xs leading-relaxed">
               I'm Jenny, a maker and developer based in Dublin. I built MakerSuite as part of my studies and to help me run my small business, <span className="text-white font-medium">With Love, Jeni</span>, where I make handmade trinkets, jewellery and crochet bouquets (●'◡'●).
             </p>
-            <p className="text-white/70 text-xs leading-relaxed">
+            <p className="text-white text-xs leading-relaxed">
               If you like everything soft, floral and sweet, come visit my <a href="https://withlovejeni.carrd.co/" target="_blank" rel="noopener noreferrer" className="text-white underline">socials &amp; stores</a>!
             </p>
           </div>
@@ -43,10 +43,10 @@ export default function Footer() {
               Notice
             </p>
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-white/70">
+              <p className="text-xs text-white">
                 MakerSuite is currently in active development and is free to use. However, there may be bugs, missing features, and occasional downtime.
               </p>
-              <p className="text-xs text-white/70">
+              <p className="text-xs text-white">
                 The term 'Etsy' is a trademark of Etsy, Inc. This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.
               </p>
             </div>
@@ -58,7 +58,7 @@ export default function Footer() {
                 href="https://withlovejeni.carrd.co/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
+                className="text-xs text-white hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <ExternalLink className="w-3 h-3" />
                 With Love Jeni's Links (Socials & Stores)
@@ -67,7 +67,7 @@ export default function Footer() {
                 href="https://forms.gle/MUPiE52FsT8yFuXw7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
+                className="text-xs text-white hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <ExternalLink className="w-3 h-3" />
                 Leave Feedback
@@ -76,7 +76,7 @@ export default function Footer() {
                 href="https://forms.gle/coahZt6JwS3bUnW48"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
+                className="text-xs text-white hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <ExternalLink className="w-3 h-3" />
                 Participate in User Testing

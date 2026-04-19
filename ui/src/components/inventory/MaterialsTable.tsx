@@ -87,6 +87,7 @@ export default function MaterialsTable({
       accessorKey: "name",
       header: ({ column }: { column: Column<RawMaterial> }) => (
         <button
+          aria-label="Sort by Name"
           className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -108,6 +109,7 @@ export default function MaterialsTable({
       accessorKey: "unit_type",
       header: ({ column }: { column: Column<RawMaterial> }) => (
         <button
+          aria-label="Sort by Unit Type"
           className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -126,6 +128,7 @@ export default function MaterialsTable({
       accessorKey: "quantity",
       header: ({ column }: { column: Column<RawMaterial> }) => (
         <button
+          aria-label="Sort by Quantity"
           className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -210,19 +213,20 @@ export default function MaterialsTable({
         const material = row.original;
         return (
           <div className="flex gap-1 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => onRestockDeduct(material)}>
+            <Button aria-label="Restock or Use Material" variant="outline" size="sm" onClick={() => onRestockDeduct(material)}>
               Restock / Use
             </Button>
-            <Button variant="outline" size="sm" onClick={() => onHistory(material)}>
+            <Button aria-label="View Material History" variant="outline" size="sm" onClick={() => onHistory(material)}>
               History
             </Button>
-            <Button variant="outline" size="sm" onClick={() => onMoreDetails(material)}>
+            <Button aria-label="View Material Details" variant="outline" size="sm" onClick={() => onMoreDetails(material)}>
               Details
             </Button>
-            <Button variant="outline" size="sm" onClick={() => onEdit(material)}>
+            <Button aria-label="Edit Material" variant="outline" size="sm" onClick={() => onEdit(material)}>
               Edit
             </Button>
             <Button
+              aria-label="Delete Material"
               variant="outline"
               size="sm"
               className="text-red-600 hover:bg-red-50 border-red-200"
@@ -266,6 +270,7 @@ export default function MaterialsTable({
 
           {/* Low stock filter */}
           <Button
+            aria-label="Filter low stock materials"
             variant={
               (table.getColumn("is_low_stock")?.getFilterValue() as string) === "low"
                 ? "default"
@@ -288,6 +293,7 @@ export default function MaterialsTable({
             <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
+                  aria-label="Filter by Tags"
                   variant={selectedTags.length > 0 ? "default" : "outline"}
                   size="sm"
                   className="h-8 text-xs gap-1.5"
@@ -327,6 +333,7 @@ export default function MaterialsTable({
                 {selectedTags.length > 0 && (
                   <div className="border-t border-border p-2">
                     <Button
+                      aria-label="Clear tag filters"
                       variant="ghost"
                       size="sm"
                       className="w-full h-7 text-xs text-muted-foreground"
@@ -409,6 +416,7 @@ export default function MaterialsTable({
         </span>
         <div className="flex gap-2">
           <Button
+            aria-label="Previous page"
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
@@ -417,6 +425,7 @@ export default function MaterialsTable({
             Previous
           </Button>
           <Button
+            aria-label="Next page"
             variant="outline"
             size="sm"
             onClick={() => table.nextPage()}

@@ -203,7 +203,7 @@ const Profile = () => {
                 <AvatarFallback className="text-lg font-semibold">{getInitials()}</AvatarFallback>
               </Avatar>
               <div>
-                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <Button aria-label="Change profile photo" type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                   Change photo
                 </Button>
                 <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB</p>
@@ -224,7 +224,7 @@ const Profile = () => {
                 <Input id="email" type="email" {...regProfile("email")} placeholder="jane@example.com" />
               </div>
             </div>
-            <Button type="submit" disabled={profileSubmitting}>
+            <Button aria-label="Save profile changes" type="submit" disabled={profileSubmitting}>
               {profileSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </form>
@@ -253,7 +253,7 @@ const Profile = () => {
                 onFocus={(e) => e.target.select()}
                 className="w-32"
               />
-              <Button onClick={handleSaveHourlyRate} disabled={savingRate} size="sm">
+              <Button aria-label="Save hourly rate" onClick={handleSaveHourlyRate} disabled={savingRate} size="sm">
                 {savingRate ? "Saving..." : "Save"}
               </Button>
               {rateSuccess && <span className="text-xs text-green-600">{rateSuccess}</span>}
@@ -292,7 +292,7 @@ const Profile = () => {
                 {...regPassword("confirm_password", { required: "Required", validate: v => v === newPassword || "Passwords don't match" })} />
               {passwordErrors.confirm_password && <p className="text-sm text-destructive">{passwordErrors.confirm_password.message}</p>}
             </div>
-            <Button type="submit" disabled={passwordSubmitting}>
+            <Button aria-label="Update password" type="submit" disabled={passwordSubmitting}>
               {passwordSubmitting ? "Updating..." : "Update Password"}
             </Button>
           </form>
@@ -323,7 +323,7 @@ const Profile = () => {
               {etsyStatus === null ? null : etsyConnected && !etsyNeedsReauth ? (
                 <>
                   <Badge variant="secondary">Connected</Badge>
-                  <Button variant="outline" size="sm" onClick={handleDisconnectEtsy} disabled={disconnecting}
+                  <Button aria-label="Disconnect from Etsy" variant="outline" size="sm" onClick={handleDisconnectEtsy} disabled={disconnecting}
                     className="text-destructive border-destructive/30 hover:bg-destructive/10">
                     {disconnecting ? "Disconnecting..." : "Disconnect"}
                   </Button>
@@ -331,12 +331,12 @@ const Profile = () => {
               ) : etsyNeedsReauth ? (
                 <>
                   <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Expired</Badge>
-                  <Button variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
+                  <Button aria-label="Reconnect to Etsy" variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
                     Reconnect
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
+                <Button aria-label="Connect to Etsy" variant="outline" size="sm" onClick={() => window.location.href = `${API_URL}/api/etsy/login/`}>
                   Connect Etsy
                 </Button>
               )}
@@ -358,7 +358,7 @@ const Profile = () => {
       {/* Logout */}
       <div className="pt-2">
         <Separator className="mb-6" />
-        <Button variant="destructive" style={{ backgroundColor: "#b84141", color: "#ffffff" }}
+        <Button aria-label="Log out" variant="destructive" style={{ backgroundColor: "#b84141", color: "#ffffff" }}
           size="lg" className="w-full text-base font-semibold" onClick={handleLogout}>
           Log Out
         </Button>

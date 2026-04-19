@@ -326,7 +326,7 @@ export default function MarketDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-white/70 text-sm">Loading market…</p>
+        <p className="text-white text-sm">Loading market…</p>
       </div>
     );
   }
@@ -366,8 +366,9 @@ export default function MarketDetailPage() {
 
       {/* ── Back ── */}
       <button
+        aria-label="Back to Marketplace"
         onClick={() => navigate("/marketplace")}
-        className="text-white/70 hover:text-white text-sm flex items-center gap-1 transition-colors"
+        className="text-white hover:text-white text-sm flex items-center gap-1 transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Marketplace
@@ -378,12 +379,12 @@ export default function MarketDetailPage() {
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white">{market.name}</h1>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
-            <span className="flex items-center gap-1 text-white/70 text-sm">
+            <span className="flex items-center gap-1 text-white text-sm">
               <Calendar className="w-3.5 h-3.5" />
               {formatDate(market.date)}
             </span>
             {market.location && (
-              <span className="flex items-center gap-1 text-white/70 text-sm">
+              <span className="flex items-center gap-1 text-white text-sm">
                 <MapPin className="w-3.5 h-3.5" />
                 {market.location}
               </span>
@@ -397,17 +398,18 @@ export default function MarketDetailPage() {
         <div className="flex gap-2 shrink-0">
           {editing ? (
             <>
-              <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+              <Button aria-label="Save market changes" size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
                 <Check className="w-3.5 h-3.5" />
                 {saving ? "Saving…" : "Save"}
               </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={saving} className="gap-1.5 bg-white/10 border-white/30 text-white hover:bg-white/20">
+              <Button aria-label="Cancel market edit" size="sm" variant="outline" onClick={handleCancelEdit} disabled={saving} className="gap-1.5 bg-white/10 border-white/30 text-white hover:bg-white/20">
                 <X className="w-3.5 h-3.5" />
                 Cancel
               </Button>
             </>
           ) : (
             <Button
+              aria-label={`Edit market: ${market.name}`}
               size="sm"
               variant="outline"
               onClick={() => setEditing(true)}
@@ -445,7 +447,9 @@ export default function MarketDetailPage() {
                 <div className="space-y-2">
                   <Label>Application Status</Label>
                   <Select value={editStatus} onValueChange={setEditStatus}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Market application status">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {STATUS_OPTIONS.map((s) => (
                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -512,6 +516,7 @@ export default function MarketDetailPage() {
             {/* Quick actions */}
             <div className="grid grid-cols-1 gap-3 pt-1 px-4 pt-4">
                 <Button
+                aria-label="Log a sale for this market"
                 onClick={() => { setLogSaleProductId(null); setLogSaleOpen(true); }}
                 className="gap-2 h-10 w-full justify-center"
                 disabled={products.length === 0}
@@ -545,6 +550,7 @@ export default function MarketDetailPage() {
                 />
               </div>
               <Button
+                aria-label="Add a product to this market"
                 size="sm"
                 variant="outline"
                 className="gap-1.5 h-8 shrink-0"
@@ -579,11 +585,12 @@ export default function MarketDetailPage() {
                   className="w-20 h-9 text-sm text-center"
                   placeholder="Qty"
                 />
-                <Button size="sm" onClick={handleAddProduct} disabled={savingProduct} className="gap-1">
+                <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="gap-1">
                   <Check className="w-3.5 h-3.5" />
                   Add
                 </Button>
                 <Button
+                  aria-label="Cancel adding product"
                   size="sm"
                   variant="outline"
                   onClick={() => { setAddingProduct(false); setNewProductId(""); setNewUnitsBrought(1); }}
@@ -676,6 +683,7 @@ export default function MarketDetailPage() {
                           <TableCell className="p-2">
                             <div className="flex items-center gap-1">
                               <Button
+                                aria-label={`Log a sale for ${mp.product_title}`}
                                 size="sm"
                                 className="h-7 text-xs px-2 gap-1"
                                 onClick={() => { setLogSaleProductId(mp.product); setLogSaleOpen(true); }}
@@ -686,6 +694,7 @@ export default function MarketDetailPage() {
                                 Log
                               </Button>
                               <Button
+                                aria-label="Remove Product"
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"

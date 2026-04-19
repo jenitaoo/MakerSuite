@@ -81,6 +81,7 @@ export default function MaterialsSection() {
 
   const SortHeader = ({ column, label }: { column: any; label: string }) => (
     <button
+      aria-label={`Sort by ${label}`}
       className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
@@ -232,7 +233,7 @@ export default function MaterialsSection() {
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setLogTarget(material)}>
+                <Button aria-label="Restock / Use" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setLogTarget(material)}>
                   Restock / Use
                 </Button>
               </TooltipTrigger>
@@ -240,7 +241,7 @@ export default function MaterialsSection() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(material)}>
+                <Button aria-label="History" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(material)}>
                   <History className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -249,6 +250,7 @@ export default function MaterialsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label="More Actions"
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0"
@@ -262,6 +264,7 @@ export default function MaterialsSection() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label="Delete"
                   variant="ghost" size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => handleDelete(material)}
@@ -318,6 +321,7 @@ export default function MaterialsSection() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
 
           <select
+            aria-label="Status Filter"
             value={(table.getColumn("is_low_stock")?.getFilterValue() as string) ?? ""}
             onChange={(e) => {
               const col = table.getColumn("is_low_stock");
@@ -335,6 +339,7 @@ export default function MaterialsSection() {
             <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
+                  aria-label="Filter by tags"
                   variant={selectedTags.length > 0 ? "default" : "outline"}
                   size="sm"
                   className="h-8 w-full sm:w-auto text-xs gap-1.5"
@@ -367,6 +372,7 @@ export default function MaterialsSection() {
                 {selectedTags.length > 0 && (
                   <div className="border-t p-2">
                     <Button
+                      aria-label="Clear tag filters"
                       variant="ghost"
                       size="sm"
                       className="w-full h-7 text-xs text-muted-foreground"
@@ -405,6 +411,7 @@ export default function MaterialsSection() {
           </span>
 
           <Button
+            aria-label="Add Material"
             size="sm"
             onClick={() => setShowCreate(true)}
             className="w-full sm:w-auto"
@@ -465,8 +472,8 @@ export default function MaterialsSection() {
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+          <Button aria-label="Previous" variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+          <Button aria-label="Next" variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
         </div>
       </div>
 

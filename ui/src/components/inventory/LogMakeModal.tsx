@@ -218,10 +218,10 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button aria-label="Log Make" onClick={handleSubmit} disabled={saving}>
             {saving ? "Logging..." : "Log Make"}
           </Button>
         </DialogFooter>

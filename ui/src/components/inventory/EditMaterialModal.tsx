@@ -156,6 +156,7 @@ export default function EditMaterialModal({
                 />
 
                 <button
+                  aria-label="Remove photo"
                   type="button"
                   onClick={removePhoto}
                   className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full"
@@ -164,6 +165,7 @@ export default function EditMaterialModal({
                 </button>
 
                 <button
+                  aria-label="Replace photo"
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded"
@@ -173,6 +175,7 @@ export default function EditMaterialModal({
               </div>
             ) : (
               <button
+               aria-label="Upload photo"
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-md text-neutral-400"
@@ -307,10 +310,10 @@ export default function EditMaterialModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={saving}>
+          <Button aria-label="Save" onClick={save} disabled={saving}>
             {saving ? "Saving..." : "Save changes"}
           </Button>
         </DialogFooter>

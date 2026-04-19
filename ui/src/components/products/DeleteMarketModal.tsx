@@ -52,10 +52,11 @@ export default function DeleteMarketModal({ market, onClose, onDeleted }: Props)
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={deleting}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={deleting}>
             Cancel
           </Button>
           <Button
+            aria-label="Delete market"
             variant="destructive"
             style={{ backgroundColor: "#b84141", color: "#ffffff" }}
             onClick={handleDelete}

@@ -11,7 +11,7 @@ import { RawMaterial, Project } from "../types/inventory";
 import Studio_Bunny_Illustration from "../assets/misc/Studio_Bunny_Illust.png";
 
 // ─── Studio accent colour ─────────────────────────────────────────────────────
-const STUDIO = "#8496af";
+const STUDIO = "#49496e";
 
 // ─── Side nav config ──────────────────────────────────────────────────────────
 const NAV_SECTIONS = [
@@ -85,7 +85,7 @@ export default function InventoryPage() {
               aria-label={`Navigate to ${label}`}
               aria-current={active ? "location" : undefined}
               className={`group flex items-center gap-2 py-2 px-2 rounded-lg transition-all text-left
-                hover:bg-[#5f718a] ${active ? "bg-[#8496af]/40 text-white" : "text-white/40 hover:text-white"}`}
+                hover:bg-[#5f718a] ${active ? "bg-[#49496e]/40 text-white" : "text-white/40 hover:text-white"}`}
             >
               <div className={`w-1 h-6 rounded-full transition-all shrink-0 ${
                 active ? "bg-white" : "bg-white/20 group-hover:bg-white/40"
@@ -159,7 +159,7 @@ export default function InventoryPage() {
                   <button
                     onClick={() => scrollTo("your-projects")}
                     aria-label="Scroll to Your Projects section"
-                    className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors animate-bounce"
+                    className="flex flex-col items-center gap-1 text-white hover:text-white transition-colors animate-bounce"
                   >
                     <ChevronDown className="w-5 h-5" aria-hidden="true" />
                   </button>

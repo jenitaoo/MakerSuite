@@ -55,6 +55,7 @@ export default function RestockDeductModal({ material, onClose, onSaved }: Props
           {/* Mode toggle */}
           <div className="flex rounded-md border border-border overflow-hidden">
             <button
+              aria-label="Restock mode"
               type="button"
               onClick={() => setMode("restock")}
               className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === "restock" ? "bg-[hsl(var(--primary))] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
@@ -62,6 +63,7 @@ export default function RestockDeductModal({ material, onClose, onSaved }: Props
               Restock
             </button>
             <button
+              aria-label="Use / Deduct mode"
               type="button"
               onClick={() => setMode("deduct")}
               className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === "deduct" ? "bg-[hsl(var(--primary))] text-white" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
@@ -89,8 +91,8 @@ export default function RestockDeductModal({ material, onClose, onSaved }: Props
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button aria-label={mode === "restock" ? "Restock material" : "Deduct material"} onClick={handleSubmit} disabled={saving}>
             {saving ? "Saving..." : mode === "restock" ? "Restock" : "Deduct"}
           </Button>
         </DialogFooter>

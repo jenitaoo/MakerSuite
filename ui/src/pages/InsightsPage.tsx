@@ -110,7 +110,7 @@ function StatCard({
       className={`rounded-lg border p-5 flex flex-col gap-2 transition
         ${
           highlight
-            ? "bg-[#907680]/8 border-[#907680]/30"
+            ? "bg-[#76535c]/8 border-[#76535c]/30"
             : "bg-white border-neutral-200"
         }
         ${
@@ -188,11 +188,12 @@ function TimeToggle({ value, onChange }: { value: TimeFilter; onChange: (v: Time
     <div className="flex rounded-md border border-neutral-200 overflow-hidden bg-white shrink-0">
       {options.map((o) => (
         <button
+          aria-label={`Filter insights by ${o.label}`}
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
             value === o.value
-              ? "bg-[#907680] text-white"
+              ? "bg-[#76535c] text-white"
               : "text-neutral-600 hover:bg-neutral-50"
           }`}
         >
@@ -241,6 +242,7 @@ function ActionItem({
         {detail && <p className={`text-xs mt-0.5 truncate ${colours.text} opacity-80`}>{detail}</p>}
       </div>
       <Button
+        aria-label={actionLabel}
         size="sm" variant="outline"
         className={`shrink-0 text-xs h-7 ${colours.btn}`}
         onClick={onAction}
@@ -444,7 +446,7 @@ export default function InsightsPage() {
   if (loading)
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-white/70 text-sm">Loading insights…</p>
+        <p className="text-white text-sm">Loading insights…</p>
       </div>
     );
 
@@ -452,7 +454,7 @@ export default function InsightsPage() {
     <div>
       {/* ══ HERO ══ */}
       <section
-        className="scalloped-intro bg-[#907680] max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10"
+        className="scalloped-intro bg-[#76535c] max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10"
         aria-label="Insights Hero"
       >
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
@@ -643,6 +645,7 @@ export default function InsightsPage() {
                   />
                 </div>
                 <Button
+                  aria-label="Go to Studio"
                   variant="outline" size="sm"
                   className="w-full gap-1.5 text-xs"
                   onClick={() => navigate("/studio")}
@@ -656,7 +659,7 @@ export default function InsightsPage() {
             <Card className="bg-white border-neutral-200">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-[#C17B6F]" aria-hidden="true" />
+                  <Store className="w-4 h-4 text-[#844839]" aria-hidden="true" />
                   <SectionLabel>Marketplace</SectionLabel>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -690,6 +693,7 @@ export default function InsightsPage() {
                   />
                 </div>
                 <Button
+                  aria-label="Go to Marketplace"
                   variant="outline" size="sm"
                   className="w-full gap-1.5 text-xs"
                   onClick={() => navigate("/marketplace")}
@@ -863,7 +867,7 @@ export default function InsightsPage() {
                 <CardContent className="p-8 text-center text-muted-foreground">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-25" />
                   <p className="text-sm">No sales logged in this period.</p>
-                  <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => navigate("/marketplace")}>
+                  <Button aria-label="Log a sale" size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => navigate("/marketplace")}>
                     Log a Sale <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </CardContent>

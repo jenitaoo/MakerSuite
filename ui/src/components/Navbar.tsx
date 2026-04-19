@@ -90,10 +90,10 @@ const Navbar = () => {
             </Link>
           ) : (
             <>
-              <Button variant="ghost" asChild>
+              <Button  aria-label="Login" variant="ghost" asChild>
                 <Link to="/login">Login</Link>
               </Button>
-              <Button asChild>
+              <Button  aria-label="Sign Up" asChild>
                 <Link to="/signup">Sign Up</Link>
               </Button>
             </>
@@ -105,14 +105,14 @@ const Navbar = () => {
           {isLoggedIn && (
             <Link to="/profile">
               <Avatar className="h-8 w-8 cursor-pointer">
-                <AvatarImage src={auth?.user?.photo ?? undefined} />
+                <AvatarImage src={auth?.user?.photo ?? undefined} alt={auth?.user?.username ?? "User Avatar"} />
                 <AvatarFallback className="text-xs font-semibold bg-muted">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
             </Link>
           )}
-          <button onClick={() => setMenuOpen(!menuOpen)} className="p-1">
+          <button aria-label="Toggle menu" onClick={() => setMenuOpen(!menuOpen)} className="p-1">
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>

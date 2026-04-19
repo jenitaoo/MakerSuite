@@ -140,12 +140,12 @@ export default function MaterialDetailModal({ material, onClose, onSaved }: Prop
         <DialogFooter>
           {editing ? (
             <>
-              <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+              <Button aria-label="Cancel" variant="outline" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
+              <Button aria-label="Save" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={onClose}>Close</Button>
+              <Button aria-label="Close" variant="outline" onClick={onClose}>Close</Button>
               <Button onClick={() => setEditing(true)}>Edit Details</Button>
             </>
           )}

@@ -82,6 +82,7 @@ export function TagsInput({
           {tag}
           {!disabled && (
             <button
+              aria-label={`Remove tag: ${tag}`}
               type="button"
               onClick={() => removeTag(tag)}
               className="ml-0.5 rounded-none opacity-60 hover:opacity-100 transition-opacity"
