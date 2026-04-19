@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { logMake } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
 
@@ -167,9 +168,16 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
                   <div className="space-y-2">
                     {project.project_materials?.map((m) => (
                       <div key={m.id} className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground flex-1 truncate">
-                          {m.material_name}
-                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs text-muted-foreground flex-1 truncate cursor-help">
+                              {m.material_name}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="w-80 whitespace-normal break-words">
+                            <p className="text-sm">{m.material_name}</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <Input
                           type="number"
                           step="0.01"
@@ -210,10 +218,10 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button aria-label="Log Make" onClick={handleSubmit} disabled={saving}>
             {saving ? "Logging..." : "Log Make"}
           </Button>
         </DialogFooter>

@@ -40,8 +40,9 @@ export default function DeleteProjectModal({ project, onClose, onDeleted }: Prop
           <p className="text-destructive font-medium">This action cannot be undone.</p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
           <Button
+            aria-label="Delete Project"
             variant="destructive"
             style={{ backgroundColor: "#b84141", color: "#ffffff" }}
             onClick={handleDelete}

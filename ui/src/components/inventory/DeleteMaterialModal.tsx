@@ -51,8 +51,9 @@ export default function DeleteMaterialModal({ material, onClose, onDeleted }: Pr
           <p className="text-destructive font-medium">This action cannot be undone.</p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
           <Button
+            aria-label="Delete Material"
             variant="destructive"
             style={{ backgroundColor: "#b84141", color: "#ffffff" }}
             onClick={handleDelete}

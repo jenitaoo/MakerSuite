@@ -112,6 +112,7 @@ export default function CreateMaterialModal({ material, existingTags = [], onClo
                 </button>
                 {/* Allow replacing */}
                 <button
+                  aria-label="Replace photo"
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute bottom-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white rounded-md px-2 py-0.5 text-xs transition-colors"
@@ -121,9 +122,10 @@ export default function CreateMaterialModal({ material, existingTags = [], onClo
               </div>
             ) : (
               <button
+                aria-label="Upload photo"
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-400 hover:text-neutral-500 transition-colors"
+                className="flex flex-col items-center justify-center w-full h-24 rounded-md border-2 border-dashed border-neutral-300 hover:border-neutral-400 text-neutral-600 hover:text-neutral-500 transition-colors"
               >
                 <ImagePlus className="h-6 w-6 mb-1" aria-hidden="true" />
                 <span className="text-xs">Click to upload</span>
@@ -279,8 +281,8 @@ export default function CreateMaterialModal({ material, existingTags = [], onClo
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : isEdit ? "Save Changes" : "Add Material"}</Button>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button aria-label="Save" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : isEdit ? "Save Changes" : "Add Material"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

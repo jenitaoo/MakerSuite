@@ -258,7 +258,7 @@ export default function EditProductListing() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
       <div>
-        <button type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/marketplace")}>
+        <button aria-label="Go back to marketplace" type="button" className="text-white text-sm mb-2 hover:underline" onClick={() => navigate("/marketplace")}>
           ← Back
         </button>
         <h1 className="text-3xl font-bold text-white">{product.title}</h1>
@@ -267,7 +267,7 @@ export default function EditProductListing() {
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border">
         {tabs.map(({ key, label, disabled }) => (
-          <button key={key} type="button" disabled={disabled}
+          <button aria-label={label} key={key} type="button" disabled={disabled}
             onClick={() => !disabled && setActiveTab(key)}
             className={[
               "px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors",
@@ -275,7 +275,7 @@ export default function EditProductListing() {
                 ? "border-transparent text-muted-foreground opacity-40 cursor-not-allowed"
                 : activeTab === key
                 ? "border-[hsl(var(--primary))] text-white"
-                : "border-transparent text-white/70 hover:text-white",
+                : "border-transparent text-white hover:text-white",
             ].join(" ")}>
             {label}
           </button>
@@ -312,6 +312,7 @@ export default function EditProductListing() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Linked Studio project</span>
                     <button
+                      aria-label={`View linked project: ${linkedProject.name}`}
                       className="text-[hsl(var(--primary))] hover:underline font-medium"
                       onClick={() => navigate(`/studio/projects/${linkedProject.id}`)}
                     >
@@ -362,10 +363,12 @@ export default function EditProductListing() {
           <Card className="bg-[#fdf8f6]">
             <CardHeader><CardTitle>Connections</CardTitle></CardHeader>
             <CardContent className="flex gap-2 flex-wrap">
-              <Button variant={etsyListing ? "default" : "outline"} size="sm" disabled={!etsyListing}>
+              <Button aria-label={etsyListing ? "View linked Etsy listing" : "Link to Etsy listing"} variant={etsyListing ? "default" : "outline"} size="sm" disabled={!etsyListing}>
                 {etsyListing ? "Etsy ↗" : "Etsy (not linked)"}
               </Button>
-              <Button variant="outline" size="sm" disabled>Shopify (coming soon)</Button>
+              <Button aria-label="Link to Shopify listing" variant="outline" size="sm" disabled>
+                Shopify (coming soon)
+              </Button>
             </CardContent>
           </Card>
 
@@ -379,7 +382,7 @@ export default function EditProductListing() {
                   {product.images?.map((img, i) => (
                     <div key={img.id} className="relative group">
                       <img src={img.url} alt={`Photo ${i + 1}`} className="w-full aspect-square object-cover rounded-md border border-border" />
-                      <button type="button" onClick={() => handleDeleteExistingImage(img.id)}
+                      <button aria-label={`Remove photo ${i + 1}`} type="button" onClick={() => handleDeleteExistingImage(img.id)}
                         className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
                       {i === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">Main</span>}
                     </div>
@@ -387,7 +390,7 @@ export default function EditProductListing() {
                   {newImages.map((img, i) => (
                     <div key={`new-${i}`} className="relative group">
                       <img src={img.preview} alt={`New photo ${i + 1}`} className="w-full aspect-square object-cover rounded-md border-2 border-dashed border-[hsl(var(--primary))]" />
-                      <button type="button" onClick={() => handleRemoveNewImage(i)}
+                      <button aria-label={`Remove new photo ${i + 1}`} type="button" onClick={() => handleRemoveNewImage(i)}
                         className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
                       <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 rounded">New</span>
                     </div>
@@ -481,7 +484,9 @@ export default function EditProductListing() {
                 <div className="space-y-2">
                   <Label>Who Made</Label>
                   <Select value={form.who_made} onValueChange={(v) => update({ who_made: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Who made the product">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="i_did">I did</SelectItem>
                       <SelectItem value="someone_else">Someone else</SelectItem>
@@ -492,7 +497,9 @@ export default function EditProductListing() {
                 <div className="space-y-2">
                   <Label>When Made</Label>
                   <Select value={form.when_made} onValueChange={(v) => update({ when_made: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="When the product was made">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="made_to_order">Made to order</SelectItem>
                       <SelectItem value="2020_2025">2020–2025</SelectItem>
@@ -505,7 +512,9 @@ export default function EditProductListing() {
                 <div className="space-y-2">
                   <Label>Listing Type</Label>
                   <Select value={form.listing_type} onValueChange={(v) => update({ listing_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Listing type">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="physical">Physical</SelectItem>
                       <SelectItem value="digital">Digital</SelectItem>
@@ -527,10 +536,18 @@ export default function EditProductListing() {
           </Card>
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button onClick={handleSaveToAll}>Save to All</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveInternally}>Save Internally</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveToEtsy}>Save to Etsy</Button>
-            <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} disabled>Save to Shopify (Disabled)</Button>
+            <Button aria-label="Save to all platforms" onClick={handleSaveToAll}>
+              Save to All
+            </Button>
+            <Button aria-label="Save internally" variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveInternally}>
+              Save Internally
+            </Button>
+            <Button aria-label="Save to Etsy" variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={handleSaveToEtsy}>
+              Save to Etsy
+            </Button>
+            <Button aria-label="Save to Shopify" variant="outline" style={{ backgroundColor: "#fdf8f6" }} disabled>
+              Save to Shopify (Disabled)
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center">
             Changes save independently — your internal price and Etsy price can differ.

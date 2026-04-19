@@ -104,7 +104,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   },
   rejected: {
     label: "Rejected",
-    className: "border-red-200 bg-red-50 text-red-600",
+    className: "border-red-300 bg-red-100 text-red-600",
   },
 };
 
@@ -204,6 +204,7 @@ function MarketCard({
         {/* Log a sale + Delete — pushed to bottom of card */}
         <div className="mt-auto pt-3 flex items-center gap-2">
           <Button
+            aria-label="Log a sale for this market"
             variant="default"
             size="sm"
             className="flex-1 gap-1.5"
@@ -365,6 +366,7 @@ export default function MarketplacePage() {
             </p>
             <div className="flex gap-2 pt-1">
                 <button
+                aria-label="Connect to Etsy"
                 onClick={() => {
                     toast.dismiss(t.id);
                     window.location.href = `${API_URL}/api/etsy/login?return_to=${encodeURIComponent(
@@ -376,6 +378,7 @@ export default function MarketplacePage() {
                 Redirect and Connect
                 </button>
                 <button
+                aria-label="Cancel connecting to Etsy"
                 onClick={() => toast.dismiss(t.id)}
                 className="px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted"
                 >
@@ -453,9 +456,9 @@ export default function MarketplacePage() {
               aria-label={`Navigate to ${label}`}
               aria-current={active ? "location" : undefined}
               className={`group flex items-center gap-2 py-2 px-2 rounded-lg transition-all text-left
-                hover:bg-[#C17B6F] ${
+                hover:bg-[#844839] ${
                   active
-                    ? "bg-[#C17B6F]/40 text-white"
+                    ? "bg-[#844839]/40 text-white"
                     : "text-white/40 hover:text-white"
                 }`}
             >
@@ -484,7 +487,7 @@ export default function MarketplacePage() {
           ref={(el) => { sectionRefs.current["intro"] = el; }}
           aria-label="Marketplace overview"
         >
-          <div className="scalloped-intro bg-[#C17B6F] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
+          <div className="scalloped-intro bg-[#844839] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
 
               <div className="w-full lg:w-2/5 overflow-visible shrink-0 flex items-center justify-center">
@@ -554,7 +557,7 @@ export default function MarketplacePage() {
                   <button
                     onClick={() => scrollTo("your-markets")}
                     aria-label="Scroll to Your Markets section"
-                    className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors animate-bounce"
+                    className="flex flex-col items-center gap-1 text-white hover:text-white transition-colors animate-bounce"
                   >
                     <ChevronDown className="w-5 h-5" aria-hidden="true" />
                   </button>
@@ -595,8 +598,8 @@ export default function MarketplacePage() {
                     />
                 </div>
 
-                <Select value={marketStatusFilter} onValueChange={setMarketStatusFilter}>
-                <SelectTrigger className="w-[140px] h-8 text-sm">
+                <Select aria-label="Status Filter" value={marketStatusFilter} onValueChange={setMarketStatusFilter}>
+                <SelectTrigger aria-label="Status Filter" className="w-[140px] h-8 text-sm">
                     <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -608,8 +611,8 @@ export default function MarketplacePage() {
                     </SelectContent>
                 </Select>
 
-                <Select value={marketTimeFilter} onValueChange={setMarketTimeFilter}>
-                <SelectTrigger className="w-[140px] h-8 text-sm">
+                <Select aria-label="Time Filter" value={marketTimeFilter} onValueChange={setMarketTimeFilter}>
+                <SelectTrigger aria-label="Time Filter" className="w-[140px] h-8 text-sm">
                     <SelectValue placeholder="All markets" />
                     </SelectTrigger>
                     <SelectContent>
@@ -621,6 +624,7 @@ export default function MarketplacePage() {
 
                 <div className="ml-auto">
                     <Button
+                    aria-label="Add a new market"
                     onClick={() => setAddMarketOpen(true)}
                     className="gap-2 h-8 text-sm"
                     >

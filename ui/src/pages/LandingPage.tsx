@@ -95,7 +95,7 @@ function Step({
 }) {
   return (
     <div className="flex gap-4 items-start">
-      <div className="shrink-0 w-8 h-8 rounded-full bg-[#C17B6F] flex items-center justify-center text-white text-sm font-bold">
+      <div className="shrink-0 w-8 h-8 rounded-full bg-[#844839] flex items-center justify-center text-white text-sm font-bold">
         {number}
       </div>
       <div>
@@ -119,7 +119,7 @@ export default function LandingPage() {
           HERO
       ══════════════════════════════════════════════════════════════════ */}
       <section
-        className="scalloped-intro bg-[#C17B6F] px-4 sm:px-8 lg:px-16 pt-10 sm:pt-16 pb-16 sm:pb-24"
+        className="scalloped-intro bg-[#844839] px-4 sm:px-8 lg:px-16 pt-10 sm:pt-16 pb-16 sm:pb-24"
         aria-label="Hero"
       >
         <div className="max-w-4xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
@@ -147,8 +147,9 @@ export default function LandingPage() {
             {!isLoggedIn && (
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Button
+                  aria-label="Sign up for MakerSuite"
                   size="lg"
-                  className="bg-white text-[#C17B6F] hover:bg-white/90 font-semibold gap-2"
+                  className="bg-white text-[#844839] hover:bg-white/90 font-semibold gap-2"
                   onClick={() => navigate("/signup")}
                 >
                   Sign up to get started
@@ -156,6 +157,7 @@ export default function LandingPage() {
                 </Button>
 
                 <Button
+                  aria-label="Log in to MakerSuite"
                   size="lg"
                   variant="outline"
                   className="border-white/40 text-white hover:bg-white/10 font-semibold"
@@ -191,7 +193,7 @@ export default function LandingPage() {
               <>
                 <PillarCard
                   icon={Hammer}
-                  colour="#8496af"
+                  colour="#465139"
                   label="Studio"
                   description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
                   illustration={Studio_Bunny}
@@ -200,7 +202,7 @@ export default function LandingPage() {
                 />
                 <PillarCard
                   icon={Store}
-                  colour="#C17B6F"
+                  colour="#844839"
                   label="Marketplace"
                   description="Manage product listings, in-person markets and sales. Sync with Etsy and keep stock up to date automatically."
                   illustration={Market_Bunny}
@@ -209,7 +211,7 @@ export default function LandingPage() {
                 />
                 <PillarCard
                   icon={BarChart3}
-                  colour="#907680"
+                  colour="#76535c"
                   label="Insights"
                   description="See your profit, sell-through rate and stock coverage. Know which products actually make you money."
                   illustration={Insights_Bunny}
@@ -222,7 +224,7 @@ export default function LandingPage() {
               <>
                 <PillarCard
                   icon={Hammer}
-                  colour="#8496af"
+                  colour="#465139"
                   label="Studio"
                   description="Track projects, raw materials and make logs. Set up a recipe once — MakerSuite handles the rest."
                   illustration={Studio_Bunny}
@@ -230,7 +232,7 @@ export default function LandingPage() {
                 />
                 <PillarCard
                   icon={Store}
-                  colour="#C17B6F"
+                  colour="#844839"
                   label="Marketplace"
                   description="Manage product listings, in-person markets and sales. Sync with Etsy and keep stock up to date automatically."
                   illustration={Market_Bunny}
@@ -238,7 +240,7 @@ export default function LandingPage() {
                 />
                 <PillarCard
                   icon={BarChart3}
-                  colour="#907680"
+                  colour="#76535c"
                   label="Insights"
                   description="See your profit, sell-through rate and stock coverage. Know which products actually make you money."
                   illustration={Insights_Bunny}
@@ -278,7 +280,7 @@ export default function LandingPage() {
             description="Create projects for each thing you make (e.g. a plush) and track the raw materials they use (e.g. yarn, stuffing). MakerSuite tracks labour, material costs, and updates inventory automatically."
           />
 
-          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+          <div className="flex items-center gap-2 text-xs text-neutral-600 ml-2">
             <span>↓</span>
           </div>
 
@@ -287,7 +289,7 @@ export default function LandingPage() {
             title="Set up your Marketplace"
             description="Manage every product you sell in one place. Connect your online stores (e.g. Etsy, Shopify) and log the markets you sell at. MakerSuite gives you a single workspace to track sales, manage listings, and updates stock levels automatically."
           />
-          <div className="flex items-center gap-2 text-xs text-neutral-400 ml-2">
+          <div className="flex items-center gap-2 text-xs text-neutral-600 ml-2">
             <span>↓</span>
           </div>
 

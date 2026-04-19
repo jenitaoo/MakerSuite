@@ -126,7 +126,7 @@ export default function ProjectDetailPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
-      <p className="text-white/70 text-sm">Loading project…</p>
+      <p className="text-white text-sm">Loading project…</p>
     </div>
   );
   if (!project) return null;
@@ -156,8 +156,9 @@ export default function ProjectDetailPage() {
 
       {/* ── Back ── */}
       <button
+        aria-label="Go back to studio"
         onClick={() => navigate("/studio")}
-        className="text-white/70 hover:text-white text-sm flex items-center gap-1 transition-colors"
+        className="text-white hover:text-white text-sm flex items-center gap-1 transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Studio
@@ -170,7 +171,8 @@ export default function ProjectDetailPage() {
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             {project.product_title && (
               <button
-                className="text-white/70 text-sm hover:text-white transition-colors flex items-center gap-1"
+                aria-label="View linked product details"
+                className="text-white text-sm hover:text-white transition-colors flex items-center gap-1"
                 onClick={() => navigate(`/products/${project.product}/edit`)}
               >
                 <Package className="w-3.5 h-3.5" />
@@ -181,6 +183,7 @@ export default function ProjectDetailPage() {
         </div>
         <div className="flex gap-2 shrink-0">
           <Button
+            aria-label="Edit project details"
             size="sm"
             variant="outline"
             onClick={() => setShowEdit(true)}
@@ -256,6 +259,7 @@ export default function ProjectDetailPage() {
             </div>
             <div className="pt-4">
               <Button
+                aria-label="Log a new make for this project"
                 onClick={async () => { await fetchAll(); setShowLogMake(true); }}
                 className="w-full h-10 gap-2"
               >
@@ -284,6 +288,7 @@ export default function ProjectDetailPage() {
                 </p>
               </div>
               <Button
+                aria-label="View linked product details"
                 size="sm"
                 variant="outline"
                 onClick={() => navigate(`/products/${project.product}/edit`)}
@@ -333,7 +338,7 @@ export default function ProjectDetailPage() {
                     onFocus={(e) => e.target.select()}
                     className="h-8 text-sm"
                   />
-                  <Button size="sm" variant="outline" className="h-8 text-xs shrink-0"
+                  <Button aria-label="Save hourly rate" size="sm" variant="outline" className="h-8 text-xs shrink-0"
                     onClick={handleSaveHourlyRate} disabled={savingRate}>
                     {savingRate ? "..." : "Save"}
                   </Button>
@@ -358,7 +363,7 @@ export default function ProjectDetailPage() {
 
             <p className="text-xs text-muted-foreground">
               Update your hourly rate in{" "}
-              <button className="underline hover:text-foreground" onClick={() => navigate("/profile")}>
+              <button aria-label="Go to profile settings" className="underline hover:text-foreground" onClick={() => navigate("/profile")}>
                 Profile Settings
               </button>{" "}
               to apply across all projects.
@@ -375,7 +380,7 @@ export default function ProjectDetailPage() {
         <Card className="bg-white border-neutral-200">
           <CardContent className="p-6 space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" variant="outline" onClick={() => setShowMaterials(true)}>
+              <Button aria-label="Add material" size="sm" variant="outline" onClick={() => setShowMaterials(true)}>
                 + Add Material
               </Button>
             </div>
@@ -422,6 +427,7 @@ export default function ProjectDetailPage() {
                         </TableCell>
                         <TableCell>
                           <Button
+                            aria-label={`Remove ${pm.material_name} from project`}
                             variant="outline" size="sm"
                             className="text-red-600 hover:bg-red-50 border-red-200"
                             onClick={() => handleRemoveMaterial(pm.material)}
@@ -483,7 +489,7 @@ export default function ProjectDetailPage() {
                         <TableCell>{formatDuration(log.duration_minutes)}</TableCell>
                         <TableCell>
                           {log.deducted_materials
-                            ? <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">Yes</Badge>
+                            ? <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100">Yes</Badge>
                             : <Badge variant="outline" className="text-gray-500 border-gray-200 bg-gray-50">No</Badge>}
                         </TableCell>
                         <TableCell>{log.notes ?? "—"}</TableCell>

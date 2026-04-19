@@ -8,7 +8,7 @@ const PrivateRoute = () => {
   if (auth?.isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-white/70 text-sm">Loading…</p>
+        <p className="text-white text-sm">Loading…</p>
       </div>
     );
   }

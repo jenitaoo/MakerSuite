@@ -78,7 +78,9 @@ export default function ProjectsTab() {
               ))}
             </select>
           )}
-          <Button onClick={() => setShowCreate(true)}>+ New Project</Button>
+          <Button aria-label="Create new project" onClick={() => setShowCreate(true)}>
+            + New Project
+          </Button>
         </div>
       </div>
 

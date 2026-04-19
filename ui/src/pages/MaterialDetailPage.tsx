@@ -45,15 +45,16 @@ export default function MaterialDetailPage() {
     fetchMaterial();
   }, [fetchMaterial]);
 
-  if (loading) return <div className="p-6 text-white/70">Loading...</div>;
+  if (loading) return <div className="p-6 text-white">Loading...</div>;
   if (!material) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
       <button
+        aria-label="Go back to studio"
         onClick={() => navigate("/studio")}
-        className="text-sm flex items-center gap-1 text-white/70 hover:text-white"
+        className="text-sm flex items-center gap-1 text-white hover:text-white"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back
@@ -68,19 +69,19 @@ export default function MaterialDetailPage() {
             <Badge variant="outline">
               {material.is_low_stock ? "Low Stock" : "In Stock"}
             </Badge>
-            <span className="text-white/70 text-sm">
+            <span className="text-white text-sm">
               {material.quantity} {material.unit_type}
             </span>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={() => setShowHistory(true)}>
+          <Button aria-label="View material history" onClick={() => setShowHistory(true)}>
             <History className="w-4 h-4 mr-1" />
             History
           </Button>
 
-          <Button onClick={() => setShowEdit(true)}>
+          <Button aria-label="Edit material" onClick={() => setShowEdit(true)}>
             <Pencil className="w-4 h-4 mr-1" />
             Edit
           </Button>
@@ -101,7 +102,7 @@ export default function MaterialDetailPage() {
                     className="w-full h-full object-contain rounded-lg"
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center text-neutral-400 py-12">
+                    <div className="flex flex-col items-center justify-center text-neutral-600 py-12">
                     <ImageIcon className="w-6 h-6 mb-1" />
                     <span className="text-xs">No image</span>
                     </div>

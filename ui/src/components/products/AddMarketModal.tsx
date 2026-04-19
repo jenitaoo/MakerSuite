@@ -106,7 +106,7 @@ export default function AddMarketModal({ onClose, onCreated }: Props) {
           <div className="space-y-2">
             <Label>Application Status</Label>
             <Select value={applicationStatus} onValueChange={setApplicationStatus}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Market application status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -133,10 +133,10 @@ export default function AddMarketModal({ onClose, onCreated }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button aria-label="Add market" onClick={handleSave} disabled={saving}>
             {saving ? "Adding..." : "Add Market"}
           </Button>
         </DialogFooter>

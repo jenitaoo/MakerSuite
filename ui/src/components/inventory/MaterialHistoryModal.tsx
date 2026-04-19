@@ -12,9 +12,9 @@ type Props = {
 };
 
 const badgeStyle: Record<string, string> = {
-  restock: "text-green-600 border-green-300 bg-green-50",
-  manual_add: "text-green-600 border-green-300 bg-green-50",
-  manual_deduct: "text-red-600 border-red-300 bg-red-50",
+  restock: "text-green-800 border-green-400 bg-green-100",
+  manual_add: "text-green-800 border-green-400 bg-green-100",
+  manual_deduct: "text-red-800 border-red-400 bg-red-100",
   make: "text-blue-600 border-blue-300 bg-blue-50",
   sale: "text-amber-600 border-amber-300 bg-amber-50",
 };
@@ -74,7 +74,7 @@ export default function MaterialHistoryModal({ material, onClose }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button aria-label="Close" variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -50,6 +50,7 @@ function AppLayout() {
                   {icon}
                   {message}
                   <button
+                     aria-label="Dismiss notification"
                     onClick={() => toast.dismiss(t.id)}
                     className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
                   >

@@ -124,7 +124,7 @@ const Signup = () => {
                 <p className="text-sm text-destructive">{errors.password2.message}</p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button aria-label="Create account" type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating account..." : "Create Account"}
             </Button>
           </form>

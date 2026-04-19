@@ -68,6 +68,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
 
   const SortHeader = ({ column, label }: { column: any; label: string }) => (
     <button
+      aria-label={`Sort by ${label.toLowerCase()}`}
       className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
@@ -107,7 +108,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         const sku = row.getValue("sku") as string | null;
         return sku
           ? <span className="text-neutral-600 text-sm font-mono">{sku}</span>
-          : <span className="text-neutral-400">—</span>;
+          : <span className="text-neutral-600">—</span>;
       },
     },
     {
@@ -120,7 +121,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
       header: ({ column }) => <SortHeader column={column} label="In Stock" />,
       cell: ({ row }) => {
         const qty = row.getValue("internal_quantity") as number;
-        if (qty === 0) return <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of stock</Badge>;
+        if (qty === 0) return <Badge variant="outline" className="text-red-800 border-red-400 bg-red-100">Out of stock</Badge>;
         if (qty <= 3) return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">{qty} — low</Badge>;
         return <span>{qty}</span>;
       },
@@ -160,6 +161,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         return (
           <div className="flex items-center gap-1">
             <Button
+              aria-label={`Log sale for product: ${product.title}`}
               size="sm"
               onClick={() => setSaleTarget(product)}
               disabled={inStock === 0}
@@ -171,7 +173,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(product)}>
+                <Button aria-label={`View sales history for: ${product.title}`} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setHistoryTarget(product)}>
                   <History className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -180,7 +182,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEdit(product)}>
+                <Button aria-label={`Edit product: ${product.title}`} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEdit(product)}>
                   <EllipsisVertical className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -190,6 +192,7 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-labbel={`Delete product: ${product.title}`}
                   variant="ghost" size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => setDeleteTarget(product)}
@@ -228,8 +231,8 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="w-full sm:flex-[2] h-8 text-sm"
           />
-          <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-full sm:flex-1 h-8 text-sm gap-1.5">
+          <Select aria-label="Filter products by platform" value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger aria-label="Filter products by platform" className="w-full sm:flex-1 h-8 text-sm gap-1.5">
               <Filter className="w-3 h-3 shrink-0" />
               <SelectValue />
             </SelectTrigger>
@@ -246,15 +249,15 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Button variant="outline" disabled className="hidden sm:inline-flex items-center w-full sm:w-auto text-muted-foreground gap-2">
+          <Button aria-label="Sync from Shopify" variant="outline" disabled className="hidden sm:inline-flex items-center w-full sm:w-auto text-muted-foreground gap-2">
             <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             Sync from Shopify
           </Button>
-          <Button variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={onRefresh} className="w-full sm:w-auto gap-2 inline-flex items-center">
+          <Button aria-label="Sync from Etsy" variant="outline" style={{ backgroundColor: "#fdf8f6" }} onClick={onRefresh} className="w-full sm:w-auto gap-2 inline-flex items-center">
             <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             Sync from Etsy
           </Button>
-          <Button onClick={onCreateNew} className="w-full sm:w-auto">
+          <Button aria-label="Create new product" onClick={onCreateNew} className="w-full sm:w-auto">
             Create New Product
           </Button>
         </div>
@@ -294,8 +297,12 @@ export default function ProductTable({ products, onEdit, onRefresh, onCreateNew,
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+          <Button aria-label="Previous page" variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+            Previous
+          </Button>
+          <Button aria-label="Next page" variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            Next
+          </Button>
         </div>
       </div>
 

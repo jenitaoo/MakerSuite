@@ -106,10 +106,11 @@ export default function DeleteProductModal({ product, hasEtsyListing, onClose, o
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={deleting}>
+          <Button aria-label="Cancel" variant="outline" onClick={onClose} disabled={deleting}>
             Cancel
           </Button>
           <Button
+            aria-label="Delete product"
             variant="destructive"
             style={{ backgroundColor: "#b84141", color: "#ffffff" }}
             onClick={handleDelete}

@@ -30,6 +30,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
 
   const SortHeader = ({ column, label }: { column: any; label: string }) => (
     <button
+      aria-label={`Sort by ${label.toLowerCase()}`}
       className="flex items-center gap-1 font-medium text-xs uppercase tracking-wide hover:text-black"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
@@ -46,6 +47,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
       header: ({ column }) => <SortHeader column={column} label="Name" />,
       cell: ({ row }) => (
         <button
+          aria-label={`View project: ${row.getValue("name")}`}
           className="font-medium text-left hover:underline max-w-[30ch] truncate block"
           onClick={() => navigate(`/studio/projects/${row.original.id}`)}
           title={row.getValue("name")}
@@ -64,13 +66,13 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
       cell: ({ row }) => {
         const inStock = row.getValue("in_stock") as number;
         if (inStock === 0) return (
-          <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">Out of stock</Badge>
+          <Badge variant="outline" className="text-red-800 border-red-400 bg-red-100">Out of stock</Badge>
         );
         if (inStock <= LOW_STOCK_THRESHOLD) return (
           <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">{inStock} — low</Badge>
         );
         return (
-          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">{inStock}</Badge>
+          <Badge variant="outline" className="text-green-800 border-green-400 bg-green-100">{inStock}</Badge>
         );
       },
     },
@@ -85,6 +87,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
         const project = row.original;
         return project.product ? (
           <button
+            aria-label={`View linked product: ${project.product_title}`}
             className="text-sm hover:underline text-left max-w-[20ch] truncate block text-[hsl(var(--primary))]"
             onClick={() => navigate(`/products/${project.product}/edit`)}
             title={project.product_title ?? ""}
@@ -103,13 +106,13 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
         const project = row.original;
         return (
           <div className="flex items-center gap-1">
-            <Button size="sm" onClick={() => onLogAction(project)} className="text-xs h-7 px-2">
+            <Button aria-label={`Log make for: ${project.name}`} size="sm" onClick={() => onLogAction(project)} className="text-xs h-7 px-2">
               Log Make
             </Button>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onHistory(project)}>
+                <Button aria-label={`View sales history for: ${project.name}`} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onHistory(project)}>
                   <History className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -118,7 +121,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onMaterials(project)}>
+                <Button aria-label={`Manage materials for: ${project.name}`} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onMaterials(project)}>
                   <Package className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -127,7 +130,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEdit(project)}>
+                <Button aria-label={`Edit project: ${project.name}`} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEdit(project)}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -137,6 +140,7 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label={`Delete project: ${project.name}`}
                   variant="ghost" size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => onDelete(project)}
@@ -215,8 +219,8 @@ export default function ProjectsTable({ projects, onDelete, onLogAction, onHisto
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
+          <Button aria-label="Previous page" variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Previous</Button>
+          <Button aria-label="Next page" variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
         </div>
       </div>
     </div>
