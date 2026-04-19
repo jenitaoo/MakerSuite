@@ -33,33 +33,52 @@ DATABASES = {
 # CORS / CSRF
 # -----------------------------
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 CORS_URLS_REGEX = r"^/.*$" # Apply CORS to all endpoints
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://app.withlovejeni.com",
     "https://makersuite-one.vercel.app",  # keep as fallback during transition
     "https://makersuitestaging.vercel.app", # staging
-    "https://makersuite-staging-production.up.railway.app", # staging
+    "https://makersuite-staging-git-staging-withlovejeni.vercel.app", # staging
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://app.withlovejeni.com",
     "https://api.withlovejeni.com",
     "https://makersuite-one.vercel.app",  # keep as fallback
     "https://makersuitestaging.vercel.app", # staging
-    "https://makersuite-staging-production.up.railway.app", # staging
+    "https://makersuite-staging-git-staging-withlovejeni.vercel.app", # staging
 ]
 
 
 # -----------------------------
 # COOKIES
 # -----------------------------
-SESSION_COOKIE_DOMAIN = ".withlovejeni.com"
-CSRF_COOKIE_DOMAIN = ".withlovejeni.com"
-SESSION_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_DOMAIN = None
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-
 
 # -----------------------------
 # STATIC FILES (ROBUST SETUP)

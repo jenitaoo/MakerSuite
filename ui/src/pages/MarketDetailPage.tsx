@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getCookie, API_URL } from "../../src/services/api";
@@ -39,8 +39,10 @@ import {
   X,
   Trash2,
 } from "lucide-react";
-import LogSaleModal from "../components/products/LogSaleModal";
 import { Product } from "../../src/types/product";
+
+// Lazy load modals to speed up initial render
+const LogSaleModal = lazy(() => import("../components/products/LogSaleModal"));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -735,14 +737,16 @@ export default function MarketDetailPage() {
 
       {/* ── Log sale modal ── */}
       {logSaleOpen && (
-        <LogSaleModal
-          products={logSaleProduct ? undefined : products}
-          product={logSaleProduct ?? undefined}
-          marketId={market.id}
-          marketName={market.name}
-          onClose={() => { setLogSaleOpen(false); setLogSaleProductId(null); }}
-          onLogged={() => { setLogSaleOpen(false); setLogSaleProductId(null); loadAll(); }}
-        />
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <LogSaleModal
+            products={logSaleProduct ? undefined : products}
+            product={logSaleProduct ?? undefined}
+            marketId={market.id}
+            marketName={market.name}
+            onClose={() => { setLogSaleOpen(false); setLogSaleProductId(null); }}
+            onLogged={() => { setLogSaleOpen(false); setLogSaleProductId(null); loadAll(); }}
+          />
+        </Suspense>
       )}
 
     </div>

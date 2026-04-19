@@ -177,11 +177,6 @@ export default function ProjectDetailPage() {
                 {project.product_title} →
               </button>
             )}
-            {project.notes && (
-              <span className="text-white/60 text-sm italic truncate max-w-[40ch]">
-                {project.notes}
-              </span>
-            )}
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -196,7 +191,7 @@ export default function ProjectDetailPage() {
           </Button>
         </div>
       </div>
-
+  
       {/* ── Images ── */}
       {project.images && project.images.length > 0 && (
         <div className="space-y-2">
@@ -361,11 +356,10 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
-      {/* ── Recipe ── */}
+      {/* ── Materials ── */}
       <div className="space-y-2">
         <SectionHeader
-          title="Recipe"
-          subtitle="Materials used per make."
+          title="Materials"
         />
         <Card className="bg-white border-neutral-200">
           <CardContent className="p-6 space-y-4">
@@ -433,6 +427,18 @@ export default function ProjectDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Notes ── */}
+      {project.notes && (
+        <div className="space-y-2">
+          <SectionHeader title="Notes" />
+          <Card className="bg-white border-neutral-200">
+            <CardContent className="p-6">
+              <p className="text-neutral-700 whitespace-pre-wrap">{project.notes}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ── Make History ── */}
       <div className="space-y-2">
