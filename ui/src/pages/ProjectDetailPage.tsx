@@ -210,6 +210,17 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
+      {/* ── Tags ── */}
+      {project.tags && project.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {project.tags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       {/* ── At a Glance ── */}
       <div className="space-y-2">
         <SectionHeader

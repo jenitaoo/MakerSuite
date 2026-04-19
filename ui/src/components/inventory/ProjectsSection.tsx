@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowUpDown, ArrowUp, ArrowDown, History,
-  EllipsisVertical, Trash2, Search, ToolCase, ExternalLink,
+  EllipsisVertical, Trash2, Search, ToolCase, ExternalLink, Check, X,
 } from "lucide-react";
 import { getProjects, getProject } from "../../services/inventoryApi";
 import { Project } from "../../types/inventory";
@@ -22,6 +22,9 @@ import LogMakeModal from "./LogMakeModal";
 import MakeHistoryModal from "./MakeHistoryModal";
 import ProjectMaterialsModal from "./ProjectMaterialsModal";
 import DeleteProjectModal from "./DeleteProjectModal";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Command, CommandEmpty, CommandItem, CommandList, CommandInput, CommandGroup } from "../ui/command";
+import { cn } from "@/lib/utils";
 
 export default function ProjectsSection() {
   const navigate = useNavigate();
@@ -36,6 +39,44 @@ export default function ProjectsSection() {
   const [materialsTarget, setMaterialsTarget] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const inStockCount = projects.filter(p => p.in_stock > 0).length;
+  const outOfStockCount = projects.filter(p => p.in_stock === 0).length;
+
+  // For tags
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+
+  const allTags = useMemo(
+    () => [...new Set(projects.flatMap((p) => p.tags ?? []))].sort(),
+    [projects]
+  );
+
+  const filteredProjects = useMemo(() => {
+    let data = projects;
+
+    // TAGS
+    if (selectedTags.length > 0) {
+      data = data.filter(p =>
+        selectedTags.some(tag => (p.tags ?? []).includes(tag))
+      );
+    }
+
+    // STATUS
+    if (statusFilter === "in") {
+      data = data.filter(p => p.in_stock > 0);
+    } else if (statusFilter === "out") {
+      data = data.filter(p => p.in_stock === 0);
+    }
+
+    return data;
+  }, [projects, selectedTags, statusFilter]);
+
+  const toggleTag = (tag: string) =>
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+
   const fetchProjects = async () => {
     try {
       const data = await getProjects();
@@ -48,6 +89,10 @@ export default function ProjectsSection() {
   };
 
   useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => {
+    console.log("PROJECTS:", projects);
+    console.log("TAGS:", projects.map(p => p.tags));
+  }, [projects]);
 
   const handleLogAction = async (project: Project) => {
     try {
@@ -220,6 +265,33 @@ export default function ProjectsSection() {
     },
 
     {
+      accessorKey: "tags",
+      header: ({ column }) => <SortHeader column={column} label="Tags" />,
+      size: 120,
+      minSize: 100,
+      maxSize: 150,
+      cell: ({ row }) => {
+        const tags: string[] = row.getValue("tags") ?? [];
+        if (!tags.length) return <span className="text-muted-foreground">—</span>;
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.slice(0, 2).map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {tags.length > 2 && (
+              <Badge variant="secondary" className="text-xs">
+                +{tags.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      },
+    },
+
+    {
       id: "actions",
       header: () => <span className="font-medium text-xs uppercase tracking-wide whitespace-nowrap">Actions</span>,
       enableSorting: false,
@@ -305,7 +377,7 @@ export default function ProjectsSection() {
   ], [navigate]);
 
   const table = useReactTable({
-    data: projects,
+    data: filteredProjects,
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
@@ -323,17 +395,130 @@ export default function ProjectsSection() {
     <div className="space-y-4">
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8 h-8 w-48 text-sm"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Search projects..."
-          />
+      <div className="flex flex-col gap-3">
+
+        {/* SEARCH */}
+        <div className="w-full sm:w-[320px] md:w-[420px]">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search projects by name"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-8 h-8 w-full text-sm"
+            />
+          </div>
         </div>
-        <Button size="sm" onClick={() => setShowCreate(true)}>+ New Project</Button>
+
+        {/* FILTERS */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+
+          {/* STATUS FILTER */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-8 w-full sm:w-auto rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">All statuses</option>
+
+            <option value="in">
+              In Stock {inStockCount > 0 ? `(${inStockCount})` : ""}
+            </option>
+
+            <option value="out">
+              Out of Stock {outOfStockCount > 0 ? `(${outOfStockCount})` : ""}
+            </option>
+          </select>
+
+          {/* TAG FILTER */}
+          {allTags.length > 0 && (
+            <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedTags.length > 0 ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 w-full sm:w-auto text-xs gap-1.5"
+                >
+                  Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-56 p-0 bg-white" align="start">
+                <Command>
+                  <CommandInput placeholder="Search tags..." />
+                  <CommandList>
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup>
+                      {allTags.map((tag) => (
+                        <CommandItem
+                          key={tag}
+                          value={tag}
+                          onSelect={() => toggleTag(tag)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 size-3",
+                              selectedTags.includes(tag)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {tag}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+
+                {selectedTags.length > 0 && (
+                  <div className="border-t p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full h-7 text-xs text-muted-foreground"
+                      onClick={() => setSelectedTags([])}
+                    >
+                      <X className="size-3 mr-1" /> Clear filters
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {/* ACTIVE TAGS */}
+          {selectedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="text-xs gap-1 pr-1 cursor-pointer"
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag} <X className="size-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* FOOTER (COUNT + BUTTON) */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+          <span className="text-sm text-muted-foreground">
+            {table.getFilteredRowModel().rows.length} of {projects.length} projects
+          </span>
+
+          <Button
+            size="sm"
+            onClick={() => setShowCreate(true)}
+            className="w-full sm:w-auto"
+          >
+            + New Project
+          </Button>
+
+        </div>
       </div>
 
       {/* ── Table ── */}

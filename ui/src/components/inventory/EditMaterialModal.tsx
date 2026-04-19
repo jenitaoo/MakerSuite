@@ -17,6 +17,7 @@ import { ImagePlus, X } from "lucide-react";
 
 import { updateMaterial } from "../../services/inventoryApi";
 import type { RawMaterial } from "../../types/inventory";
+import { TagsInput } from "@/components/ui/tags-input";
 
 type Props = {
   material: RawMaterial;
@@ -29,6 +30,7 @@ export default function EditMaterialModal({
   onClose,
   onSaved,
 }: Props) {
+  const [tags, setTags] = useState<string[]>(material.tags ?? []);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -115,6 +117,7 @@ export default function EditMaterialModal({
         material.id,
         {
           ...form,
+          tags,
           quantity: Number(form.quantity || 0),
           low_stock_threshold: Number(form.low_stock_threshold || 0),
           cost_per_unit: Number(form.cost_per_unit || 0),
@@ -277,6 +280,22 @@ export default function EditMaterialModal({
               />
             </div>
           </div>
+
+        <div className="space-y-2">
+        <Label>
+            Tags <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+
+        <TagsInput
+            value={tags}
+            onChange={setTags}
+            placeholder="e.g. cotton, yarn, acrylic"
+        />
+
+        <p className="text-xs text-muted-foreground">
+            Press Enter or comma to add tags
+        </p>
+        </div>
 
           <div>
             <Label>Notes</Label>
