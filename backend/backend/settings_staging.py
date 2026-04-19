@@ -73,8 +73,8 @@ CSRF_TRUSTED_ORIGINS = [
 # -----------------------------
 # COOKIES
 # -----------------------------
-SESSION_COOKIE_DOMAIN = "makersuitestaging.vercel.app"
-CSRF_COOKIE_DOMAIN = "makersuitestaging.vercel.app"
+SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_DOMAIN = None
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = True
