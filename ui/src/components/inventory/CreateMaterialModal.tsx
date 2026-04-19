@@ -19,7 +19,7 @@ type Props = {
 };
 
 
-export default function MaterialFormModal({ material, existingTags = [], onClose, onSaved }: Props) {
+export default function CreateMaterialModal({ material, existingTags = [], onClose, onSaved }: Props) {
   const isEdit = !!material;
   const [form, setForm] = useState({
     name: material?.name ?? "",
@@ -191,20 +191,51 @@ export default function MaterialFormModal({ material, existingTags = [], onClose
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2 mt-4">
-                <Label>Cost per Unit (€)</Label>
+                <Label>Cost Per Unit (€)</Label>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="h-4 w-4 rounded-full bg-neutral-300 text-white flex items-center justify-center text-xs cursor-help">
                       ?
                     </div>
                   </TooltipTrigger>
+
                   <TooltipContent side="right" className="max-w-xs">
                     <p>Cost per single unit of measurement.</p>
-                    <p className="text-xs mt-1">Example: If 50g cost €3.50, then cost per gram = €3.50 ÷ 50 = €0.07</p>
+                    <p className="text-xs mt-1">
+                      Example: If 50g cost €3.50, then cost per gram = €3.50 ÷ 50 = €0.07
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <Input type="number" min="0" step="0.01" value={form.cost_per_unit} onChange={(e) => update({ cost_per_unit: e.target.value })} placeholder="0.00" />
+
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.cost_per_unit}
+                onChange={(e) => {
+                  let val = e.target.value;
+
+                  // allow empty input
+                  if (val === "") {
+                    update({ cost_per_unit: "" });
+                    return;
+                  }
+
+                  // only allow numbers + one dot
+                  if (!/^\d*\.?\d*$/.test(val)) return;
+
+                  // limit to 2 decimal places
+                  if (val.includes(".")) {
+                    const [int, dec] = val.split(".");
+                    val = `${int}.${dec.slice(0, 2)}`;
+                  }
+
+                  update({ cost_per_unit: val });
+                }}
+                placeholder="0.00"
+              />
             </div>
           </div>
 

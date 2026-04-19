@@ -114,7 +114,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "id", "owner", "name", "product", "product_title", "product_price",
             "units_made", "units_sold", "in_stock",
             "avg_duration_minutes", "material_cost_per_unit",
-            "notes", "images", "project_materials", "make_logs",
+            "notes", "tags", "images", "project_materials", "make_logs",
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]

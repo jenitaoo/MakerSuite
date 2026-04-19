@@ -16,10 +16,9 @@ import { Check, X, Search, ArrowUpDown, ArrowUp, ArrowDown, History, Trash2, Ell
 import { cn } from "@/lib/utils";
 import { getMaterials, deleteMaterial } from "../../services/inventoryApi";
 import { RawMaterial } from "../../types/inventory";
-import MaterialFormModal from "./MaterialFormModal";
+import CreateMaterialModal from "./CreateMaterialModal";
 import RestockDeductModal from "./RestockDeductModal";
 import MaterialHistoryModal from "./MaterialHistoryModal";
-import MaterialDetailModal from "./MaterialDetailModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DeleteMaterialModal from "./DeleteMaterialModal";
 
@@ -295,28 +294,32 @@ export default function MaterialsSection() {
   return (
     <div className="space-y-4">
 
-      {/* ── Toolbar — one row ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Search */}
+      {/* ── Toolbar ── */}
+      <div className="flex flex-col gap-3">
+
+        {/* SEARCH */}
+        <div className="w-full sm:w-[320px] md:w-[420px]">
           <div className="relative">
             <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search materials..."
+              placeholder="Search materials by name, SKU, brand, source, supplier"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-8 h-8 w-48 text-sm"
+              className="pl-8 h-8 w-full text-sm"
             />
           </div>
+        </div>
 
-          {/* Status filter */}
+        {/* FILTERS */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+
           <select
             value={(table.getColumn("is_low_stock")?.getFilterValue() as string) ?? ""}
             onChange={(e) => {
               const col = table.getColumn("is_low_stock");
               col?.setFilterValue(e.target.value || undefined);
             }}
-            className="h-8 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-8 w-full sm:w-auto rounded-md border border-input bg-transparent px-3 text-sm"
           >
             <option value="">All statuses</option>
             <option value="ok">In Stock</option>
@@ -324,18 +327,18 @@ export default function MaterialsSection() {
             <option value="out">Out of Stock {outOfStockCount > 0 ? `(${outOfStockCount})` : ""}</option>
           </select>
 
-          {/* Tag filter */}
           {allTags.length > 0 && (
             <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={selectedTags.length > 0 ? "default" : "outline"}
                   size="sm"
-                  className="h-8 text-xs gap-1.5"
+                  className="h-8 w-full sm:w-auto text-xs gap-1.5"
                 >
                   Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
                 </Button>
               </PopoverTrigger>
+
               <PopoverContent className="w-56 p-0 bg-white" align="start">
                 <Command>
                   <CommandInput placeholder="Search tags..." />
@@ -344,16 +347,27 @@ export default function MaterialsSection() {
                     <CommandGroup>
                       {allTags.map((tag) => (
                         <CommandItem key={tag} value={tag} onSelect={() => toggleTag(tag)}>
-                          <Check className={cn("mr-2 size-3", selectedTags.includes(tag) ? "opacity-100" : "opacity-0")} />
+                          <Check
+                            className={cn(
+                              "mr-2 size-3",
+                              selectedTags.includes(tag) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
                           {tag}
                         </CommandItem>
                       ))}
                     </CommandGroup>
                   </CommandList>
                 </Command>
+
                 {selectedTags.length > 0 && (
                   <div className="border-t p-2">
-                    <Button variant="ghost" size="sm" className="w-full h-7 text-xs text-muted-foreground" onClick={() => setSelectedTags([])}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full h-7 text-xs text-muted-foreground"
+                      onClick={() => setSelectedTags([])}
+                    >
                       <X className="size-3 mr-1" /> Clear filters
                     </Button>
                   </div>
@@ -362,20 +376,39 @@ export default function MaterialsSection() {
             </Popover>
           )}
 
-          {/* Active tag chips */}
-          {selectedTags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs gap-1 pr-1 cursor-pointer" onClick={() => toggleTag(tag)}>
-              {tag} <X className="size-3" />
-            </Badge>
-          ))}
+          {/* active tags */}
+          {selectedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="text-xs gap-1 pr-1 cursor-pointer"
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag} <X className="size-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
+        {/* FOOTER (COUNT + BUTTON) */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+          <span className="text-sm text-muted-foreground">
             {table.getFilteredRowModel().rows.length} of {materials.length} materials
           </span>
-          <Button size="sm" onClick={() => setShowCreate(true)}>+ Add Material</Button>
+
+          <Button
+            size="sm"
+            onClick={() => setShowCreate(true)}
+            className="w-full sm:w-auto"
+          >
+            + Add Material
+          </Button>
         </div>
+
       </div>
 
       {/* ── Table ── */}
@@ -435,10 +468,10 @@ export default function MaterialsSection() {
 
       {/* ── Modals ── */}
       {showCreate && (
-        <MaterialFormModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); fetchMaterials(); }} />
+        <CreateMaterialModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); fetchMaterials(); }} />
       )}
       {editTarget && (
-        <MaterialFormModal material={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchMaterials(); }} />
+        <CreateMaterialModal material={editTarget} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); fetchMaterials(); }} />
       )}
       {logTarget && (
         <RestockDeductModal material={logTarget} onClose={() => setLogTarget(null)} onSaved={() => { setLogTarget(null); fetchMaterials(); }} />

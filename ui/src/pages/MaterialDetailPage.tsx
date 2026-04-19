@@ -26,6 +26,10 @@ export default function MaterialDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Helper to display a dash for empty values
+  const dash = (v: unknown): string =>
+  v === null || v === undefined || v === "" ? "—" : String(v);
+
   const fetchMaterial = useCallback(async () => {
     try {
       const data = await getMaterial(materialId);
@@ -107,100 +111,116 @@ export default function MaterialDetailPage() {
             </CardContent>
         </Card>
         <Card className="bg-white border-neutral-200">
-            <CardContent className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 text-sm">
+        <CardContent className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 text-sm">
 
-                {/* Name */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Name
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.name ?? "—"}</p>
+            {/* Name */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Name
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.name)}
+                </p>
+            </div>
+
+            {/* Unit Type */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Unit Type
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.unit_type)}
+                </p>
+            </div>
+
+            {/* Quantity */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Quantity
+                </p>
+                <p className="font-medium text-neutral-800">
+                {material.quantity != null
+                    ? `${material.quantity} ${dash(material.unit_type)}`
+                    : "—"}
+                </p>
+            </div>
+
+            {/* Low stock */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Low Stock Threshold
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.low_stock_threshold)}
+                </p>
+            </div>
+
+            {/* Cost per unit */}
+            <div className="space-y-1 sm:col-span-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Cost Per Unit
+                </p>
+                <p className="font-medium text-neutral-800">
+                {material.cost_per_unit != null
+                    ? `€${material.cost_per_unit}`
+                    : "—"}
+                </p>
+            </div>
+
+            {/* Brand */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Brand
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.brand)}
+                </p>
+            </div>
+
+            {/* Source */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Source
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.source)}
+                </p>
+            </div>
+
+            {/* Supplier */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Supplier
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.supplier)}
+                </p>
+            </div>
+
+            {/* SKU */}
+            <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                SKU
+                </p>
+                <p className="font-medium text-neutral-800">
+                {dash(material.sku)}
+                </p>
+            </div>
+
+            {/* Notes */}
+            <div className="sm:col-span-2 space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Notes
+                </p>
+
+                <div className="min-h-[120px] p-3 rounded-md border border-neutral-200 bg-neutral-50 text-neutral-800 whitespace-pre-wrap">
+                {material.notes?.trim() ? material.notes : "—"}
                 </div>
+            </div>
 
-                {/* Unit Type */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Unit Type
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.unit_type ?? "—"}</p>
-                </div>
-
-                {/* Quantity */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Quantity
-                    </p>
-                    <p className="font-medium text-neutral-800">
-                    {material.quantity} {material.unit_type}
-                    </p>
-                </div>
-
-                {/* Low stock */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Low Stock Threshold
-                    </p>
-                    <p className="font-medium text-neutral-800">
-                    {material.low_stock_threshold ?? "—"}
-                    </p>
-                </div>
-
-                {/* Cost per unit (spans 2 columns) */}
-                <div className="space-y-1 sm:col-span-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Cost Per Unit
-                    </p>
-                    <p className="font-medium text-neutral-800">
-                    {material.cost_per_unit ? `€${material.cost_per_unit}` : "—"}
-                    </p>
-                </div>
-
-                {/* Brand */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Brand
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.brand ?? "—"}</p>
-                </div>
-
-                {/* Source */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Source
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.source ?? "—"}</p>
-                </div>
-
-                {/* Supplier */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Supplier
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.supplier ?? "—"}</p>
-                </div>
-
-                {/* SKU */}
-                <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    SKU
-                    </p>
-                    <p className="font-medium text-neutral-800">{material.sku ?? "—"}</p>
-                </div>
-
-                {/* Notes (full width big box) */}
-                <div className="sm:col-span-2 space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Notes
-                    </p>
-
-                    <div className="min-h-[120px] p-3 rounded-md border border-neutral-200 bg-neutral-50 text-neutral-800 whitespace-pre-wrap">
-                    {material.notes?.trim() ? material.notes : "Nothing here yet φ(*￣0￣)!"}
-                    </div>
-                </div>
-
-                </div>
-            </CardContent>
+            </div>
+        </CardContent>
         </Card>
       </div>
 
