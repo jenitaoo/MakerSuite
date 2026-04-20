@@ -124,6 +124,19 @@ class EtsyProductActions:
             product=product, platform="Etsy"
         ).first()
 
+        # Override product fields with Etsy-specific values from request (in-memory only, no save)
+        # Allows Etsy price/quantity/etc to differ from internal values
+        if "price" in request.data and request.data["price"] not in (None, ""):
+            product.internal_price = request.data["price"]
+        if "quantity" in request.data and request.data["quantity"] not in (None, ""):
+            product.internal_quantity = request.data["quantity"]
+        if "title" in request.data and request.data["title"]:
+            product.title = request.data["title"]
+        if "description" in request.data and request.data["description"] is not None:
+            product.description = request.data["description"]
+        if "sku" in request.data and request.data["sku"] is not None:
+            product.sku = request.data["sku"]
+
         # Extract Etsy fields from request
         etsy_fields = {k: v for k, v in {
             "tags": request.data.get("tags"),
@@ -138,6 +151,12 @@ class EtsyProductActions:
         if not product.internal_price:
             return Response(
                 {"error": "Product has no price set. Add a price before pushing to Etsy."},
+                status=400
+            )
+
+        if not product.internal_quantity:
+            return Response(
+                {"error": "Product has no quantity set. Add a quantity before pushing to Etsy."},
                 status=400
             )
 
