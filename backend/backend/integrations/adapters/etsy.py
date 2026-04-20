@@ -11,6 +11,9 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from django.conf import settings
 from django.utils import timezone
+from asgiref.sync import sync_to_async
+
+from backend.products.models import Product, ExternalProductListing
 
 from backend.integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
 from backend.integrations.exceptions import (
@@ -101,23 +104,17 @@ class EtsyAdapter(BasePlatformAdapter):
         """
         Get valid access token, auto-refreshing if needed.
 
-        Synchronous method because Django DB operations are sync.
-        EtsyToken.get_valid_token() handles:
-        - Checking if token expired (5 min buffer)
-        - Locking token row to prevent race conditions
-        - Calling Etsy refresh API if needed
-        - Atomically saving new tokens
+        Wraps sync EtsyToken.get_valid_token() for async context.
+        sync_to_async() runs the sync DB operation in a thread pool,
+        keeping the async event loop free for other requests.
 
-        Design decision: Keep sync because token model operations are sync.
-        Performance impact: negligible (happens once per request batch).
 
         Raises:
             PlatformAuthError: if refresh token missing or refresh fails
         """
         try:
-            return self._token.get_valid_token()
+            return await sync_to_async(self._token.get_valid_token)()
         except ValueError as e:
-            # Refresh token missing — 90 days inactive
             logger.error(f"EtsyToken refresh failed: {e}")
             raise PlatformAuthError(
                 f"Etsy token refresh failed: {str(e)}",
@@ -140,13 +137,10 @@ class EtsyAdapter(BasePlatformAdapter):
         Etsy requires:
         - Authorization: Bearer {access_token}
         - x-api-key: {ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}
-
-        Design decision: Rebuild headers per-request (not cached).
-        Ensures token stays fresh even if request is queued.
-        Negligible performance cost (string building).
         """
+        token = await self._get_access_token()  # ← await it
         return {
-            "Authorization": f"Bearer {self._get_access_token()}",
+            "Authorization": f"Bearer {token}",
             "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
             "Content-Type": "application/json",
         }
@@ -236,26 +230,11 @@ class EtsyAdapter(BasePlatformAdapter):
         context: str = "",
         **kwargs,
     ) -> Dict[str, Any]:
-        """
-        Make HTTP request to Etsy API.
-
-        Args:
-            method: HTTP verb (GET, POST, PATCH, PUT)
-            endpoint: API endpoint path
-            context: Description for logging/errors
-            **kwargs: json, params, data, files, etc.
-
-        Returns:
-            Parsed JSON response
-
-        Design decision: Single _request() method for all verbs.
-        Reduces code duplication, centralizes error handling.
-        """
-        token = self._get_access_token()  # Sync call
-        headers = self._headers()
+        """Make HTTP request to Etsy API."""
+        headers = await self._headers()  # ← await it
         url = f"{self.BASE_URL}{endpoint}"
 
-        client = await self._get_client()  # Async call
+        client = await self._get_client()
 
         logger.debug(f"Etsy {method} {endpoint}")
 
@@ -273,7 +252,7 @@ class EtsyAdapter(BasePlatformAdapter):
             return response.json()
 
         except PlatformIntegrationError:
-            raise  # Re-raise platform errors
+            raise
         except Exception as e:
             logger.error(f"Etsy API request failed: {e}", exc_info=True)
             raise PlatformAPIError(
