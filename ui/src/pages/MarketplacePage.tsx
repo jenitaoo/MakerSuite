@@ -396,6 +396,9 @@ export default function MarketplacePage() {
         return;
       }
       const { shop_id } = await shopRes.json();
+      console.log("shop_id:", shop_id);
+      const importUrl = `${API_URL}/api/etsy/shops/${shop_id}/import/`;
+      console.log("Import URL:", importUrl);
       await toast.promise(
         fetch(`${API_URL}/api/etsy/shops/${shop_id}/import/`, {
           method: "POST",
