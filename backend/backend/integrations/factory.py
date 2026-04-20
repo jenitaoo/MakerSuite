@@ -5,7 +5,7 @@ It currently supports Etsy and can be easily extended to support additional plat
 
 The factory provides a centralized way to manage adapter creation and ensures that the correct adapter is returned for each platform.
 """
-from integrations.adapters.etsy import EtsyAdapter
+from .adapters.etsy import EtsyAdapter
 
 class AdapterFactory:
     """Factory for creating platform adapters."""
