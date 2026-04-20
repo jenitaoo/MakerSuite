@@ -15,8 +15,8 @@ from asgiref.sync import sync_to_async
 
 from products.models import Product, ExternalProductListing
 
-from integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
-from integrations.exceptions import (
+from code.backend.integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
+from code.backend.integrations.exceptions import (
     PlatformAuthError,
     PlatformAPIError,
     PlatformIntegrationError,
