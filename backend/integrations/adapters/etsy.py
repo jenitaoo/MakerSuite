@@ -460,7 +460,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             data = await self._get(
-                f"/v3/application/shops/{shop_id}/listings",
+                f"/shops/{shop_id}/listings",
                 params=params,
                 context="fetch listings"
             )
@@ -559,7 +559,7 @@ class EtsyAdapter(BasePlatformAdapter):
             }
 
             result = await self._post(
-                f"/v3/application/shops/{shop_id}/listings",
+                f"/shops/{shop_id}/listings",
                 json=payload,
                 context="create listing"
             )
@@ -646,7 +646,7 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
         return await self._patch(
-            f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
+            f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
             json=payload,
             context="update listing metadata"
         )
@@ -697,7 +697,7 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
         return await self._put(
-            f"/v3/application/listings/{listing.platform_listing_id}/inventory",
+            f"/listings/{listing.platform_listing_id}/inventory",
             json=payload,
             context="update inventory"
         )
@@ -708,7 +708,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             await self._patch(
-                f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
+                f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
                 json={"state": "inactive"},
                 context="deactivate listing"
             )
@@ -755,7 +755,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             data = await self._get(
-                f"/v3/application/shops/{shop_id}/receipts",
+                f"/shops/{shop_id}/receipts",
                 params=params,
                 context="fetch receipts"
             )
@@ -808,7 +808,7 @@ class EtsyAdapter(BasePlatformAdapter):
         try:
             result = await self._request(
                 "POST",
-                f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images",
+                f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images",
                 json=False,
                 files=files,
                 context="upload image"
