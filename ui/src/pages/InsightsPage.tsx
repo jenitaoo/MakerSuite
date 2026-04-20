@@ -110,7 +110,7 @@ function StatCard({
       className={`rounded-lg border p-5 flex flex-col gap-2 transition
         ${
           highlight
-            ? "bg-[#76535c]/8 border-[#76535c]/30"
+            ? "bg-[#593026]/8 border-[#593026]/30"
             : "bg-white border-neutral-200"
         }
         ${
@@ -193,7 +193,7 @@ function TimeToggle({ value, onChange }: { value: TimeFilter; onChange: (v: Time
           onClick={() => onChange(o.value)}
           className={`px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
             value === o.value
-              ? "bg-[#76535c] text-white"
+              ? "bg-[#593026] text-white"
               : "text-neutral-600 hover:bg-neutral-50"
           }`}
         >
@@ -454,7 +454,7 @@ export default function InsightsPage() {
     <div>
       {/* ══ HERO ══ */}
       <section
-        className="scalloped-intro bg-[#76535c] max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10"
+        className="scalloped-intro bg-[#593026] max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-10"
         aria-label="Insights Hero"
       >
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
@@ -659,7 +659,7 @@ export default function InsightsPage() {
             <Card className="bg-white border-neutral-200">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-[#844839]" aria-hidden="true" />
+                  <Store className="w-4 h-4 text-[#6b3a2e]" aria-hidden="true" />
                   <SectionLabel>Marketplace</SectionLabel>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

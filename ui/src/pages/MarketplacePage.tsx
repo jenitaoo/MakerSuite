@@ -459,9 +459,9 @@ export default function MarketplacePage() {
               aria-label={`Navigate to ${label}`}
               aria-current={active ? "location" : undefined}
               className={`group flex items-center gap-2 py-2 px-2 rounded-lg transition-all text-left
-                hover:bg-[#844839] ${
+                hover:bg-[#6b3a2e] ${
                   active
-                    ? "bg-[#844839]/40 text-white"
+                    ? "bg-[#6b3a2e]/40 text-white"
                     : "text-white/40 hover:text-white"
                 }`}
             >
@@ -490,7 +490,7 @@ export default function MarketplacePage() {
           ref={(el) => { sectionRefs.current["intro"] = el; }}
           aria-label="Marketplace overview"
         >
-          <div className="scalloped-intro bg-[#844839] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
+          <div className="scalloped-intro bg-[#6b3a2e] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
 
               <div className="w-full lg:w-2/5 overflow-visible shrink-0 flex items-center justify-center">

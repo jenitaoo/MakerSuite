@@ -257,7 +257,7 @@ export default function ProjectsSection() {
                   e.stopPropagation();
                   navigate(`/products/${project.product}/edit`);
                 }}
-                className="text-[#844839] hover:text-[#a5655a] transition-colors"
+                className="text-[#6b3a2e] hover:text-[#a5655a] transition-colors"
               >
                 <ExternalLink className="h-4 w-4" />
               </button>
