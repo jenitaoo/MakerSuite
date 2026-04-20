@@ -188,6 +188,8 @@ class EtsyShopInfoView(APIView):
             return Response(data)
 
         except PlatformAuthError as e:
-            return Response({"error": e.message}, status=401)
+            return Response({"error": e.message, "requires_reauth": e.requires_reauth}, status=401)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({"error": str(e)}, status=500)

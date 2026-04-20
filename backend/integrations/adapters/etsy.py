@@ -386,14 +386,15 @@ class EtsyAdapter(BasePlatformAdapter):
         """
         Fetch authenticated user's shop info.
 
-        Endpoint: /v3/application/shops/1
-        Note: Always uses shop ID "1" (authenticated user's shop)
+        Endpoint: /users/{etsy_user_id}/shops
+        Uses the esty_user_id from the token to find the user's shop
         """
         logger.debug("Fetching Etsy shop info")
 
         try:
+            etsy_user_id = self._token.etsy_user_id
             data = await self._get(
-                "/v3/application/shops/1",
+                f"/users/{etsy_user_id}/shops",
                 context="fetch shop info"
             )
 
