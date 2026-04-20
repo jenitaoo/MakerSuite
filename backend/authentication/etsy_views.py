@@ -2,6 +2,7 @@ import base64
 import hashlib
 import secrets
 import requests
+import logging
 
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
@@ -19,6 +20,9 @@ from integrations.exceptions import PlatformAuthError, PlatformIntegrationError
 from products.models import ExternalProductListing
 from authentication.models import UserProfile
 
+logger = logging.getLogger(__name__)
+
+
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
@@ -27,12 +31,12 @@ def build_code_challenge(verifier: str) -> str:
 def extract_etsy_user_id(access_token: str) -> str:
     return access_token.split(".", 1)[0]
 
+
 class EtsyLoginView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
 
-        # Store where to return after auth completes
         return_to = request.GET.get("return_to", "/")
         request.session["etsy_auth_return"] = return_to
 
@@ -107,11 +111,6 @@ class EtsyCallbackView(View):
 
 
 class EtsyDisconnectView(View):
-    """
-    POST /api/etsy/disconnect/
-    Removes the stored Etsy token, effectively disconnecting the account.
-    The user will need to re-authenticate to use Etsy features again.
-    """
     def post(self, request):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
@@ -123,17 +122,6 @@ class EtsyDisconnectView(View):
 
 
 class EtsyConnectionStatusView(View):
-    """
-    GET /api/etsy/status/
-    Returns whether the user has a valid Etsy connection.
-    Used by the Profile page for accurate real-time connection status
-    instead of the stale value stored in the auth context.
-
-    etsy_connected: True if a token record exists
-    etsy_needs_reauth: True if token is expired AND has no refresh token
-                       (automatic refresh is not possible — full re-auth required)
-    etsy_token_expired: True if the access token is currently expired
-    """
     def get(self, request):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
@@ -173,6 +161,7 @@ class EtsyPingView(View):
 
         resp = requests.get("https://api.etsy.com/v3/application/openapi-ping", headers=headers)
         return JsonResponse({"status": resp.status_code, "body": resp.json()})
+
 
 class EtsyShopInfoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -259,80 +248,99 @@ class EtsyImportListingsView(APIView):
             adapter = AdapterFactory.get_adapter("etsy", etsy_token, shop_id)
             listings = async_to_sync(adapter.fetch_listings)(shop_id=shop_id, limit=100)
 
+            logger.info(f"[IMPORT] Fetched {len(listings)} listings from Etsy")
+
             imported = 0
-            skipped = 0
+            updated = 0
+            errors = 0
 
             for listing in listings:
-                # Check if already imported
-                existing = ExternalProductListing.objects.filter(
-                    owner=profile,
-                    platform="Etsy",
-                    platform_listing_id=listing.external_id,
-                ).first()
+                try:
+                    logger.info(f"[IMPORT] Processing listing {listing.external_id}: {listing.title[:50]}, qty={listing.quantity}")
 
-            if existing:
-                # Update all fields from Etsy
-                existing.raw = listing.raw_data
-                existing.listing_title = listing.title
-                existing.listing_description = listing.description
-                existing.listing_price = listing.price
-                existing.listing_quantity = listing.quantity
-                existing.listing_currency = listing.raw_data.get("price", {}).get("currency_code")
-                
-                # Etsy-specific fields
-                existing.etsy_tags = listing.raw_data.get("tags", [])
-                existing.etsy_materials = listing.raw_data.get("materials", [])
-                existing.etsy_who_made = listing.raw_data.get("who_made", "i_did")
-                existing.etsy_when_made = listing.raw_data.get("when_made", "made_to_order")
-                existing.etsy_should_auto_renew = listing.raw_data.get("should_auto_renew", True)
-                existing.etsy_is_taxable = listing.raw_data.get("is_taxable", True)
-                existing.etsy_listing_type = listing.raw_data.get("listing_type", "physical")
+                    existing = ExternalProductListing.objects.filter(
+                        owner=profile,
+                        platform="Etsy",
+                        platform_listing_id=listing.external_id,
+                    ).first()
 
-                # Get primary image URL
-                images = listing.raw_data.get("images", [])
-                if images:
-                    existing.listing_image_url = images[0].get("url_fullxfull")
+                    if existing:
+                        logger.info(f"[IMPORT] Updating existing listing {listing.external_id} (old qty={existing.listing_quantity})")
 
-                existing.save()  # Save all fields, let Django figure it out
+                        # Update all fields from Etsy
+                        existing.raw = listing.raw_data
+                        existing.listing_title = listing.title
+                        existing.listing_description = listing.description
+                        existing.listing_price = listing.price
+                        existing.listing_quantity = listing.quantity
+                        existing.listing_currency = listing.raw_data.get("price", {}).get("currency_code")
 
-                # Update linked Product
-                if existing.product:
-                    existing.product.internal_quantity = listing.quantity
-                    existing.product.internal_price = listing.price
-                    existing.product.save(update_fields=["internal_quantity", "internal_price"])
+                        # Etsy-specific fields
+                        existing.etsy_tags = listing.raw_data.get("tags", [])
+                        existing.etsy_materials = listing.raw_data.get("materials", [])
+                        existing.etsy_who_made = listing.raw_data.get("who_made", "i_did")
+                        existing.etsy_when_made = listing.raw_data.get("when_made", "made_to_order")
+                        existing.etsy_should_auto_renew = listing.raw_data.get("should_auto_renew", True)
+                        existing.etsy_is_taxable = listing.raw_data.get("is_taxable", True)
+                        existing.etsy_listing_type = listing.raw_data.get("listing_type", "physical")
 
-                skipped += 1
-            else:
-                # Create new
-                images = listing.raw_data.get("images", [])
-                image_url = images[0].get("url_fullxfull") if images else None
+                        # Primary image URL
+                        images = listing.raw_data.get("images", [])
+                        if images:
+                            existing.listing_image_url = images[0].get("url_fullxfull")
 
-                ExternalProductListing.objects.create(
-                    owner=profile,
-                    platform="Etsy",
-                    platform_listing_id=listing.external_id,
-                    shop_id=shop_id,
-                    listing_title=listing.title,
-                    listing_description=listing.description,
-                    listing_price=listing.price,
-                    listing_quantity=listing.quantity,
-                    listing_currency=listing.raw_data.get("price", {}).get("currency_code"),
-                    listing_image_url=image_url,
-                    etsy_tags=listing.raw_data.get("tags", []),
-                    etsy_materials=listing.raw_data.get("materials", []),
-                    etsy_who_made=listing.raw_data.get("who_made", "i_did"),
-                    etsy_when_made=listing.raw_data.get("when_made", "made_to_order"),
-                    etsy_should_auto_renew=listing.raw_data.get("should_auto_renew", True),
-                    etsy_is_taxable=listing.raw_data.get("is_taxable", True),
-                    etsy_listing_type=listing.raw_data.get("listing_type", "physical"),
-                    raw=listing.raw_data,
-                )
-                imported += 1
+                        existing.save()
+                        logger.info(f"[IMPORT] Saved listing {listing.external_id} (new qty={listing.quantity})")
+
+                        # Update linked Product
+                        if existing.product:
+                            logger.info(f"[IMPORT] Updating linked Product {existing.product.id}")
+                            existing.product.internal_quantity = listing.quantity
+                            existing.product.internal_price = listing.price
+                            existing.product.save(update_fields=["internal_quantity", "internal_price"])
+                        else:
+                            logger.info(f"[IMPORT] Listing {listing.external_id} has no linked Product")
+
+                        updated += 1
+                    else:
+                        logger.info(f"[IMPORT] Creating new listing {listing.external_id}")
+
+                        images = listing.raw_data.get("images", [])
+                        image_url = images[0].get("url_fullxfull") if images else None
+
+                        ExternalProductListing.objects.create(
+                            owner=profile,
+                            platform="Etsy",
+                            platform_listing_id=listing.external_id,
+                            shop_id=shop_id,
+                            listing_title=listing.title,
+                            listing_description=listing.description,
+                            listing_price=listing.price,
+                            listing_quantity=listing.quantity,
+                            listing_currency=listing.raw_data.get("price", {}).get("currency_code"),
+                            listing_image_url=image_url,
+                            etsy_tags=listing.raw_data.get("tags", []),
+                            etsy_materials=listing.raw_data.get("materials", []),
+                            etsy_who_made=listing.raw_data.get("who_made", "i_did"),
+                            etsy_when_made=listing.raw_data.get("when_made", "made_to_order"),
+                            etsy_should_auto_renew=listing.raw_data.get("should_auto_renew", True),
+                            etsy_is_taxable=listing.raw_data.get("is_taxable", True),
+                            etsy_listing_type=listing.raw_data.get("listing_type", "physical"),
+                            raw=listing.raw_data,
+                        )
+                        imported += 1
+
+                except Exception as e:
+                    logger.error(f"[IMPORT] Error processing listing {listing.external_id}: {e}", exc_info=True)
+                    errors += 1
+
+            logger.info(f"[IMPORT] Done: imported={imported}, updated={updated}, errors={errors}, total={len(listings)}")
 
             return Response({
                 "status": "success",
                 "imported": imported,
-                "updated": skipped,
+                "updated": updated,
+                "errors": errors,
                 "total": len(listings),
             })
 
