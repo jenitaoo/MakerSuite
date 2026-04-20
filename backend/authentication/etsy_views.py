@@ -1,7 +1,3 @@
-"""
-This module handles OAuth2 authentication with Etsy, including login, callback handling, and token management.
-It also provides a ping endpoint to test the connection with Etsy's API.
-"""
 import base64
 import hashlib
 import secrets
@@ -12,12 +8,14 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views import View
-from products.platforms.etsy.etsy import EtsyAdapter
+from django.http import JsonResponse, HttpResponseForbidden
 from .models import EtsyToken
+
 
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+
 
 def extract_etsy_user_id(access_token: str) -> str:
     return access_token.split(".", 1)[0]
@@ -27,8 +25,8 @@ class EtsyLoginView(View):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Login required.")
 
-        # Store where to return after auth
-        return_to = request.GET.get("return_to", "/marketplace")
+        # Store where to return after auth completes
+        return_to = request.GET.get("return_to", "/")
         request.session["etsy_auth_return"] = return_to
 
         code_verifier = secrets.token_urlsafe(64)
@@ -49,8 +47,6 @@ class EtsyLoginView(View):
             f"&code_challenge_method=S256"
             f"&state={state}"
         )
-
-
 
         return redirect(auth_url)
 
@@ -73,9 +69,7 @@ class EtsyCallbackView(View):
         if not returned_state or returned_state != expected_state:
             return HttpResponse("Invalid state", status=400)
 
-
         token_url = "https://api.etsy.com/v3/public/oauth/token"
-
         data = {
             "grant_type": "authorization_code",
             "client_id": settings.ETSY_KEYSTRING,
@@ -84,29 +78,75 @@ class EtsyCallbackView(View):
             "code_verifier": verifier,
         }
 
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-        resp = requests.post(token_url, data=data, headers=headers)
-
+        resp = requests.post(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
         if resp.status_code != 200:
             return HttpResponse(f"Token exchange failed: {resp.text}", status=resp.status_code)
 
         payload = resp.json()
-
-        payload["etsy_user_id"] = extract_etsy_user_id(payload["access_token"])
+        etsy_user_id = extract_etsy_user_id(payload["access_token"])
 
         EtsyToken.objects.update_or_create(
             user=request.user,
             defaults={
-                "etsy_user_id": payload["etsy_user_id"],
+                "etsy_user_id": etsy_user_id,
                 "access_token": payload["access_token"],
                 "refresh_token": payload.get("refresh_token"),
                 "expires_at": timezone.now() + timezone.timedelta(seconds=payload["expires_in"]),
             },
         )
 
-        return_to = request.session.pop("etsy_auth_return", "/marketplace")
+        return_to = request.session.pop("etsy_auth_return", "/")
         return redirect(f"{settings.FRONTEND_URL}{return_to}")
+
+
+class EtsyDisconnectView(View):
+    """
+    POST /api/etsy/disconnect/
+    Removes the stored Etsy token, effectively disconnecting the account.
+    The user will need to re-authenticate to use Etsy features again.
+    """
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Login required.")
+        try:
+            request.user.etsy_token.delete()
+        except EtsyToken.DoesNotExist:
+            pass
+        return HttpResponse(status=204)
+
+
+class EtsyConnectionStatusView(View):
+    """
+    GET /api/etsy/status/
+    Returns whether the user has a valid Etsy connection.
+    Used by the Profile page for accurate real-time connection status
+    instead of the stale value stored in the auth context.
+
+    etsy_connected: True if a token record exists
+    etsy_needs_reauth: True if token is expired AND has no refresh token
+                       (automatic refresh is not possible — full re-auth required)
+    etsy_token_expired: True if the access token is currently expired
+    """
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Login required.")
+
+        try:
+            token = request.user.etsy_token
+            expired = token.is_expired()
+            has_refresh = bool(token.refresh_token)
+
+            return JsonResponse({
+                "etsy_connected": True,
+                "etsy_needs_reauth": expired and not has_refresh,
+                "etsy_token_expired": expired,
+            })
+        except EtsyToken.DoesNotExist:
+            return JsonResponse({
+                "etsy_connected": False,
+                "etsy_needs_reauth": False,
+                "etsy_token_expired": False,
+            })
 
 
 class EtsyPingView(View):
@@ -119,42 +159,11 @@ class EtsyPingView(View):
         except EtsyToken.DoesNotExist:
             return HttpResponseForbidden("No Etsy token. Authenticate first.")
 
-        if token.is_expired():
-            return HttpResponse("Token expired.", status=401)
-
         headers = {
-            "Authorization": f"Bearer {token.access_token}",
+            "Authorization": f"Bearer {token.get_valid_token()}",
             "x-api-key": settings.ETSY_KEYSTRING,
         }
 
         resp = requests.get("https://api.etsy.com/v3/application/openapi-ping", headers=headers)
-
         return JsonResponse({"status": resp.status_code, "body": resp.json()})
 
-"""
-The purpose of this view is to ensure that the user is logged in with a valid etsy token,
-initate the EtsyAdapter and call get_shop() to return data from the user's shop
-"""
-class EtsyShopView(View):
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden("Login required.")
-
-        try:
-            etsy_token = request.user.etsy_token
-        except EtsyToken.DoesNotExist:
-            return HttpResponseForbidden("No Etsy token. Authenticate first.")
-
-        if etsy_token.is_expired():
-            return HttpResponseForbidden("Token expired.")
-
-        if not etsy_token.etsy_user_id:
-            return HttpResponse("Missing Etsy user id on token.", status=400)
-
-        if etsy_token.is_expired():
-            return HttpResponse("Token expired.", status=401)
-
-        adapter = EtsyAdapter(etsy_token)
-
-        data = adapter.get_shop()
-        return JsonResponse(data)

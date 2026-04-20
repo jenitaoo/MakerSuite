@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     # Local apps
     'authentication.apps.AuthenticationConfig',
     'products',
-    'etsy',
     'inventory',
 ]
 
