@@ -203,9 +203,18 @@ export default function EditProductListing() {
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRFToken": getCookie("csrftoken") ?? "" },
       body: JSON.stringify({
-        tags: form.tags, materials: form.materials, who_made: form.who_made,
-        when_made: form.when_made, should_auto_renew: form.should_auto_renew,
-        is_taxable: form.is_taxable, listing_type: form.listing_type,
+        price: parseFloat(form.price) || 0,
+        quantity: parseInt(form.quantity) || 0,
+        title: form.title,
+        description: form.description,
+        sku: form.sku,
+        tags: form.tags,
+        materials: form.materials,
+        who_made: form.who_made,
+        when_made: form.when_made,
+        should_auto_renew: form.should_auto_renew,
+        is_taxable: form.is_taxable,
+        listing_type: form.listing_type,
       }),
     });
     if (!res.ok) {
