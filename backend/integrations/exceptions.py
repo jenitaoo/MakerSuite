@@ -59,13 +59,14 @@ class PlatformAuthError(PlatformIntegrationError):
         message: str,
         platform: Optional[str] = None,
         requires_reauth: bool = True,
+        error_code: str = "AUTH_ERROR",
         **kwargs
     ):
         self.requires_reauth = requires_reauth
         kwargs['status_code'] = 401
         super().__init__(
             message,
-            error_code="AUTH_ERROR",
+            error_code=error_code,
             platform=platform,
             **kwargs
         )
@@ -89,6 +90,7 @@ class PlatformAPIError(PlatformIntegrationError):
         status_code: Optional[int] = None,
         platform: Optional[str] = None,
         retryable: bool = False,
+        error_code: str = "API_ERROR",
         **kwargs
     ):
         self.status_code = status_code or 500
@@ -96,7 +98,7 @@ class PlatformAPIError(PlatformIntegrationError):
         kwargs['status_code'] = self.status_code
         super().__init__(
             message,
-            error_code="API_ERROR",
+            error_code=error_code,
             platform=platform,
             details={"retryable": self.retryable},
             **kwargs
@@ -122,6 +124,7 @@ class PlatformRateLimitError(PlatformAPIError):
         message: str,
         retry_after: Optional[int] = None,
         platform: Optional[str] = None,
+        error_code: str = "RATE_LIMIT",
         **kwargs
     ):
         details = kwargs.pop("details", {})
@@ -129,9 +132,9 @@ class PlatformRateLimitError(PlatformAPIError):
         super().__init__(
             message,
             status_code=429,
-            error_code="RATE_LIMIT",
             platform=platform,
             retryable=True,
+            error_code=error_code,
             details=details,
             **kwargs
         )
@@ -156,6 +159,7 @@ class PlatformValidationError(PlatformIntegrationError):
         message: str,
         field: Optional[str] = None,
         platform: Optional[str] = None,
+        error_code: str = "VALIDATION_ERROR",
         **kwargs
     ):
         details = kwargs.pop("details", {})
@@ -164,7 +168,7 @@ class PlatformValidationError(PlatformIntegrationError):
         kwargs['status_code'] = 400
         super().__init__(
             message,
-            error_code="VALIDATION_ERROR",
+            error_code=error_code,
             platform=platform,
             details=details,
             **kwargs
@@ -190,6 +194,7 @@ class PlatformNotFoundError(PlatformAPIError):
         resource_type: Optional[str] = None,
         resource_id: Optional[str] = None,
         platform: Optional[str] = None,
+        error_code: str = "NOT_FOUND",
         **kwargs
     ):
         details = kwargs.pop("details", {})
@@ -200,9 +205,9 @@ class PlatformNotFoundError(PlatformAPIError):
         super().__init__(
             message,
             status_code=404,
-            error_code="NOT_FOUND",
             platform=platform,
             retryable=False,
+            error_code=error_code,
             details=details,
             **kwargs
         )
@@ -225,13 +230,14 @@ class PlatformUnauthorizedError(PlatformAuthError):
         self,
         message: str,
         platform: Optional[str] = None,
+        error_code: str = "UNAUTHORIZED",
         **kwargs
     ):
         kwargs['status_code'] = 403
         super().__init__(
             message,
-            error_code="UNAUTHORIZED",
             platform=platform,
             requires_reauth=False,
+            error_code=error_code,
             **kwargs
         )

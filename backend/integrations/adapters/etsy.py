@@ -138,7 +138,7 @@ class EtsyAdapter(BasePlatformAdapter):
         - Authorization: Bearer {access_token}
         - x-api-key: {ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}
         """
-        token = await self._get_access_token()  # ← await it
+        token = await self._get_access_token()
         return {
             "Authorization": f"Bearer {token}",
             "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
@@ -231,7 +231,7 @@ class EtsyAdapter(BasePlatformAdapter):
         **kwargs,
     ) -> Dict[str, Any]:
         """Make HTTP request to Etsy API."""
-        headers = await self._headers()  # ← await it
+        headers = await self._headers()
         url = f"{self.BASE_URL}{endpoint}"
 
         client = await self._get_client()
@@ -499,12 +499,6 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             Created PlatformListing with external_id
-
-        Design notes:
-        - Requires reference_listing_raw OR first existing listing
-          (to extract required profile IDs)
-        - Images uploaded separately after creation
-        - Returns listing data with images included
         """
         logger.debug(f"Creating Etsy listing: {product.title}")
 
@@ -550,8 +544,8 @@ class EtsyAdapter(BasePlatformAdapter):
                 "price": float(product.internal_price),
                 "quantity": int(product.internal_quantity) or 1,
                 "sku": str(product.sku or ""),
-                "tags": etsy_fields.get("tags", [])[:13],  # Etsy max 13
-                "materials": etsy_fields.get("materials", [])[:12],  # Etsy max 12
+                "tags": etsy_fields.get("tags", [])[:13],
+                "materials": etsy_fields.get("materials", [])[:12],
                 "who_made": etsy_fields.get("who_made", "i_did"),
                 "when_made": etsy_fields.get("when_made", "made_to_order"),
                 "should_auto_renew": etsy_fields.get("should_auto_renew", True),
@@ -601,11 +595,6 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             {"core": {...}, "inventory": {...}} response
-
-        Design notes:
-        - Etsy separates metadata (title, description) from inventory
-        - Calls _update_core_listing() and update_inventory() separately
-        - Both must succeed (atomic from caller's perspective)
         """
         logger.debug(f"Updating Etsy listing {listing.platform_listing_id}")
 
@@ -737,7 +726,6 @@ class EtsyAdapter(BasePlatformAdapter):
     async def delete_listing(self, listing: 'ExternalProductListing') -> bool:
         """Delete listing (permanent)."""
         logger.debug(f"Deleting Etsy listing {listing.platform_listing_id}")
-        # Etsy DELETE is not commonly used; implement if needed
         raise NotImplementedError("Etsy listing deletion not yet implemented")
 
     async def fetch_receipts(
@@ -754,11 +742,6 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             List of PlatformOrder objects
-
-        Design notes:
-        - Filters by was_paid=true (only paid orders)
-        - Includes transactions for full order details
-        - Supports incremental sync via since_timestamp
         """
         logger.debug(f"Fetching Etsy receipts (shop={shop_id}, since={since_timestamp})")
 
@@ -825,7 +808,7 @@ class EtsyAdapter(BasePlatformAdapter):
             result = await self._request(
                 "POST",
                 f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images",
-                json=False,  # Don't set Content-Type
+                json=False,
                 files=files,
                 context="upload image"
             )
@@ -851,7 +834,7 @@ class EtsyAdapter(BasePlatformAdapter):
         if not hasattr(product, 'images'):
             return
 
-        for idx, product_image in enumerate(product.images.all()[:10]):  # Etsy max 10
+        for idx, product_image in enumerate(product.images.all()[:10]):
             try:
                 with product_image.image.open('rb') as f:
                     await self.upload_image(
@@ -864,7 +847,6 @@ class EtsyAdapter(BasePlatformAdapter):
                     )
             except Exception as e:
                 logger.warning(f"Failed to upload image {idx}: {e}")
-                # Don't fail the whole creation for one image
                 continue
 
     #  ASYNC CONTEXT MANAGER
@@ -877,4 +859,3 @@ class EtsyAdapter(BasePlatformAdapter):
         """Clean up client on exit."""
         await self._close_client()
         return False
-
