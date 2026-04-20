@@ -180,14 +180,14 @@ class EtsyAdapter(BasePlatformAdapter):
         # Map status codes to exceptions
         if status_code == 401 or status_code == 403:
             raise PlatformAuthError(
-                f"Etsy authentication failed: {error_message}",
+                message=f"Etsy authentication failed: {error_message}",
                 platform=self.platform_name,
                 requires_reauth=(status_code == 401),
             )
 
         elif status_code == 404:
             raise PlatformNotFoundError(
-                f"Resource not found: {error_message}",
+                message=f"Resource not found: {error_message}",
                 platform=self.platform_name,
             )
 
@@ -195,20 +195,20 @@ class EtsyAdapter(BasePlatformAdapter):
             # Rate limit — Etsy sends Retry-After header
             retry_after = int(response.headers.get("Retry-After", 60))
             raise PlatformRateLimitError(
-                f"Etsy rate limit exceeded. Retry after {retry_after}s",
+                message=f"Etsy rate limit exceeded. Retry after {retry_after}s",
                 retry_after=retry_after,
                 platform=self.platform_name,
             )
 
         elif status_code == 400:
             raise PlatformValidationError(
-                f"Invalid request: {error_message}",
+                message=f"Invalid request: {error_message}",
                 platform=self.platform_name,
             )
 
         elif status_code >= 500:
             raise PlatformAPIError(
-                f"Etsy server error [{status_code}]: {error_message}",
+                message=f"Etsy server error [{status_code}]: {error_message}",
                 status_code=status_code,
                 platform=self.platform_name,
                 retryable=True,
@@ -216,7 +216,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         else:
             raise PlatformAPIError(
-                f"Etsy API error [{status_code}]: {error_message}",
+                message=f"Etsy API error [{status_code}]: {error_message}",
                 status_code=status_code,
                 platform=self.platform_name,
             )
