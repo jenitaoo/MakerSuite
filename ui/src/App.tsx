@@ -30,6 +30,7 @@ function AppLayout() {
       <div className="app">
         <Toaster
           position="top-center"
+          containerStyle={{ zIndex: 9999 }}
           toastOptions={{
             style: {
               border: "1px solid #713200",
