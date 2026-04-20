@@ -270,28 +270,64 @@ class EtsyImportListingsView(APIView):
                     platform_listing_id=listing.external_id,
                 ).first()
 
-                if existing:
-                    # Update raw data
-                    existing.raw = listing.raw_data
-                    existing.listing_title = listing.title
-                    existing.listing_price = listing.price
-                    existing.listing_quantity = listing.quantity
-                    existing.save(update_fields=["raw", "listing_title", "listing_price", "listing_quantity"])
-                    skipped += 1
-                else:
-                    # Create new listing record
-                    ExternalProductListing.objects.create(
-                        owner=profile,
-                        platform="Etsy",
-                        platform_listing_id=listing.external_id,
-                        shop_id=shop_id,
-                        listing_title=listing.title,
-                        listing_description=listing.description,
-                        listing_price=listing.price,
-                        listing_quantity=listing.quantity,
-                        raw=listing.raw_data,
-                    )
-                    imported += 1
+            if existing:
+                # Update all fields from Etsy
+                existing.raw = listing.raw_data
+                existing.listing_title = listing.title
+                existing.listing_description = listing.description
+                existing.listing_price = listing.price
+                existing.listing_quantity = listing.quantity
+                existing.listing_currency = listing.raw_data.get("price", {}).get("currency_code")
+                
+                # Etsy-specific fields
+                existing.etsy_tags = listing.raw_data.get("tags", [])
+                existing.etsy_materials = listing.raw_data.get("materials", [])
+                existing.etsy_who_made = listing.raw_data.get("who_made", "i_did")
+                existing.etsy_when_made = listing.raw_data.get("when_made", "made_to_order")
+                existing.etsy_should_auto_renew = listing.raw_data.get("should_auto_renew", True)
+                existing.etsy_is_taxable = listing.raw_data.get("is_taxable", True)
+                existing.etsy_listing_type = listing.raw_data.get("listing_type", "physical")
+
+                # Get primary image URL
+                images = listing.raw_data.get("images", [])
+                if images:
+                    existing.listing_image_url = images[0].get("url_fullxfull")
+
+                existing.save()  # Save all fields, let Django figure it out
+
+                # Update linked Product
+                if existing.product:
+                    existing.product.internal_quantity = listing.quantity
+                    existing.product.internal_price = listing.price
+                    existing.product.save(update_fields=["internal_quantity", "internal_price"])
+
+                skipped += 1
+            else:
+                # Create new
+                images = listing.raw_data.get("images", [])
+                image_url = images[0].get("url_fullxfull") if images else None
+
+                ExternalProductListing.objects.create(
+                    owner=profile,
+                    platform="Etsy",
+                    platform_listing_id=listing.external_id,
+                    shop_id=shop_id,
+                    listing_title=listing.title,
+                    listing_description=listing.description,
+                    listing_price=listing.price,
+                    listing_quantity=listing.quantity,
+                    listing_currency=listing.raw_data.get("price", {}).get("currency_code"),
+                    listing_image_url=image_url,
+                    etsy_tags=listing.raw_data.get("tags", []),
+                    etsy_materials=listing.raw_data.get("materials", []),
+                    etsy_who_made=listing.raw_data.get("who_made", "i_did"),
+                    etsy_when_made=listing.raw_data.get("when_made", "made_to_order"),
+                    etsy_should_auto_renew=listing.raw_data.get("should_auto_renew", True),
+                    etsy_is_taxable=listing.raw_data.get("is_taxable", True),
+                    etsy_listing_type=listing.raw_data.get("listing_type", "physical"),
+                    raw=listing.raw_data,
+                )
+                imported += 1
 
             return Response({
                 "status": "success",
