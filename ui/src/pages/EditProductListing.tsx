@@ -148,8 +148,8 @@ export default function EditProductListing() {
     const body = new FormData();
     body.append("title", form.title);
     body.append("description", form.description);
-    body.append("internal_price", String(parseInt(String(form.quantity)) || 0));
-    body.append("internal_quantity", String(parseInt(String(form.quantity)) || 0));
+    body.append("internal_price", String(parseFloat(form.price) || 0));
+    body.append("internal_quantity", String(parseInt(form.quantity) || 0));
     body.append("sku", form.sku);
 
     await toast.promise(
