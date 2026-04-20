@@ -15,7 +15,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from asgiref.sync import async_to_sync
 from integrations.factory import AdapterFactory
-from integrations.exceptions import PlatformAuthError
+from integrations.exceptions import PlatformAuthError, PlatformIntegrationError
+from products.models import ExternalProductListing
+from authentication.models import UserProfile
 
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
@@ -192,4 +194,155 @@ class EtsyShopInfoView(APIView):
         except Exception as e:
             import traceback
             traceback.print_exc()
+            return Response({"error": str(e)}, status=500)
+
+
+class EtsyListingsView(APIView):
+    """GET /api/etsy/shops/{shop_id}/listings/ - List imported listings from DB"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, shop_id):
+        try:
+            profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found."}, status=404)
+
+        listings = ExternalProductListing.objects.filter(owner=profile, shop_id=shop_id)
+
+        data = []
+        for l in listings:
+            raw = l.raw or {}
+            data.append({
+                "id": l.id,
+                "platform": l.platform,
+                "external_id": raw.get("listing_id"),
+                "title": raw.get("title"),
+                "description": raw.get("description"),
+                "price": {
+                    "amount": raw.get("price", {}).get("amount"),
+                    "currency": raw.get("price", {}).get("currency_code"),
+                },
+                "quantity": raw.get("quantity"),
+                "state": raw.get("state"),
+                "tags": raw.get("tags", []),
+                "materials": raw.get("materials", []),
+                "skus": raw.get("skus", []),
+                "images": raw.get("images"),
+                "url": raw.get("url"),
+                "shop_id": raw.get("shop_id"),
+                "taxonomy_id": raw.get("taxonomy_id"),
+                "listing_type": raw.get("listing_type"),
+                "views": raw.get("views"),
+                "num_favorers": raw.get("num_favorers"),
+                "shipping_profile_id": raw.get("shipping_profile_id"),
+            })
+
+        return Response(data)
+
+
+class EtsyImportListingsView(APIView):
+    """POST /api/etsy/shops/{shop_id}/import/ - Fetch listings from Etsy and save to DB"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, shop_id):
+        try:
+            etsy_token = request.user.etsy_token
+        except Exception:
+            return Response({"error": "etsy_not_connected"}, status=400)
+
+        try:
+            profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found."}, status=404)
+
+        try:
+            adapter = AdapterFactory.get_adapter("etsy", etsy_token, shop_id)
+            listings = async_to_sync(adapter.fetch_listings)(shop_id=shop_id, limit=100)
+
+            imported = 0
+            skipped = 0
+
+            for listing in listings:
+                # Check if already imported
+                existing = ExternalProductListing.objects.filter(
+                    owner=profile,
+                    platform="Etsy",
+                    platform_listing_id=listing.external_id,
+                ).first()
+
+                if existing:
+                    # Update raw data
+                    existing.raw = listing.raw_data
+                    existing.listing_title = listing.title
+                    existing.listing_price = listing.price
+                    existing.listing_quantity = listing.quantity
+                    existing.save(update_fields=["raw", "listing_title", "listing_price", "listing_quantity"])
+                    skipped += 1
+                else:
+                    # Create new listing record
+                    ExternalProductListing.objects.create(
+                        owner=profile,
+                        platform="Etsy",
+                        platform_listing_id=listing.external_id,
+                        shop_id=shop_id,
+                        listing_title=listing.title,
+                        listing_description=listing.description,
+                        listing_price=listing.price,
+                        listing_quantity=listing.quantity,
+                        raw=listing.raw_data,
+                    )
+                    imported += 1
+
+            return Response({
+                "status": "success",
+                "imported": imported,
+                "updated": skipped,
+                "total": len(listings),
+            })
+
+        except PlatformAuthError as e:
+            return Response({"error": e.message, "requires_reauth": e.requires_reauth}, status=401)
+        except PlatformIntegrationError as e:
+            return Response({"error": e.message}, status=e.status_code)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=500)
+
+
+class EtsyUploadImageView(APIView):
+    """POST /api/etsy/shops/{shop_id}/listings/{listing_id}/images/ - Upload image"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, shop_id, listing_id):
+        listing = ExternalProductListing.objects.filter(
+            owner=request.user.userprofile,
+            platform="Etsy",
+            platform_listing_id=str(listing_id)
+        ).first()
+
+        if not listing:
+            return Response({"error": "Listing not found"}, status=404)
+
+        image_file = request.FILES.get("image")
+        rank = request.POST.get("rank", 1)
+
+        if not image_file:
+            return Response({"error": "No image provided"}, status=400)
+
+        try:
+            etsy_token = request.user.etsy_token
+        except Exception:
+            return Response({"error": "etsy_not_connected"}, status=400)
+
+        try:
+            adapter = AdapterFactory.get_adapter("etsy", etsy_token, shop_id)
+            result = async_to_sync(adapter.upload_image)(listing, image_file, int(rank))
+            return Response({"uploaded": True, "result": result})
+
+        except PlatformAuthError as e:
+            return Response({"error": e.message}, status=401)
+        except PlatformIntegrationError as e:
+            return Response({"error": e.message}, status=e.status_code)
+        except Exception as e:
             return Response({"error": str(e)}, status=500)
