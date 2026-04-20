@@ -568,9 +568,8 @@ class EtsyAdapter(BasePlatformAdapter):
             listing_id = result["listing_id"]
             logger.info(f"Created Etsy listing {listing_id}: {product.title}")
 
-            # Upload images if provided
-            if hasattr(product, 'images') and product.images.exists():
-                await self._upload_product_images(shop_id, listing_id, product)
+            # Note: Image uploads handled separately by the view (_push_images_to_etsy)
+            # to avoid sync-in-async issues with Django ORM and file I/O
 
             return self._to_platform_listing(result)
 
