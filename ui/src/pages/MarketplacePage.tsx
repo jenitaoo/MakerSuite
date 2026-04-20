@@ -411,7 +411,7 @@ export default function MarketplacePage() {
           if (!res.ok) throw new Error("Import failed");
           const data = await res.json();
           loadProducts();
-          return data.imported_listing_ids?.length ?? 0;
+          return (data.imported ?? 0) + (data.updated ?? 0);
         }),
         {
           loading: "Syncing from Etsy…",
