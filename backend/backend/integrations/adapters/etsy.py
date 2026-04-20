@@ -13,10 +13,10 @@ from django.conf import settings
 from django.utils import timezone
 from asgiref.sync import sync_to_async
 
-from backend.products.models import Product, ExternalProductListing
+from products.models import Product, ExternalProductListing
 
-from backend.integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
-from backend.integrations.exceptions import (
+from integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
+from integrations.exceptions import (
     PlatformAuthError,
     PlatformAPIError,
     PlatformIntegrationError,
