@@ -8,9 +8,14 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views import View
-from django.http import JsonResponse, HttpResponseForbidden
 from .models import EtsyToken
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from asgiref.sync import async_to_sync
+from backend.integrations.factory import AdapterFactory
+from backend.integrations.exceptions import PlatformAuthError
 
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()
@@ -167,3 +172,22 @@ class EtsyPingView(View):
         resp = requests.get("https://api.etsy.com/v3/application/openapi-ping", headers=headers)
         return JsonResponse({"status": resp.status_code, "body": resp.json()})
 
+class EtsyShopInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """GET /api/etsy/shop/ - Get authenticated shop info"""
+        try:
+            etsy_token = request.user.etsy_token
+        except Exception:
+            return Response({"error": "etsy_not_connected"}, status=400)
+
+        try:
+            adapter = AdapterFactory.get_adapter("etsy", etsy_token, None)
+            data = async_to_sync(adapter.get_shop_info)()
+            return Response(data)
+
+        except PlatformAuthError as e:
+            return Response({"error": e.message}, status=401)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

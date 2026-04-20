@@ -5,6 +5,7 @@ from .etsy_views import (
     EtsyDisconnectView,
     EtsyConnectionStatusView,
     EtsyPingView,
+    EtsyShopInfoView,
 )
 
 urlpatterns = [
@@ -13,4 +14,6 @@ urlpatterns = [
     path("disconnect/", EtsyDisconnectView.as_view(), name="etsy-disconnect"),
     path("status/", EtsyConnectionStatusView.as_view(), name="etsy-status"),
     path("ping/", EtsyPingView.as_view(), name="etsy-ping"),
+    path("shop/", EtsyShopInfoView.as_view(), name="etsy-shop"),
+
 ]
