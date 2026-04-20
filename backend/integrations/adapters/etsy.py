@@ -117,14 +117,14 @@ class EtsyAdapter(BasePlatformAdapter):
         except ValueError as e:
             logger.error(f"EtsyToken refresh failed: {e}")
             raise PlatformAuthError(
-                f"Etsy token refresh failed: {str(e)}",
+                message=f"Etsy token refresh failed: {str(e)}",
                 platform=self.platform_name,
                 requires_reauth=True,
             ) from e
         except Exception as e:
             logger.error(f"Unexpected token error: {e}", exc_info=True)
             raise PlatformAuthError(
-                f"Unable to get valid Etsy token: {str(e)}",
+                message=f"Unable to get valid Etsy token: {str(e)}",
                 platform=self.platform_name,
                 requires_reauth=True,
             ) from e
@@ -256,7 +256,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Etsy API request failed: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Etsy API request failed: {str(e)}",
+                message=f"Etsy API request failed: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -414,7 +414,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch shop info: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy shop info: {str(e)}",
+                message=f"Failed to fetch Etsy shop info: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -477,7 +477,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch listings: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy listings: {str(e)}",
+                message=f"Failed to fetch Etsy listings: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -513,7 +513,7 @@ class EtsyAdapter(BasePlatformAdapter):
         for field in required:
             if not getattr(product, field, None):
                 raise PlatformValidationError(
-                    f"Product missing required field: {field}",
+                    message=f"Product missing required field: {field}",
                     field=field,
                     platform=self.platform_name,
                 )
@@ -524,7 +524,7 @@ class EtsyAdapter(BasePlatformAdapter):
                 existing = await self.fetch_listings(shop_id, limit=1)
                 if not existing:
                     raise PlatformValidationError(
-                        "No existing listing to reference. Create at least one listing manually.",
+                        message="No existing listing to reference. Create at least one listing manually.",
                         platform=self.platform_name,
                     )
                 reference_listing_raw = existing[0].raw_data
@@ -535,7 +535,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
             if not shipping_profile_id or not return_policy_id:
                 raise PlatformValidationError(
-                    "Reference listing missing shipping/return policy IDs",
+                    message="Reference listing missing shipping/return policy IDs",
                     platform=self.platform_name,
                 )
 
@@ -583,7 +583,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to create listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to create Etsy listing: {str(e)}",
+                message=f"Failed to create Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -611,7 +611,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         if not listing.shop_id or not listing.platform_listing_id:
             raise PlatformValidationError(
-                "Listing missing shop_id or platform_listing_id",
+                message="Listing missing shop_id or platform_listing_id",
                 platform=self.platform_name,
             )
 
@@ -630,7 +630,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to update listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to update Etsy listing: {str(e)}",
+                message=f"Failed to update Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -683,7 +683,7 @@ class EtsyAdapter(BasePlatformAdapter):
         readiness_state_id = listing.raw.get("readiness_state_id")
         if not readiness_state_id:
             raise PlatformValidationError(
-                f"No readiness_state_id found in listing raw data",
+                message=f"No readiness_state_id found in listing raw data",
                 platform=self.platform_name,
             )
 
@@ -730,7 +730,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to deactivate listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to deactivate Etsy listing: {str(e)}",
+                message=f"Failed to deactivate Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -789,7 +789,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch receipts: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy receipts: {str(e)}",
+                message=f"Failed to fetch Etsy receipts: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -837,7 +837,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to upload image: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to upload Etsy image: {str(e)}",
+                message=f"Failed to upload Etsy image: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
