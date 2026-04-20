@@ -97,7 +97,7 @@ class PlatformAPIError(PlatformIntegrationError):
         )
 
 
-class PlatformRateLimitError(PlatformAPIError):
+class PlatformRateLimitError(PlatformIntegrationError):
     """
     Raised when API rate limit exceeded.
 
@@ -160,7 +160,7 @@ class PlatformValidationError(PlatformIntegrationError):
         )
 
 
-class PlatformNotFoundError(PlatformAPIError):
+class PlatformNotFoundError(PlatformIntegrationError):
     """
     Raised when resource doesn't exist on platform.
 
@@ -193,9 +193,9 @@ class PlatformNotFoundError(PlatformAPIError):
             details=details,
             status_code=404,
         )
- 
 
-class PlatformUnauthorizedError(PlatformAuthError):
+
+class PlatformUnauthorizedError(PlatformIntegrationError):
     """
     Raised when user lacks permission for operation (distinct from token expiry).
 
