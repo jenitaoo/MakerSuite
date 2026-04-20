@@ -87,10 +87,12 @@ class EtsyAdapter(BasePlatformAdapter):
     #  HTTP CLIENT MANAGEMENT
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get or create async HTTP client (lazy initialization)."""
-        if self._client is None:
-            self._client = httpx.AsyncClient(timeout=30.0)
-        return self._client
+        """Create a fresh async HTTP client for each request.
+
+        Can't cache client across async_to_sync calls — event loop closes
+        between calls, invalidating the cached client.
+        """
+        return httpx.AsyncClient(timeout=30.0)
 
     async def _close_client(self):
         """Close HTTP client (call on cleanup)."""
@@ -234,22 +236,21 @@ class EtsyAdapter(BasePlatformAdapter):
         headers = await self._headers()
         url = f"{self.BASE_URL}{endpoint}"
 
-        client = await self._get_client()
-
         logger.debug(f"Etsy {method} {endpoint}")
 
         try:
-            response = await client.request(
-                method,
-                url,
-                headers=headers,
-                **kwargs,
-            )
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    **kwargs,
+                )
 
-            if response.status_code >= 400:
-                self._handle_response_error(response, context or f"{method} {endpoint}")
+                if response.status_code >= 400:
+                    self._handle_response_error(response, context or f"{method} {endpoint}")
 
-            return response.json()
+                return response.json()
 
         except PlatformIntegrationError:
             raise
