@@ -100,7 +100,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
     #  TOKEN & HEADERS
 
-    def _get_access_token(self) -> str:
+    async def _get_access_token(self) -> str:
         """
         Get valid access token, auto-refreshing if needed.
 
@@ -129,7 +129,7 @@ class EtsyAdapter(BasePlatformAdapter):
                 requires_reauth=True,
             ) from e
 
-    def _headers(self) -> Dict[str, str]:
+    async def _headers(self) -> Dict[str, str]:
         """
         Build request headers with fresh access token.
 
