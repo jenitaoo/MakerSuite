@@ -32,6 +32,6 @@ urlpatterns = [
     path('api/auth/profile/', ProfileView.as_view(), name='profile'),
     path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/inventory/', include('inventory.urls')),
-    path("api/etsy/", include("etsy.urls")),
+    path("api/etsy/", include("authentication.etsy_urls")),
     path("api/", include("products.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,8 +3,9 @@ This module manages synchronization of product listings between the local system
 and various external platforms like Etsy and Shopify.
 """
 
-from products.platforms.etsy.etsy import EtsyAdapter
+from backend.integrations.factory import AdapterFactory
 from .models import ExternalProductListing
+import asyncio
 
 class SyncManager:
     def __init__(self, user_profile):
@@ -14,23 +15,22 @@ class SyncManager:
 
         try:
             etsy_token = user.etsy_token
-            print(f"DEBUG: Etsy token found: {etsy_token}")
-            self.adapters["etsy"] = EtsyAdapter(etsy_token)
-            print(f"DEBUG: Adapters initialized: {self.adapters.keys()}")
-        except AttributeError as e:
-            print(f"DEBUG: No Etsy token (AttributeError): {e}")
-        except Exception as e:
-            print(f"DEBUG: Error initializing Etsy: {type(e).__name__}: {e}")
+            self.adapters["etsy"] = AdapterFactory.get_adapter("etsy", etsy_token, shop_id=None)
+        except Exception:
+            pass  # Etsy not connected
 
-    def sync_product(self, product):
+    async def sync_product(self, product):
+        """Sync product across all connected platforms."""
         listings = ExternalProductListing.objects.filter(product=product)
+        tasks = []
         for listing in listings:
-            if listing.product is None:
-                continue
             adapter = self.adapters.get(listing.platform.lower())
-            if not adapter:
-                continue  # Platform not connected, skip
-            adapter.update_listing(listing, product)
+            if adapter:
+                tasks.append(adapter.update_listing(listing, product))
+
+        # Run all updates concurrently
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     def create_missing_listings(self, product):
         existing_platforms = set(

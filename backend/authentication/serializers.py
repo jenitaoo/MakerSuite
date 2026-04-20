@@ -1,9 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import UserProfile
-from etsy.models import EtsyToken
-
+from .models import UserProfile, EtsyToken
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
