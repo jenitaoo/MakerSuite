@@ -14,8 +14,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from asgiref.sync import async_to_sync
-from backend.integrations.factory import AdapterFactory
-from backend.integrations.exceptions import PlatformAuthError
+from integrations.factory import AdapterFactory
+from integrations.exceptions import PlatformAuthError
 
 def build_code_challenge(verifier: str) -> str:
     digest = hashlib.sha256(verifier.encode()).digest()

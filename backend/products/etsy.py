@@ -11,8 +11,8 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from asgiref.sync import async_to_sync
 
-from backend.integrations.factory import AdapterFactory
-from backend.integrations.exceptions import (
+from integrations.factory import AdapterFactory
+from integrations.exceptions import (
     PlatformAuthError,
     PlatformRateLimitError,
     PlatformValidationError,
