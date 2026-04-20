@@ -1,0 +1,1 @@
+from integrations.adapters.etsy import EtsyAdapter
