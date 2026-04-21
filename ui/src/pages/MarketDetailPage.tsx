@@ -308,7 +308,7 @@ export default function MarketDetailPage() {
 
   const handleUpdateUnits = async (productPk: number, units: number) => {
     try {
-      await fetch(`/${API_URL}api/markets/${id}/products/${productPk}/`, {
+      const res = await fetch(`${API_URL}/api/markets/${id}/products/${productPk}/`, {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -317,8 +317,11 @@ export default function MarketDetailPage() {
         },
         body: JSON.stringify({ units_brought: units }),
       });
+      if (!res.ok) throw new Error();
       await loadAll();
-    } catch {}
+    } catch {
+      toast.error("Failed to update units");
+    }
   };
 
   // ── Loading / empty ─────────────────────────────────────────────────────────
@@ -562,41 +565,47 @@ export default function MarketDetailPage() {
               </Button>
             </div>
 
-            {/* Add product row */}
+            {/* Add product row — matches table styling */}
             {addingProduct && (
-              <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/30">
-                <select
-                  value={newProductId}
-                  onChange={(e) => setNewProductId(e.target.value)}
-                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select a product…</option>
-                  {availableProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}{p.internal_quantity != null ? ` (${p.internal_quantity} in stock)` : ""}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  type="number"
-                  min={1}
-                  value={newUnitsBrought}
-                  onChange={(e) => setNewUnitsBrought(Number(e.target.value))}
-                  className="w-20 h-9 text-sm text-center"
-                  placeholder="Qty"
-                />
-                <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="gap-1">
-                  <Check className="w-3.5 h-3.5" />
-                  Add
-                </Button>
-                <Button
-                  aria-label="Cancel adding product"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { setAddingProduct(false); setNewProductId(""); setNewUnitsBrought(1); }}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
+              <div className="rounded-md border border-border overflow-hidden">
+                <div className="bg-muted/30 px-4 py-3 flex items-center gap-2">
+                  <div className="w-14" />
+                  <select
+                    value={newProductId}
+                    onChange={(e) => setNewProductId(e.target.value)}
+                    className="flex-1 h-8 rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="">Select a product…</option>
+                    {availableProducts.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}{p.internal_quantity != null ? ` (${p.internal_quantity} in stock)` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={newUnitsBrought}
+                    onChange={(e) => setNewUnitsBrought(Number(e.target.value))}
+                    className="w-16 h-8 text-sm text-center"
+                    placeholder="Qty"
+                  />
+                  <div className="flex items-center gap-1">
+                    <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="h-8 gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      Add
+                    </Button>
+                    <Button
+                      aria-label="Cancel adding product"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => { setAddingProduct(false); setNewProductId(""); setNewUnitsBrought(1); }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
