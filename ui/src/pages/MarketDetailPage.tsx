@@ -670,8 +670,13 @@ export default function MarketDetailPage() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
-                              value={mp.units_brought}
-                              onChange={(e) => handleUpdateUnits(mp.product, Number(e.target.value) || 0)}
+                              defaultValue={mp.units_brought}
+                              onBlur={(e) => {
+                                const val = Number(e.target.value);
+                                if (!isNaN(val) && val !== mp.units_brought) {
+                                  handleUpdateUnits(mp.product, val);
+                                }
+                              }}
                               className="w-16 h-7 text-sm text-center px-1 mx-auto"
                             />
                           </TableCell>
