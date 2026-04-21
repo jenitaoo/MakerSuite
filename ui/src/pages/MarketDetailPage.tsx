@@ -573,7 +573,7 @@ export default function MarketDetailPage() {
                   <select
                     value={newProductId}
                     onChange={(e) => setNewProductId(e.target.value)}
-                    className="flex-1 h-8 rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="flex-1 min-w-0 h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">Select a product…</option>
                     {availableProducts.map((p) => (
@@ -587,24 +587,22 @@ export default function MarketDetailPage() {
                     min={1}
                     value={newUnitsBrought}
                     onChange={(e) => setNewUnitsBrought(Number(e.target.value))}
-                    className="w-16 h-8 text-sm text-center"
+                    className="w-16 h-8 text-sm text-center shrink-0"
                     placeholder="Qty"
                   />
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="h-8 gap-1">
-                      <Check className="w-3.5 h-3.5" />
-                      Add
-                    </Button>
-                    <Button
-                      aria-label="Cancel adding product"
-                      size="sm"
-                      variant="outline"
-                      className="h-8 w-8 p-0"
-                      onClick={() => { setAddingProduct(false); setNewProductId(""); setNewUnitsBrought(1); }}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="h-8 gap-1 shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                    Add
+                  </Button>
+                  <Button
+                    aria-label="Cancel adding product"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 shrink-0"
+                    onClick={() => { setAddingProduct(false); setNewProductId(""); setNewUnitsBrought(1); }}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             )}
