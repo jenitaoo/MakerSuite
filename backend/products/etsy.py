@@ -280,7 +280,7 @@ class EtsyProductActions:
         # Upload images if sync_images is True
         if sync_images:
             logger.info(f"sync_images=True, attempting to upload {product.images.count()} images")
-            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
+            self._push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
         else:
             logger.info(f"sync_images=False, skipping image upload")
 
@@ -338,20 +338,19 @@ class EtsyProductActions:
         etsy_image_count = len(linked_listing.raw.get("images", []))
         if sync_images:
             logger.info(f"sync_images=True, attempting to upload {product.images.count()} images")
-            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
+            self._push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
         else:
-            # Still upload unpushed images even if sync_images is False (for consistency)
             logger.info(f"sync_images=False, skipping image upload")
-            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
 
         logger.info(f"Updated Etsy listing {linked_listing.platform_listing_id} for product {product.id}")
 
         return Response({"status": "pushed", "result": result})
 
-
-    def _push_images_to_etsy(adapter, product, listing, etsy_image_count: int):
+    def _push_images_to_etsy(self, adapter, product, listing, etsy_image_count: int):
         """
         Upload unpushed product images to Etsy listing.
+        
+        Etsy requires image ranks to be 1-20 (1-based), not 0-based.
         """
         slots_available = MAX_PRODUCT_IMAGES - etsy_image_count
         if slots_available <= 0:
@@ -372,18 +371,15 @@ class EtsyProductActions:
         # Etsy requires ranks 1-20, not 0-based
         for idx, img in enumerate(unpushed, start=1):
             try:
-                # Use 1-based rank for Etsy
-                etsy_rank = idx
-                logger.debug(f"Uploading image {img.id} with rank={etsy_rank} to listing {listing.platform_listing_id}")
+                etsy_rank = idx  # 1, 2, 3, 4 — NOT img.rank which is 0, 1, 2, 3
+                logger.info(f"Uploading image {img.id} with Etsy rank={etsy_rank} (db rank={img.rank})")
 
-                # Open file and upload
                 with img.image.open("rb") as f:
                     result = async_to_sync(adapter.upload_image)(listing, f, rank=etsy_rank)
 
-                # Mark as pushed
                 img.pushed_to_etsy = True
                 img.save(update_fields=["pushed_to_etsy"])
-                logger.info(f"✓ Uploaded image {img.id} to Etsy listing {listing.platform_listing_id} with rank {etsy_rank}")
+                logger.info(f"✓ Uploaded image {img.id} to Etsy with rank {etsy_rank}")
 
             except PlatformRateLimitError as e:
                 logger.warning(f"Rate limited uploading image {img.id}")
@@ -394,47 +390,6 @@ class EtsyProductActions:
             except Exception as e:
                 logger.error(f"Failed to upload image {img.id}: {e}", exc_info=True)
                 continue
-    """
-    Upload unpushed product images to Etsy listing.
-
-    Handles rate limits and auth errors gracefully.
-    Continues uploading remaining images even if one fails.
-    """
-    slots_available = MAX_PRODUCT_IMAGES - etsy_image_count
-    if slots_available <= 0:
-        logger.debug(f"No image slots available for listing {listing.platform_listing_id}")
-        return
-
-    unpushed = product.images.filter(pushed_to_etsy=False).order_by("rank")[:slots_available]
-
-    for img in unpushed:
-        try:
-            with img.image.open("rb") as f:
-                async_to_sync(adapter.upload_image)(listing, f, rank=img.rank)
-                img.pushed_to_etsy = True
-                img.save(update_fields=["pushed_to_etsy"])
-                logger.debug(f"Uploaded image {img.id} to listing {listing.platform_listing_id}")
-
-        except PlatformRateLimitError as e:
-            # Stop uploading to respect rate limit
-            retry_after = e.details.get('retry_after', 60)
-            logger.warning(f"Rate limited uploading image {img.id}, will retry later. Retry after {retry_after}s")
-            break
-
-        except PlatformAuthError as e:
-            # Auth failed — stop uploading
-            logger.error(f"Auth error uploading image {img.id}: {e.message}")
-            break
-
-        except PlatformIntegrationError as e:
-            # Other platform errors — log and continue
-            logger.error(f"Failed to upload image {img.id}: {e.message}")
-            continue
-
-        except Exception as e:
-            # Unexpected errors — log and continue
-            logger.error(f"Unexpected error uploading image {img.id}: {e}", exc_info=True)
-            continue
 
 
 def sync_quantity_to_etsy(user, product, new_quantity: int):
