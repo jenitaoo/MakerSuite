@@ -12,7 +12,7 @@ import { Project, ProjectImage } from "../../types/inventory";
 import { TagsInput } from "@/components/ui/tags-input";
 import { API_URL } from "../../services/api";
 
-type Product = { id: number; title: string };
+type Product = { id: number; title: string; quantity?: number };
 type Props = { project: Project; onClose: () => void; onSaved: () => void };
 
 export default function EditProjectModal({ project, onClose, onSaved }: Props) {
@@ -31,7 +31,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
   const originalProductId = project.product ? Number(project.product) : 0;
 
   const [tags, setTags] = useState<string[]>(project.tags ?? []);
-
+  const [quantitySyncOption, setQuantitySyncOption] = useState<"none" | "use-project" | "use-product">("none");
 
   useEffect(() => {
     fetch(`${API_URL}/api/product-list/?page_size=100`, {
@@ -75,18 +75,72 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         await uploadProjectImage(project.id, newFile);
       }
 
+      // Handle quantity sync
+      if (quantitySyncOption !== "none" && productId) {
+        const selectedProduct = products.find((p) => p.id === Number(productId));
+        
+        if (quantitySyncOption === "use-project") {
+          // Set product quantity to project's in_stock
+          if (selectedProduct) {
+            // Call API to update product quantity
+            await fetch(`${API_URL}/api/products/${productId}/`, {
+              method: "PATCH",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-CSRFToken": getCookie("csrftoken") ?? "",
+              },
+              body: JSON.stringify({
+                quantity: project.in_stock,
+              }),
+            }).then((r) => {
+              if (!r.ok) throw new Error("Failed to sync quantity");
+            });
+            toast.success(`Product quantity synced to ${project.in_stock} (from project)`);
+          }
+        } else if (quantitySyncOption === "use-product") {
+          // Set project quantity to product's quantity
+          if (selectedProduct && selectedProduct.quantity !== undefined) {
+            // Create a make log to set the project's in_stock to match product
+            const quantityDiff = selectedProduct.quantity - project.in_stock;
+            if (quantityDiff !== 0) {
+              await fetch(`${API_URL}/api/projects/${project.id}/log-make/`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                  "X-CSRFToken": getCookie("csrftoken") ?? "",
+                },
+                body: JSON.stringify({
+                  units_made: Math.abs(quantityDiff),
+                  deduct_materials: false,
+                }),
+              }).then((r) => {
+                if (!r.ok) throw new Error("Failed to sync quantity");
+              });
+              toast.success(`Project quantity synced to ${selectedProduct.quantity} (from product)`);
+            }
+          }
+        }
+      }
+
       toast.success("Project updated");
       onSaved();
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to update project");
     } finally {
       setSaving(false);
     }
   };
 
+  const selectedProduct = products.find((p) => p.id === Number(productId));
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-sm bg-[#fdf8f6]">
+      <DialogContent className="max-w-sm bg-[#fdf8f6] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Project: {project.name}</DialogTitle>
         </DialogHeader>
@@ -171,11 +225,59 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
             )}
           </div>
 
-        <div className="space-y-2">
-          <Label>Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
-          <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, seasonal" />
-          <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
-        </div>
+          {/* Quantity sync options */}
+          {productId && selectedProduct && (
+            <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50 p-3">
+              <Label className="text-sm font-medium">Sync Quantity</Label>
+              <p className="text-xs text-blue-900 mb-2">
+                Project: <span className="font-mono">{project.in_stock}</span> | Product: <span className="font-mono">{selectedProduct.quantity ?? "—"}</span>
+              </p>
+              
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="quantity-sync"
+                    value="none"
+                    checked={quantitySyncOption === "none"}
+                    onChange={(e) => setQuantitySyncOption(e.target.value as "none")}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-xs text-blue-900">Don't sync</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="quantity-sync"
+                    value="use-project"
+                    checked={quantitySyncOption === "use-project"}
+                    onChange={(e) => setQuantitySyncOption(e.target.value as "use-project")}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-xs text-blue-900">Use project quantity → update product</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="quantity-sync"
+                    value="use-product"
+                    checked={quantitySyncOption === "use-product"}
+                    onChange={(e) => setQuantitySyncOption(e.target.value as "use-product")}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-xs text-blue-900">Use product quantity → update project</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <TagsInput value={tags} onChange={setTags} placeholder="e.g. crochet, jewellery, seasonal" />
+            <p className="text-xs text-muted-foreground">Type and press Enter or comma to add.</p>
+          </div>
 
           <div className="space-y-2">
             <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
