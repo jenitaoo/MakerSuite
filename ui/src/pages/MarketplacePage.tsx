@@ -660,7 +660,6 @@ export default function MarketplacePage() {
                               market={m}
                               onLogSale={() => {
                                 setLogSaleMarket(m);
-                                setLogSaleOpen(true);
                               }}
                               onDelete={() => setDeleteMarket(m)}
                           />
