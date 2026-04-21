@@ -28,40 +28,6 @@ function AppLayout() {
   return (
     <TooltipProvider>
       <div className="app">
-        <Toaster
-          position="top-center"
-          containerStyle={{ zIndex: 9999 }}
-          toastOptions={{
-            style: {
-              border: "1px solid #713200",
-              padding: "16px",
-              color: "#713200",
-            },
-            iconTheme: {
-              primary: "#713200",
-              secondary: "#FFFAEE",
-            },
-            duration: 4000,
-          }}
-        >
-          {(t) => (
-            <ToastBar toast={t}>
-              {({ icon, message }) => (
-                <div className="flex items-center gap-2">
-                  {icon}
-                  {message}
-                  <button
-                     aria-label="Dismiss notification"
-                    onClick={() => toast.dismiss(t.id)}
-                    className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-            </ToastBar>
-          )}
-        </Toaster>
         <Navbar />
           <main className="main-content">
             <Suspense fallback={<div className="p-4">Loading (๑•̀ㅂ•́)و✧ ...</div>}>
@@ -105,5 +71,44 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <Toaster
+        position="top-center"
+        containerStyle={{ zIndex: 999999 }}
+        toastOptions={{
+          style: {
+            border: "1px solid #713200",
+            padding: "16px",
+            color: "#713200",
+          },
+          iconTheme: {
+            primary: "#713200",
+            secondary: "#FFFAEE",
+          },
+          duration: 4000,
+        }}
+      >
+        {(t) => (
+          <ToastBar toast={t}>
+            {({ icon, message }) => (
+              <div className="flex items-center gap-2">
+                {icon}
+                {message}
+                <button
+                  aria-label="Dismiss notification"
+                  onClick={() => toast.dismiss(t.id)}
+                  className="ml-1 opacity-60 hover:opacity-100 shrink-0 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
+
+      <RouterProvider router={router} />
+    </>
+  );
 }
