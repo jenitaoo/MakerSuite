@@ -75,7 +75,10 @@ export default function App() {
     <>
       <Toaster
         position="top-center"
-        containerStyle={{ zIndex: 999999 }}
+        containerStyle={{
+          zIndex: 100,
+          position: "fixed",
+        }}
         toastOptions={{
           style: {
             border: "1px solid #713200",
