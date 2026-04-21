@@ -10,7 +10,7 @@ from .serializers import (
     ProjectMaterialSerializer, MakeLogSerializer, InventoryLogSerializer,
 )
 from decimal import Decimal
-
+from products.etsy import sync_quantity_to_etsy
 
 class RawMaterialViewSet(viewsets.ModelViewSet):
     serializer_class = RawMaterialSerializer
