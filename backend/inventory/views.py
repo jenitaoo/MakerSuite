@@ -223,11 +223,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         )
 
         if project.product:
-            project.product.internal_quantity = (
-                project.product.internal_quantity or 0
-            ) + units_made
+            new_quantity = (project.product.internal_quantity or 0) + units_made
+            project.product.internal_quantity = new_quantity
             project.product.save(update_fields=["internal_quantity"])
-
             # Push quantity change to Etsy if linked
             sync_quantity_to_etsy(request.user, project.product, new_quantity)
 
