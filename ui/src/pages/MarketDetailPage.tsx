@@ -670,8 +670,7 @@ export default function MarketDetailPage() {
                           <TableCell className="p-2 text-center">
                             <input
                               type="number"
-                              defaultValue={mp.units_brought}
-                              onBlur={(e) => handleUpdateUnits(mp.product, Number(e.target.value))}
+                              onChange={(e) => handleUpdateUnits(mp.product, Number(e.target.value))}
                               className="w-16 h-7 text-sm text-center px-1 mx-auto border border-input rounded"
                             />
                           </TableCell>
