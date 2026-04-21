@@ -279,10 +279,10 @@ class EtsyProductActions:
 
         # Upload images if sync_images is True
         if sync_images:
+            logger.info(f"sync_images=True, attempting to upload {product.images.count()} images")
             _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
         else:
-            # Still upload unpushed images even if sync_images is False (for consistency)
-            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
+            logger.info(f"sync_images=False, skipping image upload")
 
         listing_state = raw_data.get("state", "draft")
         logger.info(f"Created Etsy listing {new_listing_id} for product {product.id}")
@@ -337,9 +337,11 @@ class EtsyProductActions:
         # Upload images if sync_images is True
         etsy_image_count = len(linked_listing.raw.get("images", []))
         if sync_images:
+            logger.info(f"sync_images=True, attempting to upload {product.images.count()} images")
             _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
         else:
             # Still upload unpushed images even if sync_images is False (for consistency)
+            logger.info(f"sync_images=False, skipping image upload")
             _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
 
         logger.info(f"Updated Etsy listing {linked_listing.platform_listing_id} for product {product.id}")
