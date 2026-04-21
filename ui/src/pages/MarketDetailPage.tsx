@@ -590,7 +590,7 @@ export default function MarketDetailPage() {
                     className="w-16 h-8 text-sm text-center"
                     placeholder="Qty"
                   />
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <Button aria-label="Add product" size="sm" onClick={handleAddProduct} disabled={savingProduct} className="h-8 gap-1">
                       <Check className="w-3.5 h-3.5" />
                       Add
