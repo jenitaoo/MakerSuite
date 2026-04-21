@@ -52,10 +52,9 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
   const perUnitHours = Math.floor(perUnitSeconds / 3600);
   const perUnitMins = Math.floor((perUnitSeconds % 3600) / 60);
 
-  // Calculate total materials deducted (per unit × units made)
-  const getCalculatedDeduction = (materialId: number): number => {
-    const perUnit = parseFloat(materialOverrides[materialId] ?? project.project_materials?.find(m => m.id === materialId)?.quantity_used ?? "0");
-    return perUnit * unitsMade;
+  // Calculate per-unit material deduction
+  const getPerUnitDeduction = (materialId: number): number => {
+    return parseFloat(materialOverrides[materialId] ?? project.project_materials?.find(m => m.id === materialId)?.quantity_used ?? "0");
   };
 
   const handleSubmit = async () => {
@@ -67,28 +66,30 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
     setSaving(true);
 
     try {
-      // Material overrides are per-unit values; API will handle multiplication
-      const material_overrides = deductMaterials
-        ? project.project_materials
-            ?.map((m) => ({
-              material_id: m.material,
-              quantity_used: materialOverrides[m.id] ?? m.quantity_used,
-            }))
-        : undefined;
+      // Create individual make logs for each unit
+      for (let i = 0; i < unitsMade; i++) {
+        const material_overrides = deductMaterials
+          ? project.project_materials
+              ?.map((m) => ({
+                material_id: m.material,
+                quantity_used: getPerUnitDeduction(m.id), // Per-unit amount
+              }))
+          : undefined;
 
-      await logMake(project.id, {
-        units_made: unitsMade,
-        date_made: dateMade || undefined,
-        deduct_materials: deductMaterials,
-        material_overrides,
-        duration_minutes: getTotalDurationMinutes(),
-        notes: makeNotes || undefined,
-      });
+        await logMake(project.id, {
+          units_made: 1, // ← Always 1, create multiple logs
+          date_made: dateMade || undefined,
+          deduct_materials: deductMaterials,
+          material_overrides,
+          duration_minutes: perUnitSeconds ? Math.floor(perUnitSeconds / 60) : undefined,
+          notes: i === 0 ? makeNotes : undefined, // Only add notes to first entry
+        });
+      }
 
-      // Invalidate materials cache - forces refetch on next interaction
+      // Invalidate materials cache
       queryClient.invalidateQueries({ queryKey: ["materials"] });
 
-      toast.success("Make logged");
+      toast.success(`${unitsMade} make${unitsMade !== 1 ? "s" : ""} logged`);
       onLogged();
     } catch {
       toast.error("Failed to log make");
@@ -115,7 +116,7 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
               onFocus={(e) => e.target.select()}
             />
             <p className="text-xs text-muted-foreground">
-              Adds to the total and linked product's quantity.
+              Creates {unitsMade} separate make log{unitsMade !== 1 ? "s" : ""}.
             </p>
           </div>
 
@@ -131,7 +132,7 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
           {/* ── DURATION SECTION ── */}
           <div className="space-y-2">
             <Label>
-              Duration <span className="text-muted-foreground font-normal">(optional)</span>
+              Duration per unit <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <div className="flex items-center gap-2">
               <Input
@@ -157,17 +158,17 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
               <span className="text-sm text-muted-foreground shrink-0">mins</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Total time for all {unitsMade} unit{unitsMade !== 1 ? "s" : ""}.
+              Applied to each of the {unitsMade} unit{unitsMade !== 1 ? "s" : ""}.
             </p>
 
-            {/* Per-unit duration breakdown */}
+            {/* Show duration breakdown */}
             {getTotalDurationMinutes() ? (
               <div className="mt-2 rounded-md bg-blue-50 border border-blue-200 p-2">
                 <button
                   onClick={() => setExpandBreakdown(!expandBreakdown)}
                   className="w-full flex items-center justify-between text-xs font-medium text-blue-900 hover:text-blue-700"
                 >
-                  <span>Per unit: {perUnitHours}h {perUnitMins}m</span>
+                  <span>Duration per unit: {perUnitHours}h {perUnitMins}m</span>
                   {expandBreakdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
 
@@ -175,7 +176,7 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
                   <div className="mt-2 space-y-1 border-t border-blue-200 pt-2">
                     {Array.from({ length: unitsMade }).map((_, i) => (
                       <div key={i} className="text-xs text-blue-800 flex items-center justify-between">
-                        <span>Unit {i + 1}</span>
+                        <span>Make {i + 1}</span>
                         <span className="font-mono">{perUnitHours}h {perUnitMins}m</span>
                       </div>
                     ))}
@@ -197,21 +198,21 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
                 <div>
                   <Label className="cursor-pointer">Deduct materials from stock</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Enter per-unit amounts. Total deducted = per unit × {unitsMade} unit{unitsMade !== 1 ? "s" : ""}.
+                    Enter per-unit amounts. Each make deducts these amounts.
                   </p>
                 </div>
               </div>
 
               {deductMaterials && (
                 <div className="space-y-3 rounded-md border border-border p-3 bg-muted/30">
-                  <Label className="text-sm">Materials to Deduct</Label>
+                  <Label className="text-sm">Materials per unit</Label>
 
-                  {/* Materials per-unit breakdown */}
+                  {/* Materials breakdown */}
                   <button
                     onClick={() => setExpandBreakdown(!expandBreakdown)}
                     className="w-full flex items-center justify-between text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white rounded px-2 py-1.5 border border-neutral-200"
                   >
-                    <span>Show per-unit breakdown</span>
+                    <span>Show breakdown for each make</span>
                     {expandBreakdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </button>
 
@@ -219,10 +220,10 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
                     <div className="bg-white rounded border border-neutral-200 p-2 space-y-2">
                       {Array.from({ length: unitsMade }).map((_, unitIndex) => (
                         <div key={unitIndex} className="border-b border-neutral-100 pb-2 last:border-0 last:pb-0">
-                          <p className="text-xs font-medium text-neutral-700 mb-1">Unit {unitIndex + 1}</p>
+                          <p className="text-xs font-medium text-neutral-700 mb-1">Make {unitIndex + 1}</p>
                           <div className="space-y-1">
                             {project.project_materials?.map((m) => {
-                              const perUnit = parseFloat(materialOverrides[m.id] ?? m.quantity_used ?? "0");
+                              const perUnit = getPerUnitDeduction(m.id);
                               return (
                                 <div key={m.id} className="flex items-center justify-between text-xs text-neutral-600">
                                   <span className="truncate">{m.material_name}</span>
@@ -273,7 +274,7 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground text-right">
-                          Total: {getCalculatedDeduction(m.id).toFixed(2)} {m.material_unit_type}
+                          Total for {unitsMade} make{unitsMade !== 1 ? "s" : ""}: {(getPerUnitDeduction(m.id) * unitsMade).toFixed(2)} {m.material_unit_type}
                         </p>
                       </div>
                     ))}
@@ -301,7 +302,7 @@ export default function LogMakeModal({ project, onClose, onLogged }: Props) {
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
-            {saving ? "Logging..." : "Log Make"}
+            {saving ? "Logging..." : `Log ${unitsMade} Make${unitsMade !== 1 ? "s" : ""}`}
           </Button>
         </DialogFooter>
       </DialogContent>
