@@ -53,6 +53,7 @@ export default function EditProductListing() {
   const [materialsInput, setMaterialsInput] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const [newImages, setNewImages] = useState<NewImagePreview[]>([]);
+  const [syncImagesToEtsy, setSyncImagesToEtsy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Linked project data fetched separately
@@ -215,6 +216,7 @@ export default function EditProductListing() {
         should_auto_renew: form.should_auto_renew,
         is_taxable: form.is_taxable,
         listing_type: form.listing_type,
+        sync_images: syncImagesToEtsy, // ← Push images if checked
       }),
     });
     if (!res.ok) {
@@ -222,13 +224,16 @@ export default function EditProductListing() {
       handleEtsyError(data);
       return;
     }
-    toast.success("Saved to Etsy");
+    toast.success(syncImagesToEtsy ? "Saved to Etsy with images" : "Saved to Etsy");
+    setSyncImagesToEtsy(false);
     setIsDirty(false);
     refetch();
   };
 
   const handleSaveToAll = async () => {
     await handleSaveInternally();
+    // Add small delay to ensure images are processed
+    await new Promise(resolve => setTimeout(resolve, 500));
     await handleSaveToEtsy();
   };
 
@@ -431,8 +436,19 @@ export default function EditProductListing() {
 
               {newImages.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {newImages.length} new photo{newImages.length !== 1 ? "s" : ""} queued — will be saved when you hit Save Internally or Save to All, and pushed to Etsy on the next Save to Etsy.
+                  {newImages.length} new photo{newImages.length !== 1 ? "s" : ""} queued — will be saved when you hit Save Internally or Save to All.
                 </p>
+              )}
+
+              {/* Checkbox to sync images to Etsy */}
+              {newImages.length > 0 && etsyListing && (
+                <div className="flex items-center gap-2 mt-3 p-2 rounded bg-blue-50 border border-blue-200">
+                  <Checkbox 
+                    checked={syncImagesToEtsy} 
+                    onCheckedChange={(v) => setSyncImagesToEtsy(!!v)} 
+                  />
+                  <Label className="text-xs cursor-pointer">Push new images to Etsy when saving</Label>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -560,6 +576,7 @@ export default function EditProductListing() {
           </div>
           <p className="text-xs text-muted-foreground text-center">
             Changes save independently — your internal price and Etsy price can differ.
+            {syncImagesToEtsy && <span className="block mt-1 text-blue-600">✓ New images will be pushed to Etsy</span>}
           </p>
         </div>
       )}
