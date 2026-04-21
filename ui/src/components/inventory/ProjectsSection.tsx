@@ -76,7 +76,7 @@ export default function ProjectsSection() {
     }
 
     return data;
-  }, [projects, selectedTags, statusFilter]);
+  }, [projects, selectedTags, statusFilter, hasLinkedOnly]);
 
   const toggleTag = (tag: string) =>
     setSelectedTags((prev) =>
