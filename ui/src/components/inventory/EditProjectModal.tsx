@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
   const [notes, setNotes] = useState(project.notes ?? "");
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   // Image state — start from existing images
   const [existingImages, setExistingImages] = useState<ProjectImage[]>(project.images ?? []);
@@ -40,7 +42,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
     })
       .then((r) => r.json())
       .then((data) => setProducts(data.results ?? data))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to fetch products:", err));
   }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +66,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
     if (!name.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
     try {
+      // 1. Update project first
       await updateProject(project.id, {
         name,
         product: productId || null,
@@ -71,40 +74,49 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         tags,
       });
 
+      // 2. Upload new image if provided
       if (newFile) {
         await uploadProjectImage(project.id, newFile);
       }
 
-      // Handle quantity sync
+      // 3. Handle quantity sync
       if (quantitySyncOption !== "none" && productId) {
         const selectedProduct = products.find((p) => p.id === Number(productId));
         
         if (quantitySyncOption === "use-project") {
-          // Set product quantity to project's in_stock
-          if (selectedProduct) {
-            // Call API to update product quantity
-            await fetch(`${API_URL}/api/products/${productId}/`, {
-              method: "PATCH",
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-CSRFToken": getCookie("csrftoken") ?? "",
-              },
-              body: JSON.stringify({
-                quantity: project.in_stock,
-              }),
-            }).then((r) => {
-              if (!r.ok) throw new Error("Failed to sync quantity");
-            });
-            toast.success(`Product quantity synced to ${project.in_stock} (from project)`);
+          // Update product quantity to match project's in_stock
+          console.log(`Syncing product ${productId} quantity to ${project.in_stock} (from project)`);
+          
+          const updateResponse = await fetch(`${API_URL}/api/products/${productId}/`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              "X-CSRFToken": getCookie("csrftoken") ?? "",
+            },
+            body: JSON.stringify({
+              quantity: project.in_stock,
+            }),
+          });
+
+          if (!updateResponse.ok) {
+            const error = await updateResponse.json();
+            throw new Error(error.detail || "Failed to sync product quantity");
           }
+
+          // Invalidate product cache
+          queryClient.invalidateQueries({ queryKey: ["products"] });
+          toast.success(`Product quantity updated to ${project.in_stock}`);
+          
         } else if (quantitySyncOption === "use-product") {
-          // Set project quantity to product's quantity
+          // Update project quantity to match product
           if (selectedProduct && selectedProduct.quantity !== undefined) {
-            // Create a make log to set the project's in_stock to match product
+            console.log(`Syncing project quantity to ${selectedProduct.quantity} (from product)`);
+            
             const quantityDiff = selectedProduct.quantity - project.in_stock;
-            if (quantityDiff !== 0) {
+            if (quantityDiff > 0) {
+              // Need to add units
               await fetch(`${API_URL}/api/projects/${project.id}/log-make/`, {
                 method: "POST",
                 credentials: "include",
@@ -114,14 +126,18 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                   "X-CSRFToken": getCookie("csrftoken") ?? "",
                 },
                 body: JSON.stringify({
-                  units_made: Math.abs(quantityDiff),
+                  units_made: quantityDiff,
                   deduct_materials: false,
+                  date_made: new Date().toISOString().split("T")[0],
                 }),
               }).then((r) => {
-                if (!r.ok) throw new Error("Failed to sync quantity");
+                if (!r.ok) throw new Error("Failed to sync project quantity");
               });
-              toast.success(`Project quantity synced to ${selectedProduct.quantity} (from product)`);
             }
+            
+            // Invalidate project cache
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+            toast.success(`Project quantity updated to ${selectedProduct.quantity}`);
           }
         }
       }
@@ -129,8 +145,8 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
       toast.success("Project updated");
       onSaved();
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to update project");
+      console.error("Error saving project:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update project");
     } finally {
       setSaving(false);
     }
@@ -215,12 +231,12 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
             >
               <option value="">— None —</option>
               {products.map((p) => (
-                <option key={p.id} value={p.id}>{p.title}</option>
+                <option key={p.id} value={p.id}>{p.title} ({p.quantity ?? 0} in stock)</option>
               ))}
             </select>
             {productId && Number(productId) !== Number(originalProductId) && (
               <p className="text-xs text-amber-600">
-                ⚠ Linking this product will auto-create a make log from its current stock quantity.
+                ⚠ Linking a new product will let you sync quantities below.
               </p>
             )}
           </div>
@@ -230,7 +246,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
             <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50 p-3">
               <Label className="text-sm font-medium">Sync Quantity</Label>
               <p className="text-xs text-blue-900 mb-2">
-                Project: <span className="font-mono">{project.in_stock}</span> | Product: <span className="font-mono">{selectedProduct.quantity ?? "—"}</span>
+                Project in stock: <span className="font-mono font-bold">{project.in_stock}</span> | Product in stock: <span className="font-mono font-bold">{selectedProduct.quantity ?? 0}</span>
               </p>
               
               <div className="space-y-2">
@@ -243,7 +259,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                     onChange={(e) => setQuantitySyncOption(e.target.value as "none")}
                     className="w-4 h-4"
                   />
-                  <span className="text-xs text-blue-900">Don't sync</span>
+                  <span className="text-xs text-blue-900">Don't sync (keep separate)</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -255,7 +271,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                     onChange={(e) => setQuantitySyncOption(e.target.value as "use-project")}
                     className="w-4 h-4"
                   />
-                  <span className="text-xs text-blue-900">Use project quantity → update product</span>
+                  <span className="text-xs text-blue-900">Set product = project ({project.in_stock})</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -267,7 +283,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                     onChange={(e) => setQuantitySyncOption(e.target.value as "use-product")}
                     className="w-4 h-4"
                   />
-                  <span className="text-xs text-blue-900">Use product quantity → update project</span>
+                  <span className="text-xs text-blue-900">Set project = product ({selectedProduct.quantity ?? 0})</span>
                 </label>
               </div>
             </div>
