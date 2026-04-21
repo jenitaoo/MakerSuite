@@ -42,6 +42,7 @@ export default function ProjectsSection() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const inStockCount = projects.filter(p => p.in_stock > 0).length;
   const outOfStockCount = projects.filter(p => p.in_stock === 0).length;
+  const [hasLinkedOnly, setHasLinkedOnly] = useState(false);
 
   // For tags
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -67,6 +68,11 @@ export default function ProjectsSection() {
       data = data.filter(p => p.in_stock > 0);
     } else if (statusFilter === "out") {
       data = data.filter(p => p.in_stock === 0);
+    }
+
+    // LINKED PRODUCT
+    if (hasLinkedOnly) {
+      data = data.filter(p => !!p.product);
     }
 
     return data;
@@ -421,6 +427,14 @@ export default function ProjectsSection() {
 
         {/* FILTERS */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <Button
+            size="sm"
+            variant={hasLinkedOnly ? "default" : "outline"}
+            onClick={() => setHasLinkedOnly(v => !v)}
+            className="h-8 text-xs"
+          >
+            Has Linked Product
+          </Button>
 
           {/* STATUS FILTER */}
           <select
