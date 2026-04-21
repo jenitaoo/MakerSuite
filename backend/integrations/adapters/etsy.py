@@ -783,17 +783,7 @@ class EtsyAdapter(BasePlatformAdapter):
         image_file,
         rank: int = 1,
     ) -> Dict[str, Any]:
-        """
-        Upload image to listing via multipart form data.
-
-        Args:
-            listing: ExternalProductListing model
-            image_file: File-like object (Django UploadedFile)
-            rank: Image rank/order (1 = primary)
-
-        Returns:
-            API response
-        """
+        """Upload image to listing via multipart form data."""
         logger.debug(f"Uploading image to Etsy listing {listing.platform_listing_id}")
 
         content_type, _ = mimetypes.guess_type(image_file.name)
@@ -805,16 +795,21 @@ class EtsyAdapter(BasePlatformAdapter):
             "overwrite": (None, "true"),
         }
 
+        headers = await self._headers()
+        # Remove Content-Type from headers — httpx will set it for multipart
+        headers.pop("Content-Type", None)
+
+        url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images"
+
         try:
-            result = await self._request(
-                "POST",
-                f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images",
-                json=False,
-                files=files,
-                context="upload image"
-            )
-            logger.info(f"Uploaded image to listing {listing.platform_listing_id}")
-            return result
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, headers=headers, files=files)
+
+                if response.status_code >= 400:
+                    self._handle_response_error(response, "upload image")
+
+                logger.info(f"Uploaded image to listing {listing.platform_listing_id}")
+                return response.json()
 
         except PlatformIntegrationError:
             raise
