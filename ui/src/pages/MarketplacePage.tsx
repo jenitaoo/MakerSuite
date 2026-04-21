@@ -748,6 +748,8 @@ export default function MarketplacePage() {
       <Suspense fallback={<div className="p-4 text-sm">Loading...</div>}>
         {logSaleMarket && (
           <LogSaleModal
+            products={products}
+            product={undefined}
             marketId={logSaleMarket.id}
             marketName={logSaleMarket.name}
             onClose={() => setLogSaleMarket(null)}
@@ -758,6 +760,7 @@ export default function MarketplacePage() {
             }}
           />
         )}
+      </Suspense>
 
         {deleteMarket && (
           <DeleteMarketModal
