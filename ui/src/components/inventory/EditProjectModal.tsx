@@ -96,7 +96,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
               "X-CSRFToken": getCookie("csrftoken") ?? "",
             },
             body: JSON.stringify({
-              quantity: project.in_stock,
+              internal_quantity: project.in_stock,
             }),
           });
 
