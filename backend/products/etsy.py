@@ -349,7 +349,51 @@ class EtsyProductActions:
         return Response({"status": "pushed", "result": result})
 
 
-def _push_images_to_etsy(adapter, product, listing, etsy_image_count: int):
+    def _push_images_to_etsy(adapter, product, listing, etsy_image_count: int):
+        """
+        Upload unpushed product images to Etsy listing.
+        """
+        slots_available = MAX_PRODUCT_IMAGES - etsy_image_count
+        if slots_available <= 0:
+            logger.debug(f"No image slots available for listing {listing.platform_listing_id}")
+            return
+
+        # Get unpushed images
+        try:
+            unpushed = product.images.filter(pushed_to_etsy=False).order_by("rank")[:slots_available]
+        except Exception as e:
+            logger.error(f"Error getting product images: {e}")
+            return
+
+        if not unpushed.exists():
+            logger.debug(f"No unpushed images found for product {product.id}")
+            return
+
+        # Etsy requires ranks 1-20, not 0-based
+        for idx, img in enumerate(unpushed, start=1):
+            try:
+                # Use 1-based rank for Etsy
+                etsy_rank = idx
+                logger.debug(f"Uploading image {img.id} with rank={etsy_rank} to listing {listing.platform_listing_id}")
+
+                # Open file and upload
+                with img.image.open("rb") as f:
+                    result = async_to_sync(adapter.upload_image)(listing, f, rank=etsy_rank)
+
+                # Mark as pushed
+                img.pushed_to_etsy = True
+                img.save(update_fields=["pushed_to_etsy"])
+                logger.info(f"✓ Uploaded image {img.id} to Etsy listing {listing.platform_listing_id} with rank {etsy_rank}")
+
+            except PlatformRateLimitError as e:
+                logger.warning(f"Rate limited uploading image {img.id}")
+                break
+            except PlatformAuthError as e:
+                logger.error(f"Auth error uploading image {img.id}: {e.message}")
+                break
+            except Exception as e:
+                logger.error(f"Failed to upload image {img.id}: {e}", exc_info=True)
+                continue
     """
     Upload unpushed product images to Etsy listing.
 
