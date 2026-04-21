@@ -254,7 +254,6 @@ export default function MarketplacePage() {
   const [deleteMarket, setDeleteMarket] = useState<Market | null>(null);
 
   // Modals
-  const [logSaleOpen, setLogSaleOpen] = useState(false);
   const [logSaleMarket, setLogSaleMarket] = useState<Market | null>(null);
   const [addMarketOpen, setAddMarketOpen] = useState(false);
 
@@ -656,7 +655,15 @@ export default function MarketplacePage() {
                     ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredUpcoming.map((m) => (
-                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
+                        <MarketCard
+                            key={m.id}
+                              market={m}
+                              onLogSale={() => {
+                                setLogSaleMarket(m);
+                                setLogSaleOpen(true);
+                              }}
+                              onDelete={() => setDeleteMarket(m)}
+                          />
                         ))}
                     </div>
                     )}
@@ -740,17 +747,12 @@ export default function MarketplacePage() {
 
       {/* ── Modals ── */}
       <Suspense fallback={<div className="p-4 text-sm">Loading...</div>}>
-        {logSaleOpen && (
+        {logSaleMarket && (
           <LogSaleModal
-            products={products}
-            marketId={logSaleMarket?.id}
-            marketName={logSaleMarket?.name}
-            onClose={() => {
-              setLogSaleOpen(false);
-              setLogSaleMarket(null);
-            }}
+            marketId={logSaleMarket.id}
+            marketName={logSaleMarket.name}
+            onClose={() => setLogSaleMarket(null)}
             onLogged={() => {
-              setLogSaleOpen(false);
               setLogSaleMarket(null);
               loadProducts();
               loadMarkets();
