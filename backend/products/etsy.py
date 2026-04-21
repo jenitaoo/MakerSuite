@@ -116,7 +116,8 @@ class EtsyProductActions:
             "when_made": "made_to_order",
             "should_auto_renew": true,
             "is_taxable": true,
-            "listing_type": "physical"
+            "listing_type": "physical",
+            "sync_images": true
         }
         """
         product = self.get_object()
@@ -148,6 +149,9 @@ class EtsyProductActions:
             "listing_type": request.data.get("listing_type"),
         }.items() if v is not None}
 
+        # Check if user wants to sync images
+        sync_images = request.data.get("sync_images", False)
+
         if not product.internal_price:
             return Response(
                 {"error": "Product has no price set. Add a price before pushing to Etsy."},
@@ -171,12 +175,12 @@ class EtsyProductActions:
             if not linked_listing:
                 # ========== CREATE NEW LISTING ==========
                 return self._create_etsy_listing(
-                    request, product, adapter, etsy_fields
+                    request, product, adapter, etsy_fields, sync_images
                 )
             else:
                 # ========== UPDATE EXISTING LISTING ==========
                 return self._update_etsy_listing(
-                    request, product, linked_listing, adapter, etsy_fields
+                    request, product, linked_listing, adapter, etsy_fields, sync_images
                 )
 
         except PlatformAuthError as e:
@@ -219,7 +223,7 @@ class EtsyProductActions:
                 "code": e.error_code
             }, status=e.status_code)
 
-    def _create_etsy_listing(self, request, product, adapter, etsy_fields):
+    def _create_etsy_listing(self, request, product, adapter, etsy_fields, sync_images=False):
         """Create new listing on Etsy."""
         # Get reference listing (for shop_id and required profile IDs)
         reference = ExternalProductListing.objects.filter(
@@ -273,8 +277,12 @@ class EtsyProductActions:
             product.platforms.append("Etsy")
             product.save(update_fields=["platforms"])
 
-        # Upload images
-        _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
+        # Upload images if sync_images is True
+        if sync_images:
+            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
+        else:
+            # Still upload unpushed images even if sync_images is False (for consistency)
+            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count=0)
 
         listing_state = raw_data.get("state", "draft")
         logger.info(f"Created Etsy listing {new_listing_id} for product {product.id}")
@@ -285,7 +293,7 @@ class EtsyProductActions:
             "listing_state": listing_state,
         })
 
-    def _update_etsy_listing(self, request, product, linked_listing, adapter, etsy_fields):
+    def _update_etsy_listing(self, request, product, linked_listing, adapter, etsy_fields, sync_images=False):
         """Update existing listing on Etsy."""
         # Update etsy_* fields on linked_listing model
         update_fields = []
@@ -326,9 +334,13 @@ class EtsyProductActions:
             product.platforms.append("Etsy")
             product.save(update_fields=["platforms"])
 
-        # Upload any unpushed images
+        # Upload images if sync_images is True
         etsy_image_count = len(linked_listing.raw.get("images", []))
-        _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
+        if sync_images:
+            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
+        else:
+            # Still upload unpushed images even if sync_images is False (for consistency)
+            _push_images_to_etsy(adapter, product, linked_listing, etsy_image_count)
 
         logger.info(f"Updated Etsy listing {linked_listing.platform_listing_id} for product {product.id}")
 
