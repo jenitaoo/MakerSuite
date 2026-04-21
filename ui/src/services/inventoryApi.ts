@@ -1,6 +1,7 @@
 import { getCookie, API_URL } from "./api";
 
 const BASE = `${API_URL}/api/inventory`;
+const PRODUCTS_BASE = `${API_URL}/api/products`;
 
 const headers = () => ({
   "Content-Type": "application/json",
@@ -305,7 +306,7 @@ export async function removeProjectMaterial(projectId: number, materialId: numbe
 // ── Sale Tags ─────────────────────────────────────────────────
 
 export async function getTags() {
-  const res = await fetch(`${BASE}/tags/`, {
+  const res = await fetch(`${PRODUCTS_BASE}/tags/`, {
     credentials: "include",
     headers: headers(),
   });
@@ -314,7 +315,7 @@ export async function getTags() {
 }
 
 export async function createTag(name: string) {
-  const res = await fetch(`${BASE}/tags/`, {
+  const res = await fetch(`${PRODUCTS_BASE}/tags/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
@@ -325,7 +326,7 @@ export async function createTag(name: string) {
 }
 
 export async function deleteTag(id: number) {
-  const res = await fetch(`${BASE}/tags/${id}/`, {
+  const res = await fetch(`${PRODUCTS_BASE}/tags/${id}/`, {
     method: "DELETE",
     credentials: "include",
     headers: headers(),
@@ -334,7 +335,7 @@ export async function deleteTag(id: number) {
 }
 
 export async function linkProductToProject(projectId: number, productId: number) {
-  const res = await fetch(`${BASE}/projects/${projectId}/link-product/`, {
+  const res = await fetch(`${PRODUCTS_BASE}/projects/${projectId}/link-product/`, {
     method: "POST",
     credentials: "include",
     headers: headers(),
