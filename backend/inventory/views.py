@@ -228,6 +228,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             ) + units_made
             project.product.save(update_fields=["internal_quantity"])
 
+            # Push quantity change to Etsy if linked
+            sync_quantity_to_etsy(request.user, project.product, new_quantity)
+
         if deduct_materials:
             for pm in project.project_materials.all():
                 override_qty = material_overrides.get(str(pm.material_id))
