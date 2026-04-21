@@ -670,27 +670,8 @@ export default function MarketDetailPage() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
-                              min={0}
-                              max={999}
                               value={mp.units_brought}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                // Allow empty string while typing
-                                if (val === "") {
-                                  // Don't update yet, let user finish typing
-                                  return;
-                                }
-                                const num = Number(val);
-                                if (!isNaN(num) && num >= 0) {
-                                  handleUpdateUnits(mp.product, num);
-                                }
-                              }}
-                              onBlur={(e) => {
-                                // On blur, if empty, set to 1
-                                if (e.target.value === "") {
-                                  handleUpdateUnits(mp.product, 1);
-                                }
-                              }}
+                              onChange={(e) => handleUpdateUnits(mp.product, Number(e.target.value) || 0)}
                               className="w-16 h-7 text-sm text-center px-1 mx-auto"
                             />
                           </TableCell>
