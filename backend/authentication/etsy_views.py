@@ -17,7 +17,8 @@ from rest_framework.permissions import IsAuthenticated
 from asgiref.sync import async_to_sync
 from integrations.factory import AdapterFactory
 from integrations.exceptions import PlatformAuthError, PlatformIntegrationError
-from products.models import ExternalProductListing
+from products.models import ExternalProductListing, Product
+from products.sync import SyncManager
 from authentication.models import UserProfile
 
 logger = logging.getLogger(__name__)
@@ -336,18 +337,21 @@ class EtsyImportListingsView(APIView):
 
             logger.info(f"[IMPORT] Done: imported={imported}, updated={updated}, errors={errors}, total={len(listings)}")
 
-            # Sync Etsy receipts as sale logs
+            # ── Sync Etsy receipts as sale logs ──────────────────────────────
             imported_sales = 0
             sales_errors = 0
             try:
                 from products.sync import SyncManager
-                from products.models import Product
+                from products.models import Product, ExternalProductListing
                 manager = SyncManager(profile)
-                linked_products = Product.objects.filter(
+                linked_product_ids = ExternalProductListing.objects.filter(
                     owner=profile,
-                    external_listings__platform="Etsy",
-                    external_listings__shop_id=shop_id,
-                ).distinct()
+                    platform="Etsy",
+                    shop_id=shop_id,
+                    product__isnull=False,
+                ).values_list("product_id", flat=True).distinct()
+
+                linked_products = Product.objects.filter(id__in=linked_product_ids)
 
                 for product in linked_products:
                     try:
