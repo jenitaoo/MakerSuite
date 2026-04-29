@@ -23,6 +23,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
+  const [stockLevel, setStockLevel] = useState<string>(String(project.in_stock ?? 0));
 
   // Image state — start from existing images
   const [existingImages, setExistingImages] = useState<ProjectImage[]>(project.images ?? []);
@@ -72,6 +73,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         product: productId || null,
         notes: notes || null,
         tags,
+        in_stock: parseFloat(stockLevel) || 0,
       });
 
       // 2. Upload new image if provided
@@ -220,6 +222,20 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
           <div className="space-y-2">
             <Label>Name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Miffy Plushie" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>In Stock</Label>
+            <Input
+              inputMode="decimal"
+              value={stockLevel}
+              onChange={(e) => setStockLevel(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Manual stock correction — won't create a make log entry.
+            </p>
           </div>
 
           <div className="space-y-2">
