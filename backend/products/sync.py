@@ -3,7 +3,7 @@ This module manages synchronization of product listings between the local system
 and various external platforms like Etsy and Shopify.
 """
 
-from backend.integrations.factory import AdapterFactory
+from integrations.factory import AdapterFactory
 from .models import ExternalProductListing
 from asgiref.sync import async_to_sync
 import asyncio

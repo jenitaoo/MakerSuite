@@ -66,6 +66,9 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
   const handleSave = async () => {
     if (!name.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
+    const currentStock = project.units_made - (project.units_sold ?? 0);
+    const desiredStock = parseFloat(stockLevel) || 0;
+
     try {
       // 1. Update project first
       await updateProject(project.id, {
@@ -73,7 +76,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
         product: productId || null,
         notes: notes || null,
         tags,
-        in_stock: parseFloat(stockLevel) || 0,
+        stock_adjustment: desiredStock - currentStock,
       });
 
       // 2. Upload new image if provided
@@ -98,7 +101,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
               "X-CSRFToken": getCookie("csrftoken") ?? "",
             },
             body: JSON.stringify({
-              internal_quantity: project.in_stock,
+              internal_quantity: desiredStock,
             }),
           });
 
@@ -262,7 +265,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
             <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50 p-3">
               <Label className="text-sm font-medium">Sync Quantity</Label>
               <p className="text-xs text-blue-900 mb-2">
-                Project in stock: <span className="font-mono font-bold">{project.in_stock}</span> | Product in stock: <span className="font-mono font-bold">{selectedProduct.quantity ?? 0}</span>
+                Project in stock: <span className="font-mono font-bold">{parseFloat(stockLevel) || 0}</span>
               </p>
               
               <div className="space-y-2">
@@ -287,7 +290,7 @@ export default function EditProjectModal({ project, onClose, onSaved }: Props) {
                     onChange={(e) => setQuantitySyncOption(e.target.value as "use-project")}
                     className="w-4 h-4"
                   />
-                  <span className="text-xs text-blue-900">Set product = project ({project.in_stock})</span>
+                  <span className="text-xs text-blue-900">Set product = project ({parseFloat(stockLevel) || 0})</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
