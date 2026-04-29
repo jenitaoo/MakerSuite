@@ -112,7 +112,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             "id", "owner", "name", "product", "product_title", "product_price",
-            "units_made", "units_sold", "in_stock", "stock_adjustment"
+            "units_made", "units_sold", "in_stock", "stock_adjustment",
             "avg_duration_minutes", "material_cost_per_unit",
             "notes", "tags", "images", "project_materials", "make_logs",
             "created_at", "updated_at",
