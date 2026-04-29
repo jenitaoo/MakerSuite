@@ -5,6 +5,7 @@ and various external platforms like Etsy and Shopify.
 
 from backend.integrations.factory import AdapterFactory
 from .models import ExternalProductListing
+from asgiref.sync import async_to_sync
 import asyncio
 
 class SyncManager:
@@ -69,7 +70,7 @@ class SyncManager:
             since_ts = 0
 
             try:
-                receipts = adapter.fetch_receipts(listing.shop_id, since_ts)
+                receipts = async_to_sync(adapter.fetch_receipts)(listing.shop_id, since_ts)
                 print(f"DEBUG: Fetched {len(receipts)} receipts from {listing.platform}")
             except Exception as e:
                 print(f"DEBUG: Error fetching receipts: {e}")
