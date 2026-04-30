@@ -27,16 +27,16 @@ class PlatformIntegrationError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str = "UNKNOWN_ERROR",
         platform: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
-        status_code: Optional[int] = None,
+        status_code: int = 500,
     ):
         self.message = message
-        self.error_code = error_code or "UNKNOWN_ERROR"
+        self.error_code = error_code
         self.platform = platform
         self.details = details or {}
-        self.status_code = status_code or 500
+        self.status_code = status_code
         super().__init__(self.message)
 
 
@@ -59,17 +59,14 @@ class PlatformAuthError(PlatformIntegrationError):
         message: str,
         platform: Optional[str] = None,
         requires_reauth: bool = True,
-        **kwargs
     ):
         self.requires_reauth = requires_reauth
-        kwargs['status_code'] = 401
         super().__init__(
-            message,
+            message=message,
             error_code="AUTH_ERROR",
             platform=platform,
-            **kwargs
+            status_code=401,
         )
-
 
 class PlatformAPIError(PlatformIntegrationError):
     """
@@ -86,24 +83,21 @@ class PlatformAPIError(PlatformIntegrationError):
     def __init__(
         self,
         message: str,
-        status_code: Optional[int] = None,
+        status_code: int = 500,
         platform: Optional[str] = None,
         retryable: bool = False,
-        **kwargs
     ):
-        self.status_code = status_code or 500
-        self.retryable = retryable or (self.status_code >= 500)
-        kwargs['status_code'] = self.status_code
+        self.retryable = retryable or (status_code >= 500)
         super().__init__(
-            message,
+            message=message,
             error_code="API_ERROR",
             platform=platform,
             details={"retryable": self.retryable},
-            **kwargs
+            status_code=status_code,
         )
 
 
-class PlatformRateLimitError(PlatformAPIError):
+class PlatformRateLimitError(PlatformIntegrationError):
     """
     Raised when API rate limit exceeded.
 
@@ -120,20 +114,17 @@ class PlatformRateLimitError(PlatformAPIError):
     def __init__(
         self,
         message: str,
-        retry_after: Optional[int] = None,
+        retry_after: int = 60,
         platform: Optional[str] = None,
-        **kwargs
     ):
-        details = kwargs.pop("details", {})
-        details["retry_after"] = retry_after or 60
+        self.retry_after = retry_after
+        self.retryable = True
         super().__init__(
-            message,
-            status_code=429,
+            message=message,
             error_code="RATE_LIMIT",
             platform=platform,
-            retryable=True,
-            details=details,
-            **kwargs
+            details={"retry_after": retry_after, "retryable": True},
+            status_code=429,
         )
 
 
@@ -156,22 +147,20 @@ class PlatformValidationError(PlatformIntegrationError):
         message: str,
         field: Optional[str] = None,
         platform: Optional[str] = None,
-        **kwargs
     ):
-        details = kwargs.pop("details", {})
+        details = {}
         if field:
             details["field"] = field
-        kwargs['status_code'] = 400
         super().__init__(
-            message,
+            message=message,
             error_code="VALIDATION_ERROR",
             platform=platform,
             details=details,
-            **kwargs
+            status_code=400,
         )
 
 
-class PlatformNotFoundError(PlatformAPIError):
+class PlatformNotFoundError(PlatformIntegrationError):
     """
     Raised when resource doesn't exist on platform.
 
@@ -190,25 +179,23 @@ class PlatformNotFoundError(PlatformAPIError):
         resource_type: Optional[str] = None,
         resource_id: Optional[str] = None,
         platform: Optional[str] = None,
-        **kwargs
     ):
-        details = kwargs.pop("details", {})
+        details = {}
         if resource_type:
             details["resource_type"] = resource_type
         if resource_id:
             details["resource_id"] = resource_id
+        self.retryable = False
         super().__init__(
-            message,
-            status_code=404,
+            message=message,
             error_code="NOT_FOUND",
             platform=platform,
-            retryable=False,
             details=details,
-            **kwargs
+            status_code=404,
         )
 
 
-class PlatformUnauthorizedError(PlatformAuthError):
+class PlatformUnauthorizedError(PlatformIntegrationError):
     """
     Raised when user lacks permission for operation (distinct from token expiry).
 
@@ -225,13 +212,11 @@ class PlatformUnauthorizedError(PlatformAuthError):
         self,
         message: str,
         platform: Optional[str] = None,
-        **kwargs
     ):
-        kwargs['status_code'] = 403
+        self.requires_reauth = False
         super().__init__(
-            message,
+            message=message,
             error_code="UNAUTHORIZED",
             platform=platform,
-            requires_reauth=False,
-            **kwargs
+            status_code=403,
         )

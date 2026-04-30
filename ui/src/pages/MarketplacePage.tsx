@@ -56,7 +56,7 @@ type Market = {
   products_brought?: number;
 };
 
-// ─── Side nav config ──────────────────────────────────────────────────────────
+// ─── Side nav config ──────────────────────────────────────────────────────
 
 const NAV_SECTIONS = [
   { id: "your-markets",  label: "Markets",      icon: Store      },
@@ -254,12 +254,11 @@ export default function MarketplacePage() {
   const [deleteMarket, setDeleteMarket] = useState<Market | null>(null);
 
   // Modals
-  const [logSaleOpen, setLogSaleOpen] = useState(false);
   const [logSaleMarket, setLogSaleMarket] = useState<Market | null>(null);
   const [addMarketOpen, setAddMarketOpen] = useState(false);
 
   // Nav
-  const [activeSection, setActiveSection] = useState<string>("at-a-glance");
+  const [activeSection, setActiveSection] = useState<string>("intro");
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   // ── Data fetching ───────────────────────────────────────────────────────────
@@ -339,7 +338,7 @@ export default function MarketplacePage() {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [loadProducts]);
+  }, []);
 
   const scrollTo = (id: string) =>
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -358,36 +357,36 @@ export default function MarketplacePage() {
       });
       if (shopRes.status === 401 || shopRes.status === 403) {
         toast(
-        (t) => (
+          (t) => (
             <div className="space-y-2">
-            <p className="text-sm font-medium">Connect to Etsy?</p>
-            <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-medium">Connect to Etsy?</p>
+              <p className="text-xs text-muted-foreground">
                 It looks like you aren't connected to Etsy or your session has expired!
-            </p>
-            <div className="flex gap-2 pt-1">
+              </p>
+              <div className="flex gap-2 pt-1">
                 <button
-                aria-label="Connect to Etsy"
-                onClick={() => {
+                  aria-label="Connect to Etsy"
+                  onClick={() => {
                     toast.dismiss(t.id);
                     window.location.href = `${API_URL}/api/etsy/login?return_to=${encodeURIComponent(
-                    window.location.pathname
+                      window.location.pathname
                     )}`;
-                }}
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90"
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90"
                 >
-                Redirect and Connect
+                  Redirect and Connect
                 </button>
                 <button
-                aria-label="Cancel connecting to Etsy"
-                onClick={() => toast.dismiss(t.id)}
-                className="px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted"
+                  aria-label="Cancel connecting to Etsy"
+                  onClick={() => toast.dismiss(t.id)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted"
                 >
-                Cancel
+                  Cancel
                 </button>
+              </div>
             </div>
-            </div>
-        ),
-        { duration: Infinity }
+          ),
+          { duration: Infinity }
         );
         return;
       }
@@ -396,6 +395,9 @@ export default function MarketplacePage() {
         return;
       }
       const { shop_id } = await shopRes.json();
+      console.log("shop_id:", shop_id);
+      const importUrl = `${API_URL}/api/etsy/shops/${shop_id}/import/`;
+      console.log("Import URL:", importUrl);
       await toast.promise(
         fetch(`${API_URL}/api/etsy/shops/${shop_id}/import/`, {
           method: "POST",
@@ -408,7 +410,7 @@ export default function MarketplacePage() {
           if (!res.ok) throw new Error("Import failed");
           const data = await res.json();
           loadProducts();
-          return data.imported_listing_ids?.length ?? 0;
+          return (data.imported ?? 0) + (data.updated ?? 0);
         }),
         {
           loading: "Syncing from Etsy…",
@@ -425,14 +427,14 @@ export default function MarketplacePage() {
 
   // ── Market filters ──────────────────────────────────────────────────────────
 
- const filterMarket = (m: Market) => {
-  const q = marketSearch.toLowerCase();
-  if (q && !m.name.toLowerCase().includes(q) &&
+  const filterMarket = (m: Market) => {
+    const q = marketSearch.toLowerCase();
+    if (q && !m.name.toLowerCase().includes(q) &&
       !(m.location ?? "").toLowerCase().includes(q)) return false;
-  if (marketStatusFilter && marketStatusFilter !== "all" && 
+    if (marketStatusFilter && marketStatusFilter !== "all" &&
       m.application_status !== marketStatusFilter) return false;
-  return true;
-};
+    return true;
+  };
 
   const filteredUpcoming = upcoming.filter(filterMarket);
   const filteredPast = past.filter(filterMarket);
@@ -456,11 +458,11 @@ export default function MarketplacePage() {
               aria-label={`Navigate to ${label}`}
               aria-current={active ? "location" : undefined}
               className={`group flex items-center gap-2 py-2 px-2 rounded-lg transition-all text-left
-                hover:bg-[#844839] ${
-                  active
-                    ? "bg-[#844839]/40 text-white"
-                    : "text-white/40 hover:text-white"
-                }`}
+                hover:bg-[#6b3a2e] ${
+                active
+                  ? "bg-[#6b3a2e]/40 text-white"
+                  : "text-white/40 hover:text-white"
+              }`}
             >
               <div
                 className={`w-1 h-6 rounded-full transition-all shrink-0 ${
@@ -487,7 +489,7 @@ export default function MarketplacePage() {
           ref={(el) => { sectionRefs.current["intro"] = el; }}
           aria-label="Marketplace overview"
         >
-          <div className="scalloped-intro bg-[#844839] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
+          <div className="scalloped-intro bg-[#6b3a2e] px-4 sm:px-8 lg:px-16 pt-6 sm:pt-12 pb-10 sm:pb-20 space-y-6 sm:space-y-10">
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
 
               <div className="w-full lg:w-2/5 overflow-visible shrink-0 flex items-center justify-center">
@@ -575,120 +577,127 @@ export default function MarketplacePage() {
           aria-label="Your Markets"
         >
           <div className="flex items-end justify-between gap-4">
-            <div className="mb-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Markets</h2>
-                <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
-                    This is where you plan every craft market you attend. Start by adding a market, then track your application status, organise your setup, and log sales on the day. MakerSuite keeps a full history so you can see how each event performs.
-                </p>
+            <div className="mb-4 flex-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Markets</h2>
+              <p className="text-white/90 text-sm sm:text-base mt-1 leading-relaxed">
+                This is where you plan every craft market you attend. Start by adding a market, then track your application status, organise your setup, and log sales on the day. MakerSuite keeps a full history so you can see how each event performs.
+              </p>
             </div>
           </div>
 
           <Card className="bg-white border-neutral-200">
             <CardContent className="p-6 space-y-4">
 
-                {/* Toolbar */}
-                <div className="flex gap-2 flex-wrap items-center">
+              {/* Toolbar */}
+              <div className="flex gap-2 flex-wrap items-center">
                 <div className="relative flex-1 min-w-[140px] max-w-xs">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                    <Input
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
                     placeholder="Search markets…"
                     value={marketSearch}
                     onChange={(e) => setMarketSearch(e.target.value)}
                     className="pl-8 h-8 text-sm"
-                    />
+                  />
                 </div>
 
-                <Select aria-label="Status Filter" value={marketStatusFilter} onValueChange={setMarketStatusFilter}>
-                <SelectTrigger aria-label="Status Filter" className="w-[140px] h-8 text-sm">
+                <Select value={marketStatusFilter} onValueChange={setMarketStatusFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm">
                     <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  </SelectTrigger>
+                  <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="not_applied">Not applied</SelectItem>
                     <SelectItem value="applied">Applied</SelectItem>
                     <SelectItem value="accepted">Accepted</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
+                  </SelectContent>
                 </Select>
 
-                <Select aria-label="Time Filter" value={marketTimeFilter} onValueChange={setMarketTimeFilter}>
-                <SelectTrigger aria-label="Time Filter" className="w-[140px] h-8 text-sm">
+                <Select value={marketTimeFilter} onValueChange={setMarketTimeFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm">
                     <SelectValue placeholder="All markets" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  </SelectTrigger>
+                  <SelectContent>
                     <SelectItem value="all">All markets</SelectItem>
                     <SelectItem value="upcoming">Upcoming</SelectItem>
                     <SelectItem value="past">Past</SelectItem>
-                    </SelectContent>
+                  </SelectContent>
                 </Select>
 
                 <div className="ml-auto">
-                    <Button
+                  <Button
                     aria-label="Add a new market"
                     onClick={() => setAddMarketOpen(true)}
                     className="gap-2 h-8 text-sm"
-                    >
+                  >
                     <PlusCircle className="w-3.5 h-3.5" />
                     Add Market
-                    </Button>
+                  </Button>
                 </div>
-            </div>
+              </div>
 
               {/* Market lists */}
-            {loadingMarkets ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Loading markets…</p>
-            ) : (
-            <div className="space-y-6">
+              {loadingMarkets ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Loading markets…</p>
+              ) : (
+                <div className="space-y-6">
 
-                {/* Upcoming */}
-                {(!marketTimeFilter || marketTimeFilter !== "past") && (
-                <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Upcoming
-                    </p>
-                    {filteredUpcoming.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        {upcoming.length === 0 ? "No upcoming markets. Add one above." : "No upcoming markets match your filters."}
-                    </p>
-                    ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredUpcoming.map((m) => (
-                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
-                        ))}
+                  {/* Upcoming */}
+                  {(!marketTimeFilter || marketTimeFilter !== "past") && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                        Upcoming
+                      </p>
+                      {filteredUpcoming.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          {upcoming.length === 0 ? "No upcoming markets. Add one above." : "No upcoming markets match your filters."}
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {filteredUpcoming.map((m) => (
+                            <MarketCard
+                              key={m.id}
+                              market={m}
+                              onLogSale={() => {
+                                setLogSaleMarket(m);
+                              }}
+                              onDelete={() => setDeleteMarket(m)}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    )}
-                </div>
-                )}
+                  )}
 
-                {/* Past */}
-                {(!marketTimeFilter || marketTimeFilter !== "upcoming") && (
-                <div className={(!marketTimeFilter || marketTimeFilter === "all") ? "pt-2 border-t border-border" : ""}>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Past
-                    </p>
-                    {filteredPast.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        {past.length === 0 ? "No past markets yet." : "No past markets match your filters."}
-                    </p>
-                    ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredPast.map((m) => (
-                        <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
-                        ))}
+                  {/* Past */}
+                  {(!marketTimeFilter || marketTimeFilter !== "upcoming") && (
+                    <div className={(!marketTimeFilter || marketTimeFilter === "all") ? "pt-2 border-t border-border" : ""}>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                        Past
+                      </p>
+                      {filteredPast.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          {past.length === 0 ? "No past markets yet." : "No past markets match your filters."}
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {filteredPast.map((m) => (
+                            <MarketCard key={m.id} market={m} onLogSale={() => setLogSaleMarket(m)} onDelete={() => setDeleteMarket(m)} />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    )}
-                </div>
-                )}
+                  )}
 
-            </div>
-            )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </section>
 
         <WavySeparator />
 
-        {/* ═══ YOUR PRODUCTS ═══════════════════════════════════════ */}
+        {/* ═══ YOUR PRODUCTS ═══════════════════════════════════════════════ */}
         <section
           id="your-products"
           ref={(el) => { sectionRefs.current["your-products"] = el; }}
@@ -737,17 +746,14 @@ export default function MarketplacePage() {
 
       {/* ── Modals ── */}
       <Suspense fallback={<div className="p-4 text-sm">Loading...</div>}>
-        {logSaleOpen && (
+        {logSaleMarket && (
           <LogSaleModal
             products={products}
-            marketId={logSaleMarket?.id}
-            marketName={logSaleMarket?.name}
-            onClose={() => {
-              setLogSaleOpen(false);
-              setLogSaleMarket(null);
-            }}
+            product={undefined}
+            marketId={logSaleMarket.id}
+            marketName={logSaleMarket.name}
+            onClose={() => setLogSaleMarket(null)}
             onLogged={() => {
-              setLogSaleOpen(false);
               setLogSaleMarket(null);
               loadProducts();
               loadMarkets();

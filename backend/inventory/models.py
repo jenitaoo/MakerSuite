@@ -115,6 +115,7 @@ class Project(models.Model):
     tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    stock_adjustment = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -131,7 +132,7 @@ class Project(models.Model):
 
     @property
     def in_stock(self):
-        return self.units_made - self.units_sold
+        return self.units_made - self.units_sold + self.stock_adjustment
 
     @property
     def avg_duration_minutes(self):

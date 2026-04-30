@@ -6,6 +6,9 @@ and various external platforms like Etsy and Shopify.
 from backend.integrations.factory import AdapterFactory
 from .models import ExternalProductListing
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SyncManager:
     def __init__(self, user_profile):
@@ -53,26 +56,24 @@ class SyncManager:
         Pull Etsy receipts and create SaleLogs for any unseen transactions.
         Platform-agnostic — works for any adapter that implements fetch_receipts.
         """
+        from asgiref.sync import async_to_sync
+
         listings = ExternalProductListing.objects.filter(
             product=product,
             platform="Etsy"
         )
-        print(f"DEBUG: Found {listings.count()} listings for product {product.id}")
 
         for listing in listings:
-            print(f"DEBUG: Processing listing {listing.id} on {listing.platform}")
             adapter = self.adapters.get(listing.platform.lower())
             if not adapter:
-                print(f"DEBUG: No adapter for {listing.platform}")
                 continue
 
             since_ts = 0
 
             try:
-                receipts = adapter.fetch_receipts(listing.shop_id, since_ts)
-                print(f"DEBUG: Fetched {len(receipts)} receipts from {listing.platform}")
+                receipts = async_to_sync(adapter.fetch_receipts)(listing.shop_id, since_ts)
             except Exception as e:
-                print(f"DEBUG: Error fetching receipts: {e}")
+                logger.error(f"Error fetching receipts for listing {listing.id}: {e}")
                 continue
 
             self._process_receipts(receipts, product, listing, listing.platform)
@@ -87,10 +88,7 @@ class SyncManager:
         Etsy receipt structure and Shopify order structure are normalized here.
         """
         from .models import SaleLog, SaleTag
-        from django.utils.dateparse import parse_datetime
         import datetime
-
-        print(f"DEBUG: _process_receipts called with {len(receipts)} receipts, listing.platform_listing_id={listing.platform_listing_id}")
 
         for receipt in receipts:
             # Normalize across platforms
@@ -99,7 +97,6 @@ class SyncManager:
                 created_ts = receipt.get("create_timestamp")
                 sale_date = datetime.date.fromtimestamp(created_ts) if created_ts else None
                 transactions = receipt.get("transactions", [])
-                print(f"DEBUG: Processing receipt {receipt_id} with {len(transactions)} transactions")
             elif platform.lower() == "shopify":
                 receipt_id = str(receipt.get("id"))
                 sale_date = receipt.get("created_at", "")[:10]
@@ -107,42 +104,42 @@ class SyncManager:
             else:
                 continue
 
-        for transaction in transactions:
-            if platform.lower() == "etsy":
-                listing_id = str(transaction.get("listing_id"))
-                units_sold = transaction.get("quantity", 1)
-                price = transaction.get("price", {})
-                sale_price = price.get("amount", 0) / price.get("divisor", 100) if price else None
-                external_id = f"etsy_{receipt_id}_{listing_id}"
-                print(f"DEBUG: Transaction listing_id={listing_id} vs {listing.platform_listing_id}, match={listing_id == str(listing.platform_listing_id)}")
+            # Fixed: this loop must be INSIDE the receipt loop
+            for transaction in transactions:
+                if platform.lower() == "etsy":
+                    listing_id = str(transaction.get("listing_id"))
+                    units_sold = transaction.get("quantity", 1)
+                    price = transaction.get("price", {})
+                    sale_price = price.get("amount", 0) / price.get("divisor", 100) if price else None
+                    external_id = f"etsy_{receipt_id}_{listing_id}"
 
-                # Only process transactions for this product's listing
-                if listing_id != listing.platform_listing_id:
-                    continue
+                    # Only process transactions for this product's listing
+                    if listing_id != listing.platform_listing_id:
+                        continue
 
-                # Deduplicate — skip if already logged
-                if SaleLog.objects.filter(external_id=external_id).exists():
-                    continue
+                    # Deduplicate — skip if already logged
+                    if SaleLog.objects.filter(external_id=external_id).exists():
+                        continue
 
-                # Get or create Etsy sale tag
-                etsy_tag, _ = SaleTag.objects.get_or_create(
-                    owner=self.user_profile,
-                    name=platform.capitalize(),
-                )
+                    # Get or create Etsy sale tag
+                    etsy_tag, _ = SaleTag.objects.get_or_create(
+                        owner=self.user_profile,
+                        name=platform.capitalize(),
+                    )
 
-                # Create the sale log
-                sale_log = SaleLog.objects.create(
-                    owner=self.user_profile,
-                    product=product,
-                    units_sold=units_sold,
-                    sale_date=sale_date,
-                    source=SaleLog.SOURCE_ETSY if platform.lower() == "etsy" else SaleLog.SOURCE_MANUAL,
-                    sale_price=str(round(sale_price * units_sold, 2)) if sale_price else None,
-                    unit_prices=[{"unit": i + 1, "price": str(sale_price)} for i in range(units_sold)] if sale_price else [],
-                    external_id=external_id,
-                )
-                sale_log.tags.set([etsy_tag])
+                    # Create the sale log
+                    sale_log = SaleLog.objects.create(
+                        owner=self.user_profile,
+                        product=product,
+                        units_sold=units_sold,
+                        sale_date=sale_date,
+                        source=SaleLog.SOURCE_ETSY if platform.lower() == "etsy" else SaleLog.SOURCE_MANUAL,
+                        sale_price=str(round(sale_price * units_sold, 2)) if sale_price else None,
+                        unit_prices=[{"unit": i + 1, "price": str(sale_price)} for i in range(units_sold)] if sale_price else [],
+                        external_id=external_id,
+                    )
+                    sale_log.tags.set([etsy_tag])
 
-                # Decrement internal stock
-                product.internal_quantity = max(0, (product.internal_quantity or 0) - units_sold)
-                product.save(update_fields=["internal_quantity"])
+                    # Decrement internal stock
+                    product.internal_quantity = max(0, (product.internal_quantity or 0) - units_sold)
+                    product.save(update_fields=["internal_quantity"])

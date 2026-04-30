@@ -308,7 +308,7 @@ export default function MarketDetailPage() {
 
   const handleUpdateUnits = async (productPk: number, units: number) => {
     try {
-      await fetch(`/${API_URL}api/markets/${id}/products/${productPk}/`, {
+      const res = await fetch(`${API_URL}/api/markets/${id}/products/${productPk}/`, {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -317,8 +317,11 @@ export default function MarketDetailPage() {
         },
         body: JSON.stringify({ units_brought: units }),
       });
+      if (!res.ok) throw new Error();
       await loadAll();
-    } catch {}
+    } catch {
+      toast.error("Failed to update units");
+    }
   };
 
   // ── Loading / empty ─────────────────────────────────────────────────────────
@@ -659,12 +662,10 @@ export default function MarketDetailPage() {
                             {product?.sku && <p className="text-xs text-muted-foreground">{product.sku}</p>}
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            <Input
+                            <input
                               type="number"
-                              min={1}
-                              value={mp.units_brought}
                               onChange={(e) => handleUpdateUnits(mp.product, Number(e.target.value))}
-                              className="w-16 h-7 text-sm text-center px-1 mx-auto"
+                              className="w-16 h-7 text-sm text-center px-1 mx-auto border border-input rounded"
                             />
                           </TableCell>
                           <TableCell className="p-2 text-center text-sm">{sold}</TableCell>

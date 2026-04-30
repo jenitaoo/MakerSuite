@@ -11,9 +11,12 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from django.conf import settings
 from django.utils import timezone
+from asgiref.sync import sync_to_async
 
-from backend.integrations.interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
-from backend.integrations.exceptions import (
+from products.models import Product, ExternalProductListing
+
+from ..interfaces import BasePlatformAdapter, PlatformListing, PlatformOrder
+from ..exceptions import (
     PlatformAuthError,
     PlatformAPIError,
     PlatformIntegrationError,
@@ -84,10 +87,12 @@ class EtsyAdapter(BasePlatformAdapter):
     #  HTTP CLIENT MANAGEMENT
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get or create async HTTP client (lazy initialization)."""
-        if self._client is None:
-            self._client = httpx.AsyncClient(timeout=30.0)
-        return self._client
+        """Create a fresh async HTTP client for each request.
+
+        Can't cache client across async_to_sync calls — event loop closes
+        between calls, invalidating the cached client.
+        """
+        return httpx.AsyncClient(timeout=30.0)
 
     async def _close_client(self):
         """Close HTTP client (call on cleanup)."""
@@ -97,42 +102,36 @@ class EtsyAdapter(BasePlatformAdapter):
 
     #  TOKEN & HEADERS
 
-    def _get_access_token(self) -> str:
+    async def _get_access_token(self) -> str:
         """
         Get valid access token, auto-refreshing if needed.
 
-        Synchronous method because Django DB operations are sync.
-        EtsyToken.get_valid_token() handles:
-        - Checking if token expired (5 min buffer)
-        - Locking token row to prevent race conditions
-        - Calling Etsy refresh API if needed
-        - Atomically saving new tokens
+        Wraps sync EtsyToken.get_valid_token() for async context.
+        sync_to_async() runs the sync DB operation in a thread pool,
+        keeping the async event loop free for other requests.
 
-        Design decision: Keep sync because token model operations are sync.
-        Performance impact: negligible (happens once per request batch).
 
         Raises:
             PlatformAuthError: if refresh token missing or refresh fails
         """
         try:
-            return self._token.get_valid_token()
+            return await sync_to_async(self._token.get_valid_token)()
         except ValueError as e:
-            # Refresh token missing — 90 days inactive
             logger.error(f"EtsyToken refresh failed: {e}")
             raise PlatformAuthError(
-                f"Etsy token refresh failed: {str(e)}",
+                message=f"Etsy token refresh failed: {str(e)}",
                 platform=self.platform_name,
                 requires_reauth=True,
             ) from e
         except Exception as e:
             logger.error(f"Unexpected token error: {e}", exc_info=True)
             raise PlatformAuthError(
-                f"Unable to get valid Etsy token: {str(e)}",
+                message=f"Unable to get valid Etsy token: {str(e)}",
                 platform=self.platform_name,
                 requires_reauth=True,
             ) from e
 
-    def _headers(self) -> Dict[str, str]:
+    async def _headers(self) -> Dict[str, str]:
         """
         Build request headers with fresh access token.
 
@@ -140,13 +139,10 @@ class EtsyAdapter(BasePlatformAdapter):
         Etsy requires:
         - Authorization: Bearer {access_token}
         - x-api-key: {ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}
-
-        Design decision: Rebuild headers per-request (not cached).
-        Ensures token stays fresh even if request is queued.
-        Negligible performance cost (string building).
         """
+        token = await self._get_access_token()
         return {
-            "Authorization": f"Bearer {self._get_access_token()}",
+            "Authorization": f"Bearer {token}",
             "x-api-key": f"{settings.ETSY_KEYSTRING}:{settings.ETSY_SHARED_SECRET}",
             "Content-Type": "application/json",
         }
@@ -186,14 +182,14 @@ class EtsyAdapter(BasePlatformAdapter):
         # Map status codes to exceptions
         if status_code == 401 or status_code == 403:
             raise PlatformAuthError(
-                f"Etsy authentication failed: {error_message}",
+                message=f"Etsy authentication failed: {error_message}",
                 platform=self.platform_name,
                 requires_reauth=(status_code == 401),
             )
 
         elif status_code == 404:
             raise PlatformNotFoundError(
-                f"Resource not found: {error_message}",
+                message=f"Resource not found: {error_message}",
                 platform=self.platform_name,
             )
 
@@ -201,20 +197,20 @@ class EtsyAdapter(BasePlatformAdapter):
             # Rate limit — Etsy sends Retry-After header
             retry_after = int(response.headers.get("Retry-After", 60))
             raise PlatformRateLimitError(
-                f"Etsy rate limit exceeded. Retry after {retry_after}s",
+                message=f"Etsy rate limit exceeded. Retry after {retry_after}s",
                 retry_after=retry_after,
                 platform=self.platform_name,
             )
 
         elif status_code == 400:
             raise PlatformValidationError(
-                f"Invalid request: {error_message}",
+                message=f"Invalid request: {error_message}",
                 platform=self.platform_name,
             )
 
         elif status_code >= 500:
             raise PlatformAPIError(
-                f"Etsy server error [{status_code}]: {error_message}",
+                message=f"Etsy server error [{status_code}]: {error_message}",
                 status_code=status_code,
                 platform=self.platform_name,
                 retryable=True,
@@ -222,7 +218,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         else:
             raise PlatformAPIError(
-                f"Etsy API error [{status_code}]: {error_message}",
+                message=f"Etsy API error [{status_code}]: {error_message}",
                 status_code=status_code,
                 platform=self.platform_name,
             )
@@ -236,48 +232,32 @@ class EtsyAdapter(BasePlatformAdapter):
         context: str = "",
         **kwargs,
     ) -> Dict[str, Any]:
-        """
-        Make HTTP request to Etsy API.
-
-        Args:
-            method: HTTP verb (GET, POST, PATCH, PUT)
-            endpoint: API endpoint path
-            context: Description for logging/errors
-            **kwargs: json, params, data, files, etc.
-
-        Returns:
-            Parsed JSON response
-
-        Design decision: Single _request() method for all verbs.
-        Reduces code duplication, centralizes error handling.
-        """
-        token = self._get_access_token()  # Sync call
-        headers = self._headers()
+        """Make HTTP request to Etsy API."""
+        headers = await self._headers()
         url = f"{self.BASE_URL}{endpoint}"
-
-        client = await self._get_client()  # Async call
 
         logger.debug(f"Etsy {method} {endpoint}")
 
         try:
-            response = await client.request(
-                method,
-                url,
-                headers=headers,
-                **kwargs,
-            )
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    **kwargs,
+                )
 
-            if response.status_code >= 400:
-                self._handle_response_error(response, context or f"{method} {endpoint}")
+                if response.status_code >= 400:
+                    self._handle_response_error(response, context or f"{method} {endpoint}")
 
-            return response.json()
+                return response.json()
 
         except PlatformIntegrationError:
-            raise  # Re-raise platform errors
+            raise
         except Exception as e:
             logger.error(f"Etsy API request failed: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Etsy API request failed: {str(e)}",
+                message=f"Etsy API request failed: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -407,14 +387,15 @@ class EtsyAdapter(BasePlatformAdapter):
         """
         Fetch authenticated user's shop info.
 
-        Endpoint: /v3/application/shops/1
-        Note: Always uses shop ID "1" (authenticated user's shop)
+        Endpoint: /users/{etsy_user_id}/shops
+        Uses the esty_user_id from the token to find the user's shop
         """
         logger.debug("Fetching Etsy shop info")
 
         try:
+            etsy_user_id = self._token.etsy_user_id
             data = await self._get(
-                "/v3/application/shops/1",
+                f"/users/{etsy_user_id}/shops",
                 context="fetch shop info"
             )
 
@@ -435,7 +416,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch shop info: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy shop info: {str(e)}",
+                message=f"Failed to fetch Etsy shop info: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -480,7 +461,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             data = await self._get(
-                f"/v3/application/shops/{shop_id}/listings",
+                f"/shops/{shop_id}/listings",
                 params=params,
                 context="fetch listings"
             )
@@ -498,7 +479,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch listings: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy listings: {str(e)}",
+                message=f"Failed to fetch Etsy listings: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -520,12 +501,6 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             Created PlatformListing with external_id
-
-        Design notes:
-        - Requires reference_listing_raw OR first existing listing
-          (to extract required profile IDs)
-        - Images uploaded separately after creation
-        - Returns listing data with images included
         """
         logger.debug(f"Creating Etsy listing: {product.title}")
 
@@ -534,7 +509,7 @@ class EtsyAdapter(BasePlatformAdapter):
         for field in required:
             if not getattr(product, field, None):
                 raise PlatformValidationError(
-                    f"Product missing required field: {field}",
+                    message=f"Product missing required field: {field}",
                     field=field,
                     platform=self.platform_name,
                 )
@@ -545,7 +520,7 @@ class EtsyAdapter(BasePlatformAdapter):
                 existing = await self.fetch_listings(shop_id, limit=1)
                 if not existing:
                     raise PlatformValidationError(
-                        "No existing listing to reference. Create at least one listing manually.",
+                        message="No existing listing to reference. Create at least one listing manually.",
                         platform=self.platform_name,
                     )
                 reference_listing_raw = existing[0].raw_data
@@ -556,7 +531,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
             if not shipping_profile_id or not return_policy_id:
                 raise PlatformValidationError(
-                    "Reference listing missing shipping/return policy IDs",
+                    message="Reference listing missing shipping/return policy IDs",
                     platform=self.platform_name,
                 )
 
@@ -571,8 +546,8 @@ class EtsyAdapter(BasePlatformAdapter):
                 "price": float(product.internal_price),
                 "quantity": int(product.internal_quantity) or 1,
                 "sku": str(product.sku or ""),
-                "tags": etsy_fields.get("tags", [])[:13],  # Etsy max 13
-                "materials": etsy_fields.get("materials", [])[:12],  # Etsy max 12
+                "tags": etsy_fields.get("tags", [])[:13],
+                "materials": etsy_fields.get("materials", [])[:12],
                 "who_made": etsy_fields.get("who_made", "i_did"),
                 "when_made": etsy_fields.get("when_made", "made_to_order"),
                 "should_auto_renew": etsy_fields.get("should_auto_renew", True),
@@ -585,7 +560,7 @@ class EtsyAdapter(BasePlatformAdapter):
             }
 
             result = await self._post(
-                f"/v3/application/shops/{shop_id}/listings",
+                f"/shops/{shop_id}/listings",
                 json=payload,
                 context="create listing"
             )
@@ -593,9 +568,8 @@ class EtsyAdapter(BasePlatformAdapter):
             listing_id = result["listing_id"]
             logger.info(f"Created Etsy listing {listing_id}: {product.title}")
 
-            # Upload images if provided
-            if hasattr(product, 'images') and product.images.exists():
-                await self._upload_product_images(shop_id, listing_id, product)
+            # Note: Image uploads handled separately by the view (_push_images_to_etsy)
+            # to avoid sync-in-async issues with Django ORM and file I/O
 
             return self._to_platform_listing(result)
 
@@ -604,7 +578,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to create listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to create Etsy listing: {str(e)}",
+                message=f"Failed to create Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -622,17 +596,12 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             {"core": {...}, "inventory": {...}} response
-
-        Design notes:
-        - Etsy separates metadata (title, description) from inventory
-        - Calls _update_core_listing() and update_inventory() separately
-        - Both must succeed (atomic from caller's perspective)
         """
         logger.debug(f"Updating Etsy listing {listing.platform_listing_id}")
 
         if not listing.shop_id or not listing.platform_listing_id:
             raise PlatformValidationError(
-                "Listing missing shop_id or platform_listing_id",
+                message="Listing missing shop_id or platform_listing_id",
                 platform=self.platform_name,
             )
 
@@ -651,7 +620,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to update listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to update Etsy listing: {str(e)}",
+                message=f"Failed to update Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -677,7 +646,7 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
         return await self._patch(
-            f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
+            f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
             json=payload,
             context="update listing metadata"
         )
@@ -704,7 +673,7 @@ class EtsyAdapter(BasePlatformAdapter):
         readiness_state_id = listing.raw.get("readiness_state_id")
         if not readiness_state_id:
             raise PlatformValidationError(
-                f"No readiness_state_id found in listing raw data",
+                message=f"No readiness_state_id found in listing raw data",
                 platform=self.platform_name,
             )
 
@@ -728,7 +697,7 @@ class EtsyAdapter(BasePlatformAdapter):
         }
 
         return await self._put(
-            f"/v3/application/listings/{listing.platform_listing_id}/inventory",
+            f"/listings/{listing.platform_listing_id}/inventory",
             json=payload,
             context="update inventory"
         )
@@ -739,7 +708,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             await self._patch(
-                f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
+                f"/shops/{listing.shop_id}/listings/{listing.platform_listing_id}",
                 json={"state": "inactive"},
                 context="deactivate listing"
             )
@@ -751,14 +720,13 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to deactivate listing: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to deactivate Etsy listing: {str(e)}",
+                message=f"Failed to deactivate Etsy listing: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
     async def delete_listing(self, listing: 'ExternalProductListing') -> bool:
         """Delete listing (permanent)."""
         logger.debug(f"Deleting Etsy listing {listing.platform_listing_id}")
-        # Etsy DELETE is not commonly used; implement if needed
         raise NotImplementedError("Etsy listing deletion not yet implemented")
 
     async def fetch_receipts(
@@ -775,11 +743,6 @@ class EtsyAdapter(BasePlatformAdapter):
 
         Returns:
             List of PlatformOrder objects
-
-        Design notes:
-        - Filters by was_paid=true (only paid orders)
-        - Includes transactions for full order details
-        - Supports incremental sync via since_timestamp
         """
         logger.debug(f"Fetching Etsy receipts (shop={shop_id}, since={since_timestamp})")
 
@@ -792,7 +755,7 @@ class EtsyAdapter(BasePlatformAdapter):
 
         try:
             data = await self._get(
-                f"/v3/application/shops/{shop_id}/receipts",
+                f"/shops/{shop_id}/receipts",
                 params=params,
                 context="fetch receipts"
             )
@@ -810,7 +773,7 @@ class EtsyAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.error(f"Failed to fetch receipts: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to fetch Etsy receipts: {str(e)}",
+                message=f"Failed to fetch Etsy receipts: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -820,17 +783,7 @@ class EtsyAdapter(BasePlatformAdapter):
         image_file,
         rank: int = 1,
     ) -> Dict[str, Any]:
-        """
-        Upload image to listing via multipart form data.
-
-        Args:
-            listing: ExternalProductListing model
-            image_file: File-like object (Django UploadedFile)
-            rank: Image rank/order (1 = primary)
-
-        Returns:
-            API response
-        """
+        """Upload image to listing via multipart form data."""
         logger.debug(f"Uploading image to Etsy listing {listing.platform_listing_id}")
 
         content_type, _ = mimetypes.guess_type(image_file.name)
@@ -842,23 +795,28 @@ class EtsyAdapter(BasePlatformAdapter):
             "overwrite": (None, "true"),
         }
 
+        headers = await self._headers()
+        # Remove Content-Type from headers — httpx will set it for multipart
+        headers.pop("Content-Type", None)
+
+        url = f"{self.BASE_URL}/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images"
+
         try:
-            result = await self._request(
-                "POST",
-                f"/v3/application/shops/{listing.shop_id}/listings/{listing.platform_listing_id}/images",
-                json=False,  # Don't set Content-Type
-                files=files,
-                context="upload image"
-            )
-            logger.info(f"Uploaded image to listing {listing.platform_listing_id}")
-            return result
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, headers=headers, files=files)
+
+                if response.status_code >= 400:
+                    self._handle_response_error(response, "upload image")
+
+                logger.info(f"Uploaded image to listing {listing.platform_listing_id}")
+                return response.json()
 
         except PlatformIntegrationError:
             raise
         except Exception as e:
             logger.error(f"Failed to upload image: {e}", exc_info=True)
             raise PlatformAPIError(
-                f"Failed to upload Etsy image: {str(e)}",
+                message=f"Failed to upload Etsy image: {str(e)}",
                 platform=self.platform_name,
             ) from e
 
@@ -872,7 +830,7 @@ class EtsyAdapter(BasePlatformAdapter):
         if not hasattr(product, 'images'):
             return
 
-        for idx, product_image in enumerate(product.images.all()[:10]):  # Etsy max 10
+        for idx, product_image in enumerate(product.images.all()[:10]):
             try:
                 with product_image.image.open('rb') as f:
                     await self.upload_image(
@@ -885,7 +843,6 @@ class EtsyAdapter(BasePlatformAdapter):
                     )
             except Exception as e:
                 logger.warning(f"Failed to upload image {idx}: {e}")
-                # Don't fail the whole creation for one image
                 continue
 
     #  ASYNC CONTEXT MANAGER
@@ -898,4 +855,3 @@ class EtsyAdapter(BasePlatformAdapter):
         """Clean up client on exit."""
         await self._close_client()
         return False
-
