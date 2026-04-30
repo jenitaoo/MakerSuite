@@ -17,8 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from asgiref.sync import async_to_sync
 from integrations.factory import AdapterFactory
 from integrations.exceptions import PlatformAuthError, PlatformIntegrationError
-from products.models import ExternalProductListing, Product
-from products.sync import SyncManager
+from products.models import ExternalProductListing
 from authentication.models import UserProfile
 
 logger = logging.getLogger(__name__)
@@ -337,33 +336,29 @@ class EtsyImportListingsView(APIView):
 
             logger.info(f"[IMPORT] Done: imported={imported}, updated={updated}, errors={errors}, total={len(listings)}")
 
-            # ── Sync Etsy receipts as sale logs ──────────────────────────────
-            imported_sales = 0
+            # Sync Etsy receipts for all products with linked listings
+            sales_synced = 0
             sales_errors = 0
             try:
                 from products.sync import SyncManager
-                from products.models import Product, ExternalProductListing
-                manager = SyncManager(profile)
-                linked_product_ids = ExternalProductListing.objects.filter(
-                    owner=profile,
-                    platform="Etsy",
-                    shop_id=shop_id,
-                    product__isnull=False,
-                ).values_list("product_id", flat=True).distinct()
+                from products.models import Product
 
-                linked_products = Product.objects.filter(id__in=linked_product_ids)
+                sync_manager = SyncManager(profile)
+                linked_products = Product.objects.filter(
+                    owner=profile,
+                    externalproductlisting__platform="Etsy",
+                    externalproductlisting__shop_id=shop_id,
+                ).distinct()
 
                 for product in linked_products:
                     try:
-                        manager.sync_receipts_for_product(product)
-                        imported_sales += 1
+                        sync_manager.sync_receipts_for_product(product)
+                        sales_synced += 1
                     except Exception as e:
-                        logger.error(f"[IMPORT] Error syncing receipts for product {product.id}: {e}", exc_info=True)
+                        logger.error(f"[IMPORT] Receipt sync failed for product {product.id}: {e}")
                         sales_errors += 1
-
-                logger.info(f"[IMPORT] Receipt sync done: products_synced={imported_sales}, sales_errors={sales_errors}")
             except Exception as e:
-                logger.error(f"[IMPORT] Receipt sync failed: {e}", exc_info=True)
+                logger.error(f"[IMPORT] Receipt sync setup failed: {e}")
 
             return Response({
                 "status": "success",
@@ -371,7 +366,7 @@ class EtsyImportListingsView(APIView):
                 "updated": updated,
                 "errors": errors,
                 "total": len(listings),
-                "sales_synced": imported_sales,
+                "sales_synced": sales_synced,
                 "sales_errors": sales_errors,
             })
 
